@@ -1,0 +1,9 @@
+Support (and test) csv as output type.
+Check the input parameters.
+  Check that the directory of the output file exists at the beginning.
+Check the data.
+  Make sure each row in the input file has the same number of columns.
+Add documentation for all functions.
+Support inner joins.
+Add parallelization support.
+Provide a way to stream a file as input and/or output?

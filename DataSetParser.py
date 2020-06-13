@@ -67,12 +67,12 @@ class DataSetParser:
         # Find rows that match discrete filtering criteria.
         keep_row_indices = range(self.num_rows)
         for df in discrete_filters:
-            keep_row_indices = self.filter_rows_discrete(keep_row_indices, df, data_handle, cc_handle, mccl, ll)
+            keep_row_indices = self.__filter_rows_discrete(keep_row_indices, df, data_handle, cc_handle, mccl, ll)
 
         # Find rows that match numeric filtering criteria.
         num_operator_dict = {">": operator.gt, "<": operator.lt, ">=": operator.ge, "<=": operator.le, "==": operator.eq, "!=": operator.ne}
         for nf in numeric_filters:
-            keep_row_indices = self.filter_rows_numeric(keep_row_indices, nf, num_operator_dict, data_handle, cc_handle, mccl, ll)
+            keep_row_indices = self.__filter_rows_numeric(keep_row_indices, nf, num_operator_dict, data_handle, cc_handle, mccl, ll)
 
         # Read all column names.
         column_names = get_column_names(self.data_file_path)
@@ -120,18 +120,18 @@ class DataSetParser:
         data_handle.close()
         cc_handle.close()
 
-    ########################################################################
-    # Treat these as private functions.
-    ########################################################################
+    ##############################################
+    # Private functions.
+    ##############################################
 
-    def filter_rows_discrete(self, row_indices, the_filter, data_handle, cc_handle, mccl, ll):
+    def __filter_rows_discrete(self, row_indices, the_filter, data_handle, cc_handle, mccl, ll):
         query_col_coords = list(parse_data_coords([the_filter.column_index], cc_handle, mccl))
 
         for row_index in row_indices:
             if next(parse_data_values(row_index, ll, query_col_coords, data_handle)).rstrip() in the_filter.values_set:
                 yield row_index
 
-    def filter_rows_numeric(self, row_indices, the_filter, operator_dict, data_handle, cc_handle, mccl, ll):
+    def __filter_rows_numeric(self, row_indices, the_filter, operator_dict, data_handle, cc_handle, mccl, ll):
         if the_filter.operator not in operator_dict:
             raise Exception("Invalid operator: " + oper)
 

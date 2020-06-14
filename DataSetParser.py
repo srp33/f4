@@ -82,19 +82,22 @@ class DataSetParser:
             select_column_indices = range(len(column_names))
         else:
             # This enables faster lookups.
-            select_columns_set = set(select_columns)
+            select_columns_set = set([x.encode() for x in select_columns])
 
             # Make sure select_columns are valid.
             nonexistent_columns = select_columns_set - set(column_names)
             if len(nonexistent_columns) > 0:
+                print(select_columns_set)
+                print(set(column_names))
+                print(nonexistent_columns)
                 raise Exception("Invalid select_columns value(s): {}".format(",".join(sorted(list(nonexistent_columns)))))
 
             # Pair column names with positions.
             select_columns_dict = { column_name: i for i, column_name in enumerate(column_names) if column_name in select_columns_set }
 
             # Specific the indices and names of columns we want to select (in the user-specified order).
-            select_column_indices = [select_columns_dict[column_name] for column_name in select_columns]
-            column_names = select_columns
+            select_column_indices = [select_columns_dict[column_name.encode()] for column_name in select_columns]
+            column_names = [x.encode() for x in select_columns]
 
         # Get the coords for each column to select
         select_column_coords = list(parse_data_coords(select_column_indices, cc_handle, mccl))

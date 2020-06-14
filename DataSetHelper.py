@@ -61,4 +61,4 @@ def search_indices_values(indices, values, search_str):
             yield index, value
 
 def get_column_names(fwf_file_path):
-    return read_strings_from_file(fwf_file_path, ".cn")
+    return [x.rstrip(b" ") for x in read_strings_from_file(fwf_file_path, ".cn")]

@@ -1,6 +1,7 @@
 import mmap
 
 def parse_data_coords(line_indices, coords_file, coords_file_max_length):
+    data_coords = []
     out_dict = {}
 
     for index in line_indices:
@@ -20,7 +21,9 @@ def parse_data_coords(line_indices, coords_file, coords_file_max_length):
             data_end_pos = int(coords_file[next_start_pos:further_next_start_pos].rstrip())
             out_dict[index + 1] = data_end_pos
 
-        yield [data_start_pos, data_end_pos]
+        data_coords.append([data_start_pos, data_end_pos])
+
+    return data_coords
 
 def parse_data_values(start_offset, segment_length, data_coords, str_like_object):
     start_pos = start_offset * segment_length
@@ -46,22 +49,5 @@ def open_read_file(file_path, file_extension=""):
     the_file = open(file_path + file_extension, 'rb')
     return mmap.mmap(the_file.fileno(), 0, prot=mmap.PROT_READ)
 
-#def parse_meta_value(handle, length, index):
-#    return next(parse_data_values(index, length + 1, [(index, 0, length)], handle))
-
-def write_string_to_file(file_path, file_extension, the_string):
-    with open(file_path + file_extension, 'wb') as the_file:
-        the_file.write(the_string)
-
 def is_missing_value(value):
     return value == b"" or value == b"NA"
-
-#def search_indices_values(indices, values, search_str):
-#    for value in values:
-#        index = next(indices)
-#
-#        if search_str in value:
-#            yield index, value
-
-def get_column_names(fwf_file_path):
-    return [x.rstrip(b" ") for x in read_strings_from_file(fwf_file_path, ".cn")]

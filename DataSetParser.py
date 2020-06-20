@@ -18,6 +18,11 @@ class DataSetParser:
     """
 
     def __init__(self, data_file_path):
+        for file_extension in ("", ".cc", ".cn", ".ct", ".ll", ".mccl", ".mcnl", ".mctl", ".ncol", ".nrow"):
+            file_path = f"{data_file_path}{file_extension}"
+            if not os.path.exists(file_path):
+                raise Exception(f"A file named {file_path} does not exist.")
+
         self.data_file_path = data_file_path
         self.__num_rows = None
         self.__num_columns = None
@@ -69,7 +74,7 @@ class DataSetParser:
                 raise Exception("An object of type {} may not be used as a filter.".format(type(fltr)))
 
         # Read all column names.
-        column_names = get_column_names(self.data_file_path)
+        column_names = self.__get_column_names()
 
         # By default, select all columns.
         if not select_columns or len(select_columns) == 0:
@@ -91,7 +96,7 @@ class DataSetParser:
             column_names = [x.encode() for x in select_columns]
 
         # Get the coords for each column to select
-        select_column_coords = list(parse_data_coords(select_column_indices, cc_handle, mccl))
+        select_column_coords = parse_data_coords(select_column_indices, cc_handle, mccl)
 
         # Write output file (in chunks)
         with open(out_file_path, 'wb') as out_file:
@@ -120,7 +125,7 @@ class DataSetParser:
 
     def __filter_rows_discrete(self, row_indices, the_filter, data_handle, ll, cc_handle, mccl, cn_handle, mcnl):
         column_index = self.__find_column_index(the_filter.column_name, cn_handle, mcnl)
-        query_col_coords = list(parse_data_coords([column_index], cc_handle, mccl))
+        query_col_coords = parse_data_coords([column_index], cc_handle, mccl)
 
         for row_index in row_indices:
             if next(parse_data_values(row_index, ll, query_col_coords, data_handle)).rstrip() in the_filter.values_set:
@@ -128,7 +133,7 @@ class DataSetParser:
 
     def __filter_rows_numeric(self, row_indices, the_filter, data_handle, ll, cc_handle, mccl, cn_handle, mcnl):
         column_index = self.__find_column_index(the_filter.column_name, cn_handle, mcnl)
-        query_col_coords = list(parse_data_coords([column_index], cc_handle, mccl))
+        query_col_coords = parse_data_coords([column_index], cc_handle, mccl)
 
         for row_index in row_indices:
             value = next(parse_data_values(row_index, ll, query_col_coords, data_handle)).rstrip()
@@ -148,3 +153,6 @@ class DataSetParser:
                 return col_index
 
         raise Exception(f"A column named {query_column_name.decode()} could not be found for {self.data_file_path}.")
+
+    def __get_column_names(self):
+        return [x.rstrip(b" ") for x in read_strings_from_file(self.data_file_path, ".cn")]

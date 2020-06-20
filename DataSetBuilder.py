@@ -1,9 +1,13 @@
 import fastnumbers
 from DataSetHelper import *
 
-def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter=b"\t"):
-    if not isinstance(in_file_delimiter, bytes):
-        in_file_delimiter = in_file_delimiter.encode()
+def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="\t"):
+    if type(in_file_delimiter) != str:
+        raise Exception("The in_file_delimiter value must be a string.")
+    if in_file_delimiter not in ("\t"):
+        raise Exception("Invalid delimiter. Must be \t.")
+
+    in_file_delimiter = in_file_delimiter.encode()
 
     column_size_dict = {}
     column_start_coords = []
@@ -33,7 +37,7 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter=b
     line_length = sum([column_size_dict[i] for i in range(len(column_names))]) + 1
 
     # Save value that indicates line length.
-    write_string_to_file(f4_file_path, ".ll", str(line_length).encode())
+    __write_string_to_file(f4_file_path, ".ll", str(line_length).encode())
 
     # Calculate the position where each column starts.
     cumulative_position = 0
@@ -43,23 +47,23 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter=b
         cumulative_position += column_size
     column_start_coords.append(str(cumulative_position).encode())
 
-    ## Build a map of the column names and save this to a file.
-    column_names_string, max_col_name_length = build_string_map([x for x in column_names])
-    write_string_to_file(f4_file_path, ".cn", column_names_string)
-    write_string_to_file(f4_file_path, ".mcnl", str(max_col_name_length).encode())
+    # Build a map of the column names and save this to a file.
+    column_names_string, max_col_name_length = __build_string_map([x for x in column_names])
+    __write_string_to_file(f4_file_path, ".cn", column_names_string)
+    __write_string_to_file(f4_file_path, ".mcnl", str(max_col_name_length).encode())
 
     # Calculate the column coordinates and max length of these coordinates.
-    column_coords_string, max_column_coord_length = build_string_map(column_start_coords)
+    column_coords_string, max_column_coord_length = __build_string_map(column_start_coords)
 
     # Save column coordinates.
-    write_string_to_file(f4_file_path, ".cc", column_coords_string)
+    __write_string_to_file(f4_file_path, ".cc", column_coords_string)
 
     # Save value that indicates maximum length of column coords string.
-    write_string_to_file(f4_file_path, ".mccl", str(max_column_coord_length).encode())
+    __write_string_to_file(f4_file_path, ".mccl", str(max_column_coord_length).encode())
 
     # Save number of rows and cols.
-    write_string_to_file(f4_file_path, ".nrow", str(num_rows).encode())
-    write_string_to_file(f4_file_path, ".ncol", str(len(column_names)).encode())
+    __write_string_to_file(f4_file_path, ".nrow", str(num_rows).encode())
+    __write_string_to_file(f4_file_path, ".ncol", str(len(column_names)).encode())
 
     # Save the data to output file.
     with open(in_file_path, 'rb') as my_file:
@@ -75,7 +79,7 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter=b
 
                 line_out = b""
                 for i in sorted(column_size_dict.keys()):
-                    line_out += format_string_as_fixed_width(line_items[i], column_size_dict[i])
+                    line_out += __format_string_as_fixed_width(line_items[i], column_size_dict[i])
 
                 out_lines.append(line_out)
 
@@ -86,24 +90,28 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter=b
             if len(out_lines) > 0:
                 out_file.write(b"\n".join(out_lines) + b"\n")
 
-    parse_and_save_column_types(f4_file_path, line_length, num_rows, len(column_names), max_column_coord_length, max_col_name_length)
+    __parse_and_save_column_types(f4_file_path, line_length, num_rows, len(column_names), max_column_coord_length, max_col_name_length)
 
-def parse_and_save_column_types(file_path, line_length, num_rows, num_cols, mccl, mcnl):
+#####################################################
+# Private functions
+#####################################################
+
+def __parse_and_save_column_types(file_path, line_length, num_rows, num_cols, mccl, mcnl):
     data_handle = open_read_file(file_path)
     cc_handle = open_read_file(file_path, ".cc")
-    col_coords = list(parse_data_coords(range(num_cols), cc_handle, mccl))
+    col_coords = parse_data_coords(range(num_cols), cc_handle, mccl)
 
-    column_types = [parse_column_type(data_handle, num_rows, line_length, [col_coords[i]]) for i in range(num_cols)]
+    column_types = [__parse_column_type(data_handle, num_rows, line_length, [col_coords[i]]) for i in range(num_cols)]
 
     # Save the column types and max length of these types.
-    column_types_string, max_column_types_length = build_string_map(column_types)
-    write_string_to_file(file_path, ".ct", column_types_string)
-    write_string_to_file(file_path, ".mctl", str(max_column_types_length).encode())
+    column_types_string, max_column_types_length = __build_string_map(column_types)
+    __write_string_to_file(file_path, ".ct", column_types_string)
+    __write_string_to_file(file_path, ".mctl", str(max_column_types_length).encode())
 
     data_handle.close()
     cc_handle.close()
 
-def parse_column_type(data_handle, num_rows, line_length, col_coords):
+def __parse_column_type(data_handle, num_rows, line_length, col_coords):
     has_non_number = False
     has_non_float = False
     has_non_int = False
@@ -143,13 +151,13 @@ def parse_column_type(data_handle, num_rows, line_length, col_coords):
 
     return column_type
 
-def format_string_as_fixed_width(x, size):
+def __format_string_as_fixed_width(x, size):
     formatted = "{:<" + str(size) + "}"
     return formatted.format(x.decode()).encode()
 
-def build_string_map(the_list):
+def __build_string_map(the_list):
     # Find maximum length of value.
-    max_value_length = get_max_string_length(the_list)
+    max_value_length = __get_max_string_length(the_list)
 
     # Build output string.
     output = ""
@@ -159,5 +167,9 @@ def build_string_map(the_list):
 
     return output.encode(), max_value_length
 
-def get_max_string_length(the_list):
+def __get_max_string_length(the_list):
     return max([len(x) for x in set(the_list)])
+
+def __write_string_to_file(file_path, file_extension, the_string):
+    with open(file_path + file_extension, 'wb') as the_file:
+        the_file.write(the_string)

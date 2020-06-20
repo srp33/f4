@@ -18,6 +18,10 @@ class NumericFilter:
         if not column_name or column_name == "":
             raise Exception("An empty value is not supported for the column_name argument.")
 
+        q_type = type(query_value)
+        if not q_type == float and not q_type == int:
+            raise Exception("The query_value value must be a float or an integer.")
+
         self.column_name = column_name.encode()
         self.operator = oper
         self.query_value = query_value

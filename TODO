@@ -1,19 +1,15 @@
+Make sure each row in the input file has the same number of columns.
+Add function to DataSetParser to return type of a given column.
 Search for column indices all at once for all columns being queried.
-Check the input parameters.
-  Check that the directory of the output file exists at the beginning.
-Check the data.
-  Make sure each row in the input file has the same number of columns.
-Support (and test) csv as output type.
+OR logic for filtering.
 Support inner joins.
-Add documentation for all functions.
-  Set up readthedocs.
 Add parallelization support.
-Provide a way to stream a file as input and/or output?
-Provide discrete lookup table outside of FFF file to enable compression without compressing?
-  Maybe not because we kinda already get that with zstandard on transposed version.
-Change parse_data_coords function so that it returns a list (everything that invokes seems to be using a list).
-Remove get_column_names from DataSetHelper and use F4 methodology instead.
-Do we still need the column names stuff? If not, remove commented lines.
-Do we still need nrow and ncol stuff? If not, remove commented lines.
 Add transposed (compressed?) data.
 Rework the format so that everything is stored in a single file.
+
+in_file_delimiter="," and out_file_type="csv"
+  Change in_file_delimiter to in_file_type?
+  Make sure exception when invalid value specified.
+Support conversion from pandas DataFrame to F4.
+Provide a way to stream a file as input and/or output?
+Set up readthedocs.

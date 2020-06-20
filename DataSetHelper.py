@@ -20,13 +20,13 @@ def parse_data_coords(line_indices, coords_file, coords_file_max_length):
             data_end_pos = int(coords_file[next_start_pos:further_next_start_pos].rstrip())
             out_dict[index + 1] = data_end_pos
 
-        yield [index, data_start_pos, data_end_pos]
+        yield [data_start_pos, data_end_pos]
 
-def parse_data_values(start_offset, segment_length, data_coords, str_like_object, end_offset=0):
+def parse_data_values(start_offset, segment_length, data_coords, str_like_object):
     start_pos = start_offset * segment_length
 
     for coords in data_coords:
-        yield str_like_object[(start_pos + coords[1]):(start_pos + coords[2] + end_offset)]
+        yield str_like_object[(start_pos + coords[0]):(start_pos + coords[1])]
 
 def read_string_from_file(file_path, file_extension=""):
     with open(file_path + file_extension, 'rb') as the_file:
@@ -46,19 +46,22 @@ def open_read_file(file_path, file_extension=""):
     the_file = open(file_path + file_extension, 'rb')
     return mmap.mmap(the_file.fileno(), 0, prot=mmap.PROT_READ)
 
-def parse_meta_value(handle, length, col_index):
-    return next(parse_data_values(col_index, length + 1, [(col_index, 0, length)], handle))
+#def parse_meta_value(handle, length, index):
+#    return next(parse_data_values(index, length + 1, [(index, 0, length)], handle))
 
 def write_string_to_file(file_path, file_extension, the_string):
     with open(file_path + file_extension, 'wb') as the_file:
         the_file.write(the_string)
 
-def search_indices_values(indices, values, search_str):
-    for value in values:
-        index = next(indices)
+def is_missing_value(value):
+    return value == b"" or value == b"NA"
 
-        if search_str in value:
-            yield index, value
+#def search_indices_values(indices, values, search_str):
+#    for value in values:
+#        index = next(indices)
+#
+#        if search_str in value:
+#            yield index, value
 
 def get_column_names(fwf_file_path):
     return [x.rstrip(b" ") for x in read_strings_from_file(fwf_file_path, ".cn")]

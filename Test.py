@@ -22,14 +22,21 @@ def check_results(description, actual_lists, expected_lists):
         check_result(description, f"Number of columns in row {i}", len(actual_row), len(expected_row))
 
         for j in range(len(actual_row)):
-            check_result(description, f"row {i}, column{j}", actual_row[j], expected_row[j])
+            check_result(description, f"row {i}, column {j}", actual_row[j], expected_row[j])
 
-    print(f"{description} - passed!")
+    print(f"PASS: {description}")
 
 def check_result(description, test, actual, expected):
     if actual != expected:
-        print(f"A test did not pass for '{description}' and '{test}'.\n  Actual: {actual}\n  Expected: {expected}")
+        fail(f"A test did not pass for '{description}' and '{test}'.\n  Actual: {actual}\n  Expected: {expected}")
         sys.exit(1)
+
+def pass(message):
+    print(f"PASS: {message}")
+
+def fail(message):
+    print(f"FAIL: {message}")
+    sys.exit(1)
 
 in_file_path = "test_data.tsv"
 f4_file_path = "output/test_data.f4"
@@ -43,25 +50,57 @@ convert_delimited_file_to_f4(in_file_path, f4_file_path)
 
 parser = DataSetParser(f4_file_path)
 
-parser.query_and_save([], [], [], out_file_path)
+check_result("Parser properties", "Number of rows", parser.num_rows, 4)
+check_result("Parser properties", "Number of columns", parser.num_columns, 9)
+
+parser.query_and_save([], [], out_file_path)
 check_results("No filters, select all columns", read_file_into_lists(out_file_path), read_file_into_lists(in_file_path))
 
-parser.query_and_save([], [], ["ID","FloatA","FloatB","OrdinalA","OrdinalB","IntA","IntB","DiscreteA","DiscreteB"], out_file_path)
+parser.query_and_save([], ["ID","FloatA","FloatB","OrdinalA","OrdinalB","IntA","IntB","DiscreteA","DiscreteB"], out_file_path)
 check_results("No filters, select all columns explicitly", read_file_into_lists(out_file_path), read_file_into_lists(in_file_path))
 
-parser.query_and_save([], [], ["ID"], out_file_path)
+parser.query_and_save([], ["ID"], out_file_path)
 check_results("No filters, select first column", read_file_into_lists(out_file_path), [[b"ID"],[b"1"],[b"2"],[b"3"],[b"4"]])
 
-parser.query_and_save([], [], ["DiscreteB"], out_file_path)
+parser.query_and_save([], ["DiscreteB"], out_file_path)
 check_results("No filters, select last column", read_file_into_lists(out_file_path), [[b"DiscreteB"],[b"Yellow"],[b"Yellow"],[b"Brown"],[b"Orange"]])
 
-parser.query_and_save([], [], ["FloatA", "DiscreteB"], out_file_path)
+parser.query_and_save([], ["FloatA", "DiscreteB"], out_file_path)
 check_results("No filters, select two columns", read_file_into_lists(out_file_path), [[b"FloatA", b"DiscreteB"],[b"1.1", b"Yellow"],[b"2.2", b"Yellow"],[b"2.2", b"Brown"],[b"4.4", b"Orange"]])
 
-#TODO: On line 45, check the parser properties (num rows, etc.).
-#TODO: Specify invalid select column(s) and verify exception thrown.
-#TODO: out_file_type="tsv"
+try:
+    parser.query_and_save([], ["ID", "InvalidColumn"], out_file_path)
+    fail("An exception should have been raised for an invalid column name.")
+except:
+    print("PASS: Should raise exception when invalid column name specified in select.")
+    pass
+
+parser.query_and_save([NumericFilter("ID", operator.eq, 1)], ["FloatA"], out_file_path)
+check_results("Filter by ID", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"]])
+
+parser.query_and_save([DiscreteFilter("ID", ["1","4"])], ["FloatA"], out_file_path)
+check_results("Filter by IDs", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"],[b"4.4"]])
+
+parser.query_and_save([NumericFilter("FloatA", operator.ne, 1.1), NumericFilter("IntA", operator.eq, 5)], ["FloatA"], out_file_path)
+check_results("Two numeric filters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"4.4"]])
+
+parser.query_and_save([DiscreteFilter("OrdinalA", ["Med", "High"]), DiscreteFilter("DiscreteB", ["Yellow", "Brown"])], ["FloatA"], out_file_path)
+check_results("Two discrete filters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"2.2"]])
+
+parser.query_and_save([DiscreteFilter("ID", ["1","2","4"]), NumericFilter("FloatB", operator.le, 44.4)], ["FloatA"], out_file_path)
+check_results("Numeric and discrete filters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"4.4"]])
+
+try:
+    parser.query_and_save([NumericFilter("InvalidColumn", operator.eq, 1)], ["FloatA"], out_file_path)
+    fail("An exception should have been raised for an invalid column name.")
+except:
+    pass
+
+#TODO: Specify query with invalid column name or invalid values and verify exceptions thrown.
+#TODO: Specify query with a filter that is not of type DiscreteFilter or NumericFilter. Make sure exception.
+#TODO: OR logic for filtering.
 #TODO: Add function to get type of a given column. Should be able to use F4 methodology for this.
+#TODO: out_file_type="csv"
 
 #ID	FloatA	FloatB	OrdinalA	OrdinalB	IntA	IntB	DiscreteA	DiscreteB
 #1	1.1	99.9	Low	High	5	99	Red	Yellow
@@ -127,4 +166,4 @@ check_results("No filters, select two columns", read_file_into_lists(out_file_pa
 #checkResult("Check discrete column options2 - beyond max", parser1.search_variable_options(3, search_str=None, max_discrete_options=2), ['High', 'Low'])
 #checkResult("Check discrete column options - search", parser1.search_variable_options(3, search_str="d", max_discrete_options=2), ['Med'])
 
-print("All tests passed!!!")
+print("PASS: Completed all tests succesfully!!")

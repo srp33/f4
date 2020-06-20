@@ -7,12 +7,21 @@ from DiscreteFilter import *
 from NumericFilter import *
 
 class DataSetParser:
+    """
+    This class is used for querying F4 files and saving the output to new files.
+
+    Args:
+        data_file_path (str): The path to an existing F4 file.
+
+    Atrributes:
+        data_file_path (str): The path to an existing F4 file.
+    """
+
     def __init__(self, data_file_path):
         self.data_file_path = data_file_path
-
         self.__num_rows = None
         self.__num_columns = None
-        self.__total_datapoints = None
+        self.__num_datapoints = None
 
     @property
     def num_rows(self) -> int:
@@ -28,51 +37,36 @@ class DataSetParser:
             self.__num_columns = read_int_from_file(self.data_file_path, ".ncol")
         return self.__num_columns
 
-    @property
-    def total_datapoints(self):
-        """Return the total number of data points in the dataset."""
-        if self.__total_datapoints == None:
-            self.__total_datapoints = self.num_rows * self.num_columns
-        return self.__total_datapoints
-
-    def query_and_save(self, discrete_filters, numeric_filters, select_columns, out_file_path, out_file_type="tsv"):
+    def query_and_save(self, filters, select_columns, out_file_path, out_file_type="tsv"):
         """
         Query the data file using zero or more filters.
 
-        This function accepts filtering criteria, identifies matching rows and columns,
-        and saves the output to a tab-separated-value (tsv) file. The input arguments must be
-        of type DiscreteFilter or NumericFilter, respectively. Currently, the only
-        supported output file type is tsv.
+        This function accepts filtering criteria, identifies matching rows,
+        and saves the output (for select columns) to an output file.
 
-        Parameters
-        ----------
-        discrete_filters: list
-            A list of DiscreteFilter objects. This list may be empty.
-        numeric_filters: list
-            A list of NumericFilter objects. This list may be empty.
-        select_columns: list
-            A list of strings that indicate the names of columns that should be selected.
-            If this an empty list, all columns will be selected.
-        out_file_path: str
-            A path to a file that will store the output data.
-        out_file_type: str
-            The output file type. Currently, the only supported value is tsv.
+        Args:
+            filters (list): A list of DiscreteFilter and/or NumericFilter objects. This list may be empty; if so, no filtering will occur.
+            select_columns (list): A list of strings that indicate the names of columns that should be selected. If this is an empty list, all columns will be selected.
+            out_file_path(str): A path to a file that will store the output data.
+            out_file_type (str): The output file type. Currently, the only supported value is tsv.
         """
         # Prepare to parse data.
         data_handle = open_read_file(self.data_file_path)
         ll = read_int_from_file(self.data_file_path, ".ll")
         cc_handle = open_read_file(self.data_file_path, ".cc")
         mccl = read_int_from_file(self.data_file_path, ".mccl")
+        cn_handle = open_read_file(self.data_file_path, ".cn")
+        mcnl = read_int_from_file(self.data_file_path, ".mcnl")
 
-        # Find rows that match discrete filtering criteria.
+        # Find rows that match the filtering criteria.
         keep_row_indices = range(self.num_rows)
-        for df in discrete_filters:
-            keep_row_indices = self.__filter_rows_discrete(keep_row_indices, df, data_handle, cc_handle, mccl, ll)
-
-        # Find rows that match numeric filtering criteria.
-        num_operator_dict = {">": operator.gt, "<": operator.lt, ">=": operator.ge, "<=": operator.le, "==": operator.eq, "!=": operator.ne}
-        for nf in numeric_filters:
-            keep_row_indices = self.__filter_rows_numeric(keep_row_indices, nf, num_operator_dict, data_handle, cc_handle, mccl, ll)
+        for fltr in filters:
+            if type(fltr) is DiscreteFilter:
+                keep_row_indices = self.__filter_rows_discrete(keep_row_indices, fltr, data_handle, ll, cc_handle, mccl, cn_handle, mcnl)
+            elif type(fltr) is NumericFilter:
+                keep_row_indices = self.__filter_rows_numeric(keep_row_indices, fltr, data_handle, ll, cc_handle, mccl, cn_handle, mcnl)
+            else:
+                raise Exception("An object of type {} may not be used as a filter.".format(type(fltr)))
 
         # Read all column names.
         column_names = get_column_names(self.data_file_path)
@@ -87,9 +81,6 @@ class DataSetParser:
             # Make sure select_columns are valid.
             nonexistent_columns = select_columns_set - set(column_names)
             if len(nonexistent_columns) > 0:
-                print(select_columns_set)
-                print(set(column_names))
-                print(nonexistent_columns)
                 raise Exception("Invalid select_columns value(s): {}".format(",".join(sorted(list(nonexistent_columns)))))
 
             # Pair column names with positions.
@@ -127,24 +118,33 @@ class DataSetParser:
     # Private functions.
     ##############################################
 
-    def __filter_rows_discrete(self, row_indices, the_filter, data_handle, cc_handle, mccl, ll):
-        query_col_coords = list(parse_data_coords([the_filter.column_index], cc_handle, mccl))
+    def __filter_rows_discrete(self, row_indices, the_filter, data_handle, ll, cc_handle, mccl, cn_handle, mcnl):
+        column_index = self.__find_column_index(the_filter.column_name, cn_handle, mcnl)
+        query_col_coords = list(parse_data_coords([column_index], cc_handle, mccl))
 
         for row_index in row_indices:
             if next(parse_data_values(row_index, ll, query_col_coords, data_handle)).rstrip() in the_filter.values_set:
                 yield row_index
 
-    def __filter_rows_numeric(self, row_indices, the_filter, operator_dict, data_handle, cc_handle, mccl, ll):
-        if the_filter.operator not in operator_dict:
-            raise Exception("Invalid operator: " + oper)
-
-        query_col_coords = list(parse_data_coords([the_filter.column_index], cc_handle, mccl))
+    def __filter_rows_numeric(self, row_indices, the_filter, data_handle, ll, cc_handle, mccl, cn_handle, mcnl):
+        column_index = self.__find_column_index(the_filter.column_name, cn_handle, mcnl)
+        query_col_coords = list(parse_data_coords([column_index], cc_handle, mccl))
 
         for row_index in row_indices:
             value = next(parse_data_values(row_index, ll, query_col_coords, data_handle)).rstrip()
-            if value == b"" or value == b"NA": # Is missing
+            if is_missing_value(value):
                 continue
 
-            # See https://stackoverflow.com/questions/18591778/how-to-pass-an-operator-to-a-python-function
-            if operator_dict[the_filter.operator](fastnumbers.float(value), the_filter.query_value):
+            if the_filter.operator(fastnumbers.float(value), the_filter.query_value):
                 yield row_index
+
+    def __find_column_index(self, query_column_name, cn_handle, mcnl):
+        col_coords = [[0, mcnl]]
+
+        for col_index in range(self.num_columns):
+            column_name = next(parse_data_values(col_index, mcnl + 1, col_coords, cn_handle)).rstrip()
+
+            if query_column_name == column_name:
+                return col_index
+
+        raise Exception(f"A column named {query_column_name.decode()} could not be found for {self.data_file_path}.")

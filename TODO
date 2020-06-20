@@ -1,3 +1,4 @@
+Search for column indices all at once for all columns being queried.
 Check the input parameters.
   Check that the directory of the output file exists at the beginning.
 Check the data.
@@ -8,3 +9,11 @@ Add documentation for all functions.
   Set up readthedocs.
 Add parallelization support.
 Provide a way to stream a file as input and/or output?
+Provide discrete lookup table outside of FFF file to enable compression without compressing?
+  Maybe not because we kinda already get that with zstandard on transposed version.
+Change parse_data_coords function so that it returns a list (everything that invokes seems to be using a list).
+Remove get_column_names from DataSetHelper and use F4 methodology instead.
+Do we still need the column names stuff? If not, remove commented lines.
+Do we still need nrow and ncol stuff? If not, remove commented lines.
+Add transposed (compressed?) data.
+Rework the format so that everything is stored in a single file.

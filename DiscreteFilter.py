@@ -14,6 +14,9 @@ class DiscreteFilter:
         if not column_name or column_name == "":
             raise Exception("An empty value is not supported for the column_name argument.")
 
+        if type(column_name) != str:
+            raise Exception("The column name must be a string.")
+
         if not values_list or len([x for x in values_list if type(x) == str]) == 0:
             raise Exception("The values_list argument must contain at least one string value.")
 

@@ -59,6 +59,26 @@ except:
 check_result("Parser properties", "Number of rows", parser.num_rows, 4)
 check_result("Parser properties", "Number of columns", parser.num_columns, 9)
 
+check_result("Column types", "ID column", parser.get_column_type("ID"), "i")
+check_result("Column types", "FloatA column", parser.get_column_type("FloatA"), "f")
+check_result("Column types", "FloatB column", parser.get_column_type("FloatB"), "f")
+check_result("Column types", "OrdinalA column", parser.get_column_type("OrdinalA"), "d")
+check_result("Column types", "OrdinalB column", parser.get_column_type("OrdinalB"), "d")
+check_result("Column types", "IntA column", parser.get_column_type("IntA"), "i")
+check_result("Column types", "IntB column", parser.get_column_type("IntB"), "i")
+check_result("Column types", "DiscreteA column", parser.get_column_type("DiscreteA"), "d")
+check_result("Column types", "DiscreteB column", parser.get_column_type("DiscreteB"), "d")
+
+check_result("Column unique values", "ID column", parser.does_column_have_unique_values("ID"), True)
+check_result("Column unique values", "FloatA column", parser.does_column_have_unique_values("FloatA"), False)
+check_result("Column unique values", "FloatB column", parser.does_column_have_unique_values("FloatB"), True)
+check_result("Column unique values", "OrdinalA column", parser.does_column_have_unique_values("OrdinalA"), False)
+check_result("Column unique values", "OrdinalB column", parser.does_column_have_unique_values("OrdinalB"), False)
+check_result("Column unique values", "IntA column", parser.does_column_have_unique_values("IntA"), False)
+check_result("Column unique values", "IntB column", parser.does_column_have_unique_values("IntB"), False)
+check_result("Column unique values", "DiscreteA column", parser.does_column_have_unique_values("DiscreteA"), False)
+check_result("Column unique values", "DiscreteB column", parser.does_column_have_unique_values("DiscreteB"), False)
+
 parser.query_and_save([], [], out_file_path)
 check_results("No filters, select all columns", read_file_into_lists(out_file_path), read_file_into_lists(in_file_path))
 
@@ -102,6 +122,12 @@ except:
     pass_test("Should raise exception when invalid column name specified in filter.")
 
 try:
+    parser.query_and_save([NumericFilter(2, operator.eq, 1)], ["FloatA"], out_file_path)
+    fail_test("An exception should have been raised for a non-string column name in numeric filter.")
+except:
+    pass_test("Should raise exception should have been raised for a non-string column name in numeric filter.")
+
+try:
     parser.query_and_save([DiscreteFilter("DiscreteA", [])], ["FloatA"], out_file_path)
     fail_test("An exception should have been raised for an empty values list.")
 except:
@@ -112,6 +138,12 @@ try:
     fail_test("An exception should have been raised when no string specified.")
 except:
     pass_test("Should raise exception when no string specified.")
+
+try:
+    parser.query_and_save([DiscreteFilter(2, ["A"])], ["FloatA"], out_file_path)
+    fail_test("An exception should have been raised for a non-string column name in discrete filter.")
+except:
+    pass_test("Should raise exception should have been raised for a non-string column name in discrete filter.")
 
 try:
     parser.query_and_save([NumericFilter("FloatA", operator.eq, "2")], ["FloatA"], out_file_path)

@@ -1,6 +1,13 @@
-Make sure each row in the input file has the same number of columns.
-Add function to DataSetParser to return type of a given column.
+Add function to DataSetParser to return type and whether unique of a given column.
+  Add documentation.
+Add function to DataSetParser to return all unique values for a given column.
+  Use this functionality in DataSetBuilder.
+  Add documentation.
+  Add validation.
 Search for column indices all at once for all columns being queried.
+
+Look at pandas for other functionality that might make sense to support.
+
 OR logic for filtering.
 Support inner joins.
 Add parallelization support.

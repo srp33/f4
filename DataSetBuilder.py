@@ -20,6 +20,8 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="
         for i in range(len(column_names)):
             column_size_dict[i] = 0
 
+    num_cols = len(column_names)
+
     # Iterate through the lines to find the max width of each column.
     with open(in_file_path, 'rb') as my_file:
         # Ignore the header line because we saved column names elsewhere.
@@ -29,6 +31,9 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="
         for line in my_file:
             num_rows += 1
             line_items = line.rstrip(b"\n").split(in_file_delimiter)
+
+            if len(line_items) != num_cols:
+                raise Exception(f"The number of elements in row {num_rows} was different from the number of column names.")
 
             for i in range(len(line_items)):
                 column_size_dict[i] = max([column_size_dict[i], len(line_items[i])])
@@ -90,7 +95,7 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="
             if len(out_lines) > 0:
                 out_file.write(b"\n".join(out_lines) + b"\n")
 
-    __parse_and_save_column_types(f4_file_path, line_length, num_rows, len(column_names), max_column_coord_length, max_col_name_length)
+    __parse_and_save_column_types(f4_file_path, line_length, num_rows, num_cols, max_column_coord_length, max_col_name_length)
 
 #####################################################
 # Private functions

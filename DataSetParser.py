@@ -119,6 +119,12 @@ class DataSetParser:
         data_handle.close()
         cc_handle.close()
 
+    def get_column_type(self, column_name):
+        return self.__get_column_type_info(column_name, 0)
+
+    def does_column_have_unique_values(self, column_name):
+        return self.__get_column_type_info(column_name, 1) == "u"
+
     ##############################################
     # Private functions.
     ##############################################
@@ -156,3 +162,23 @@ class DataSetParser:
 
     def __get_column_names(self):
         return [x.rstrip(b" ") for x in read_strings_from_file(self.data_file_path, ".cn")]
+
+    def __get_column_type_info(self, column_name, parse_index):
+        if not column_name or column_name == "":
+            raise Exception("An empty value is not supported for the column_name argument.")
+
+        if type(column_name) != str:
+            raise Exception("The column name must be a string.")
+
+        cn_handle = open_read_file(self.data_file_path, ".cn")
+        mcnl = read_int_from_file(self.data_file_path, ".mcnl")
+        ct_handle = open_read_file(self.data_file_path, ".ct")
+        mctl = read_int_from_file(self.data_file_path, ".mctl")
+
+        column_index = self.__find_column_index(column_name.encode(), cn_handle, mcnl)
+        column_type = next(parse_data_values(column_index, mctl + 1, [[0, mctl]], ct_handle))
+
+        ct_handle.close()
+        cn_handle.close()
+
+        return column_type.decode()[parse_index]

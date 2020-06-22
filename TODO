@@ -1,22 +1,25 @@
-Add function to DataSetParser to return type and whether unique of a given column.
-  Add documentation.
-Add function to DataSetParser to return all unique values for a given column.
+[Me] Test on gnomad/CADD files.
+[Me] In DataSetBuilder, add transposed (compressed?) data.
+
+[MeLater] Support OR logic for filtering.
+[MeLater] Support inner joins?
+[MeLater] Look at pandas for other functionality that might make sense to support.
+  Add to student's TODO list.
+
+[Student] Add parallelization support.
+[Student] Rework the format so that everything is stored in a single file.
+[Student] Add function to DataSetParser to return all unique values for a discrete column.
   Use this functionality in DataSetBuilder.
   Add documentation.
-  Add validation.
-Search for column indices all at once for all columns being queried.
-
-Look at pandas for other functionality that might make sense to support.
-
-OR logic for filtering.
-Support inner joins.
-Add parallelization support.
-Add transposed (compressed?) data.
-Rework the format so that everything is stored in a single file.
-
-in_file_delimiter="," and out_file_type="csv"
+  Add validation. (Generalize the code for making sure column name is valid.)
+[Student] Add function to DataSetParser to get summary statistics for a numeric column.
+[Student] Support in_file_delimiter="," and out_file_type="csv"
   Change in_file_delimiter to in_file_type?
   Make sure exception when invalid value specified.
-Support conversion from pandas DataFrame to F4.
-Provide a way to stream a file as input and/or output?
-Set up readthedocs.
+[Student] Support conversion from pandas DataFrame to F4 and vice versa.
+[Student] Provide a way to stream a file as input and/or output?
+
+[StudentLater] Translate to Rust.
+
+[?] Support date columns?
+[?] Set up readthedocs.

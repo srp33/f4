@@ -13,7 +13,7 @@ class DataSetParser:
     Args:
         data_file_path (str): The path to an existing F4 file.
 
-    Atrributes:
+    Attributes:
         data_file_path (str): The path to an existing F4 file.
     """
 
@@ -63,37 +63,32 @@ class DataSetParser:
         cn_handle = open_read_file(self.data_file_path, ".cn")
         mcnl = read_int_from_file(self.data_file_path, ".mcnl")
 
-        # Find rows that match the filtering criteria.
+        # Get column indices for column names to be filtered.
+        filter_column_indices = []
+        if len(filters) > 0:
+            filter_column_indices = self.__find_column_indices([x.column_name for x in filters], cn_handle, mcnl)
+
+        # Start with keeping all row indices.
         keep_row_indices = range(self.num_rows)
+
+        # Find rows that match the filtering criteria.
         for fltr in filters:
+            filter_column_index = filter_column_indices.pop(0)
+
             if type(fltr) is DiscreteFilter:
-                keep_row_indices = self.__filter_rows_discrete(keep_row_indices, fltr, data_handle, ll, cc_handle, mccl, cn_handle, mcnl)
+                keep_row_indices = self.__filter_rows_discrete(keep_row_indices, filter_column_index, fltr.values_set, data_handle, ll, cc_handle, mccl, cn_handle, mcnl)
             elif type(fltr) is NumericFilter:
-                keep_row_indices = self.__filter_rows_numeric(keep_row_indices, fltr, data_handle, ll, cc_handle, mccl, cn_handle, mcnl)
+                keep_row_indices = self.__filter_rows_numeric(keep_row_indices, filter_column_index, fltr.operator, fltr.query_value, data_handle, ll, cc_handle, mccl, cn_handle, mcnl)
             else:
                 raise Exception("An object of type {} may not be used as a filter.".format(type(fltr)))
 
-        # Read all column names.
-        column_names = self.__get_column_names()
-
         # By default, select all columns.
         if not select_columns or len(select_columns) == 0:
+            column_names = self.__get_column_names()
             select_column_indices = range(len(column_names))
         else:
-            # This enables faster lookups.
-            select_columns_set = set([x.encode() for x in select_columns])
-
-            # Make sure select_columns are valid.
-            nonexistent_columns = select_columns_set - set(column_names)
-            if len(nonexistent_columns) > 0:
-                raise Exception("Invalid select_columns value(s): {}".format(",".join(sorted(list(nonexistent_columns)))))
-
-            # Pair column names with positions.
-            select_columns_dict = { column_name: i for i, column_name in enumerate(column_names) if column_name in select_columns_set }
-
-            # Specific the indices and names of columns we want to select (in the user-specified order).
-            select_column_indices = [select_columns_dict[column_name.encode()] for column_name in select_columns]
             column_names = [x.encode() for x in select_columns]
+            select_column_indices = self.__find_column_indices(column_names, cn_handle, mcnl)
 
         # Get the coords for each column to select
         select_column_coords = parse_data_coords(select_column_indices, cc_handle, mccl)
@@ -120,25 +115,43 @@ class DataSetParser:
         cc_handle.close()
 
     def get_column_type(self, column_name):
+        """
+        Find the type of a specified column.
+
+        Args:
+            column_name (str): The column name.
+        Returns:
+            A character indicating the data type for the specified column.
+            The character will be one of the following:
+                * d (discrete or categorical)
+                * f (float)
+                * i (integer)
+        """
         return self.__get_column_type_info(column_name, 0)
 
     def does_column_have_unique_values(self, column_name):
+        """
+        Indicate whether a specified column contains all unique values.
+
+        Args:
+            column_name (str): The column name.
+        Returns:
+            A Boolean value indicating whether all the values are unique.
+        """
         return self.__get_column_type_info(column_name, 1) == "u"
 
     ##############################################
     # Private functions.
     ##############################################
 
-    def __filter_rows_discrete(self, row_indices, the_filter, data_handle, ll, cc_handle, mccl, cn_handle, mcnl):
-        column_index = self.__find_column_index(the_filter.column_name, cn_handle, mcnl)
+    def __filter_rows_discrete(self, row_indices, column_index, values_set, data_handle, ll, cc_handle, mccl, cn_handle, mcnl):
         query_col_coords = parse_data_coords([column_index], cc_handle, mccl)
 
         for row_index in row_indices:
-            if next(parse_data_values(row_index, ll, query_col_coords, data_handle)).rstrip() in the_filter.values_set:
+            if next(parse_data_values(row_index, ll, query_col_coords, data_handle)).rstrip() in values_set:
                 yield row_index
 
-    def __filter_rows_numeric(self, row_indices, the_filter, data_handle, ll, cc_handle, mccl, cn_handle, mcnl):
-        column_index = self.__find_column_index(the_filter.column_name, cn_handle, mcnl)
+    def __filter_rows_numeric(self, row_indices, column_index, oper, query_value, data_handle, ll, cc_handle, mccl, cn_handle, mcnl):
         query_col_coords = parse_data_coords([column_index], cc_handle, mccl)
 
         for row_index in row_indices:
@@ -146,7 +159,7 @@ class DataSetParser:
             if is_missing_value(value):
                 continue
 
-            if the_filter.operator(fastnumbers.float(value), the_filter.query_value):
+            if oper(fastnumbers.float(value), query_value):
                 yield row_index
 
     def __find_column_index(self, query_column_name, cn_handle, mcnl):
@@ -159,6 +172,25 @@ class DataSetParser:
                 return col_index
 
         raise Exception(f"A column named {query_column_name.decode()} could not be found for {self.data_file_path}.")
+
+    def __find_column_indices(self, query_column_names, cn_handle, mcnl):
+        query_column_names = set(query_column_names)
+        col_coords = [[0, mcnl]]
+        matching_column_names = set()
+        matching_column_indices = []
+
+        for col_index in range(self.num_columns):
+            column_name = next(parse_data_values(col_index, mcnl + 1, col_coords, cn_handle)).rstrip()
+
+            if column_name in query_column_names:
+                matching_column_names.add(column_name)
+                matching_column_indices.append(col_index)
+
+        unmatched_column_names = query_column_names - matching_column_names
+        if len(unmatched_column_names) > 0:
+            raise Exception(f"The following column name(s) could not be found for {self.data_file_path}: {sorted(list(unmatched_column_names))}.")
+
+        return matching_column_indices
 
     def __get_column_names(self):
         return [x.rstrip(b" ") for x in read_strings_from_file(self.data_file_path, ".cn")]

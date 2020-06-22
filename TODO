@@ -1,4 +1,7 @@
+[Me] Look at the change that James made to .cc files (one extra value at the end). Make sure everything still works with that. Maybe able to remove if/else statement from Python.
 [Me] Test on gnomad/CADD files.
+  gnomad: See notes in TickTick.
+  CADD: Compare against tabix. We can also compare it in terms of size.
 [Me] In DataSetBuilder, add transposed (compressed?) data.
 
 [MeLater] Support OR logic for filtering.
@@ -17,6 +20,7 @@
   Change in_file_delimiter to in_file_type?
   Make sure exception when invalid value specified.
 [Student] Support conversion from pandas DataFrame to F4 and vice versa.
+[Student] Provide explicit support for VCF format?
 [Student] Provide a way to stream a file as input and/or output?
 
 [StudentLater] Translate to Rust.

@@ -1,3 +1,10 @@
+[Me] Add parallelization support in Builder.
+  Identify location(s) where parallelization can help.
+  Add documentation for convert_delimited_file_to_f4. Mention .gz file support.
+[Me] Add parallelization support in Parser.
+  Identify location(s) where parallelization can help.
+  Add documentation for convert_delimited_file_to_f4. Mention .gz file support.
+[Me] Remove ConvertTsvToFixedWidthFile3.py
 [Me] Test on gnomad/CADD files.
   gnomad: See notes in TickTick.
   CADD: Compare against tabix. We can also compare it in terms of size.
@@ -8,9 +15,10 @@
 [MeLater] Support inner joins?
 [MeLater] Look at pandas for other functionality that might make sense to support.
   Add to student's TODO list.
+[MeLater] Set up readthedocs.
 
-[Student] Add parallelization support.
-[Student] Rework the format so that everything is stored in a single file.
+[??] Rework the format so that everything is stored in a single file.
+
 [Student] Add function to DataSetParser to return all unique values for a discrete column.
   Use this functionality in DataSetBuilder.
   Add documentation.
@@ -19,11 +27,9 @@
 [Student] Support in_file_delimiter="," and out_file_type="csv"
   Change in_file_delimiter to in_file_type?
   Make sure exception when invalid value specified.
+[Student] Support date columns.
 [Student] Support conversion from pandas DataFrame to F4 and vice versa.
 [Student] Provide explicit support for VCF format?
 [Student] Provide a way to stream a file as input and/or output?
 
 [StudentLater] Translate to Rust. Or create Rust/Python wrapper. https://crates.io/crates/pyo3
-
-[?] Support date columns?
-[?] Set up readthedocs.

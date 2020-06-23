@@ -1,7 +1,11 @@
 import fastnumbers
+import gzip
+from joblib import Parallel, delayed
 from Helper import *
+import sys
+import zstandard
 
-def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="\t"):
+def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="\t", num_threads=1):
     if type(in_file_delimiter) != str:
         raise Exception("The in_file_delimiter value must be a string.")
     if in_file_delimiter not in ("\t"):
@@ -13,30 +17,36 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="
     column_start_coords = []
 
     # Initialize a dictionary that will hold the column index as key and width of the column as value.
-    with open(in_file_path, 'rb') as my_file:
-        # Remove any leading or trailing white space around the column names.
-        column_names = [x.strip() for x in my_file.readline().rstrip(b"\n").split(in_file_delimiter)]
+    in_file = __get_delimited_file_handle(in_file_path)
 
-        for i in range(len(column_names)):
-            column_size_dict[i] = 0
+    # Remove any leading or trailing white space around the column names.
+    column_names = [x.strip() for x in in_file.readline().rstrip(b"\n").split(in_file_delimiter)]
+
+    for i in range(len(column_names)):
+        column_size_dict[i] = 0
+
+    in_file.close()
 
     num_cols = len(column_names)
 
+    in_file = __get_delimited_file_handle(in_file_path)
+
+    # Ignore the header line because we saved column names elsewhere.
+    in_file.readline()
+
     # Iterate through the lines to find the max width of each column.
-    with open(in_file_path, 'rb') as my_file:
-        # Ignore the header line because we saved column names elsewhere.
-        my_file.readline()
+    num_rows = 0
+    for line in in_file:
+        num_rows += 1
+        line_items = line.rstrip(b"\n").split(in_file_delimiter)
 
-        num_rows = 0
-        for line in my_file:
-            num_rows += 1
-            line_items = line.rstrip(b"\n").split(in_file_delimiter)
+        if len(line_items) != num_cols:
+            raise Exception(f"The number of elements in row {num_rows} was different from the number of column names.")
 
-            if len(line_items) != num_cols:
-                raise Exception(f"The number of elements in row {num_rows} was different from the number of column names.")
+        for i in range(len(line_items)):
+            column_size_dict[i] = max([column_size_dict[i], len(line_items[i])])
 
-            for i in range(len(line_items)):
-                column_size_dict[i] = max([column_size_dict[i], len(line_items[i])])
+    in_file.close()
 
     # Calculate the length of the first line (and thus all the other lines).
     line_length = sum([column_size_dict[i] for i in range(len(column_names))]) + 1
@@ -71,35 +81,45 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="
     __write_string_to_file(f4_file_path, ".ncol", str(len(column_names)).encode())
 
     # Save the data to output file.
-    with open(in_file_path, 'rb') as my_file:
-        # Ignore the header line because we saved column names elsewhere
-        my_file.readline()
+    in_file = __get_delimited_file_handle(in_file_path)
 
-        with open(f4_file_path, 'wb') as out_file:
-            out_lines = []
-            chunk_size = 1000
+    # Ignore the header line because we saved column names elsewhere.
+    in_file.readline()
 
-            for line in my_file:
-                line_items = line.rstrip(b"\n").split(in_file_delimiter)
+    # Write the output file.
+    with open(f4_file_path, 'wb') as out_file:
+        out_lines = []
+        chunk_size = 1000
 
-                line_out = b""
-                for i in sorted(column_size_dict.keys()):
-                    line_out += __format_string_as_fixed_width(line_items[i], column_size_dict[i])
+        for line in in_file:
+            line_items = line.rstrip(b"\n").split(in_file_delimiter)
 
-                out_lines.append(line_out)
+            line_out = b""
+            for i in sorted(column_size_dict.keys()):
+                line_out += __format_string_as_fixed_width(line_items[i], column_size_dict[i])
 
-                if len(out_lines) % chunk_size == 0:
-                    out_file.write(b"\n".join(out_lines) + b"\n")
-                    out_lines = []
+            out_lines.append(line_out)
 
-            if len(out_lines) > 0:
+            if len(out_lines) % chunk_size == 0:
                 out_file.write(b"\n".join(out_lines) + b"\n")
+                out_lines = []
+
+        if len(out_lines) > 0:
+            out_file.write(b"\n".join(out_lines) + b"\n")
+
+    in_file.close()
 
     __parse_and_save_column_types(f4_file_path, line_length, num_rows, num_cols, max_column_coord_length, max_col_name_length)
 
 #####################################################
 # Private functions
 #####################################################
+
+def __get_delimited_file_handle(file_path):
+    if file_path.endswith(".gz"):
+        return gzip.open(file_path)
+    else:
+        return open(file_path, 'rb')
 
 def __parse_and_save_column_types(file_path, line_length, num_rows, num_cols, mccl, mcnl):
     data_handle = open_read_file(file_path)
@@ -178,3 +198,12 @@ def __get_max_string_length(the_list):
 def __write_string_to_file(file_path, file_extension, the_string):
     with open(file_path + file_extension, 'wb') as the_file:
         the_file.write(the_string)
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        in_file_path = sys.argv[1]
+        f4_file_path = sys.argv[2]
+        in_file_delimiter = sys.argv[3]
+        num_threads = int(sys.argv[4])
+
+        convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter, num_threads)

@@ -1,4 +1,5 @@
 import glob
+import os
 import sys
 from Builder import *
 from Parser import *
@@ -39,10 +40,13 @@ def fail_test(message):
     sys.exit(1)
 
 in_file_path = "test_data.tsv"
-f4_file_path = "output/test_data.f4"
+f4_file_path = "data/test_data.f4"
 out_file_path = "/tmp/f4_out.tsv"
 
-# Clean up output files if they already exist
+if not os.path.exists("data"):
+    os.mkdir("data")
+
+# Clean up data files if they already exist
 for file_path in glob.glob(f"{f4_file_path}*"):
     os.unlink(file_path)
 
@@ -52,9 +56,9 @@ parser = Parser(f4_file_path)
 
 try:
     parser = Parser("bogus_file_path")
-    fail_test("It should fail with an invalid file path.")
+    fail_test("Invalid file path.")
 except:
-    pass_test("It should fail with an invalid file path.")
+    pass_test("Invalid file path.")
 
 check_result("Parser properties", "Number of rows", parser.num_rows, 4)
 check_result("Parser properties", "Number of columns", parser.num_columns, 9)
@@ -96,9 +100,9 @@ check_results("No filters, select two columns", read_file_into_lists(out_file_pa
 
 try:
     parser.query_and_save([], ["ID", "InvalidColumn"], out_file_path)
-    fail_test("An exception should have been raised for an invalid column name.")
+    fail_test("Invalid column name in select.")
 except:
-    pass_test("Should raise exception when invalid column name specified in select.")
+    pass_test("Invalid column name in select.")
 
 parser.query_and_save([NumericFilter("ID", operator.eq, 1)], ["FloatA"], out_file_path)
 check_results("Filter by ID", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"]])
@@ -117,44 +121,44 @@ check_results("Numeric and discrete filters", read_file_into_lists(out_file_path
 
 try:
     parser.query_and_save([NumericFilter("InvalidColumn", operator.eq, 1)], ["FloatA"], out_file_path)
-    fail_test("An exception should have been raised for an invalid column name.")
+    fail_test("Invalid column name in numeric filter.")
 except:
-    pass_test("Should raise exception when invalid column name specified in filter.")
+    pass_test("Invalid column name in numeric filter.")
 
 try:
     parser.query_and_save([NumericFilter(2, operator.eq, 1)], ["FloatA"], out_file_path)
-    fail_test("An exception should have been raised for a non-string column name in numeric filter.")
+    fail_test("Non-string column name in numeric filter.")
 except:
-    pass_test("Should raise exception should have been raised for a non-string column name in numeric filter.")
+    pass_test("Non-string column name in numeric filter.")
 
 try:
     parser.query_and_save([DiscreteFilter("DiscreteA", [])], ["FloatA"], out_file_path)
-    fail_test("An exception should have been raised for an empty values list.")
+    fail_test("Empty values list in discrete filter.")
 except:
-    pass_test("Should raise exception when an empty list is specified.")
+    pass_test("Empty values list in discrete filter.")
 
 try:
     parser.query_and_save([DiscreteFilter("DiscreteA", [2, 3.3])], ["FloatA"], out_file_path)
-    fail_test("An exception should have been raised when no string specified.")
+    fail_test("No string specified in discrete filter.")
 except:
-    pass_test("Should raise exception when no string specified.")
+    pass_test("No string specified in discrete filter.")
 
 try:
     parser.query_and_save([DiscreteFilter(2, ["A"])], ["FloatA"], out_file_path)
-    fail_test("An exception should have been raised for a non-string column name in discrete filter.")
+    fail_test("Non-string column name in discrete filter.")
 except:
-    pass_test("Should raise exception should have been raised for a non-string column name in discrete filter.")
+    pass_test("Non-string column name in discrete filter.")
 
 try:
     parser.query_and_save([NumericFilter("FloatA", operator.eq, "2")], ["FloatA"], out_file_path)
-    fail_test("An exception should have been raised when a non-number was specified.")
+    fail_test("Non-number specified in numeric filter.")
 except:
-    pass_test("Should raise exception when a non-number was specified.")
+    pass_test("Non-number specified in numeric filter.")
 
 try:
     parser.query_and_save(["abc"], ["FloatA"], out_file_path)
-    fail_test("An exception should have been raised when a non-filter is passed.")
+    fail_test("Non-filter is passed as a filter.")
 except:
-    pass_test("Should raise exception when a non-filter is passed.")
+    pass_test("Non-filter is passed as a filter.")
 
 print("PASS: Completed all tests succesfully!!")

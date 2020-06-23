@@ -1,5 +1,5 @@
 import fastnumbers
-from DataSetHelper import *
+from Helper import *
 
 def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="\t"):
     if type(in_file_delimiter) != str:

@@ -2,11 +2,11 @@ import fastnumbers
 from itertools import islice
 import operator
 import os
-from DataSetHelper import *
+from Helper import *
 from DiscreteFilter import *
 from NumericFilter import *
 
-class DataSetParser:
+class Parser:
     """
     This class is used for querying F4 files and saving the output to new files.
 

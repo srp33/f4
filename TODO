@@ -23,7 +23,7 @@
 [Student] Provide explicit support for VCF format?
 [Student] Provide a way to stream a file as input and/or output?
 
-[StudentLater] Translate to Rust.
+[StudentLater] Translate to Rust. Or create Rust/Python wrapper. https://crates.io/crates/pyo3
 
 [?] Support date columns?
 [?] Set up readthedocs.

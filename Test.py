@@ -1,7 +1,7 @@
 import glob
 import sys
-from DataSetBuilder import *
-from DataSetParser import *
+from Builder import *
+from Parser import *
 
 def read_file_into_lists(file_path, delimiter=b"\t"):
     out_items = []
@@ -48,10 +48,10 @@ for file_path in glob.glob(f"{f4_file_path}*"):
 
 convert_delimited_file_to_f4(in_file_path, f4_file_path)
 
-parser = DataSetParser(f4_file_path)
+parser = Parser(f4_file_path)
 
 try:
-    parser = DataSetParser("bogus_file_path")
+    parser = Parser("bogus_file_path")
     fail_test("It should fail with an invalid file path.")
 except:
     pass_test("It should fail with an invalid file path.")

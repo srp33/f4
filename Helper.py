@@ -9,14 +9,18 @@ def parse_data_coords(line_indices, coords_file, coords_file_max_length):
         next_start_pos = start_pos + coords_file_max_length + 1
         further_next_start_pos = next_start_pos + coords_file_max_length + 1
 
+        # See if we already have cached the start position.
         if index in out_dict:
             data_start_pos = out_dict[index]
+        # If not, retrieve the start position from the cc file and then cache it.
         else:
             data_start_pos = int(coords_file[start_pos:next_start_pos].rstrip())
             out_dict[index] = data_start_pos
 
+        # See if we already have cached the end position.
         if (index + 1) in out_dict:
             data_end_pos = out_dict[index + 1]
+        # If not, retrieve the end position from the cc file and then cache it.
         else:
             data_end_pos = int(coords_file[next_start_pos:further_next_start_pos].rstrip())
             out_dict[index + 1] = data_end_pos

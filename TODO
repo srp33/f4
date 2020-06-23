@@ -1,9 +1,9 @@
-[Me] Look at the change that James made to .cc files (one extra value at the end). Make sure everything still works with that. Maybe able to remove if/else statement from Python.
 [Me] Test on gnomad/CADD files.
   gnomad: See notes in TickTick.
   CADD: Compare against tabix. We can also compare it in terms of size.
 [Me] In DataSetBuilder, add transposed (compressed?) data.
 
+[MeLater] Store discrete data in separate table from numeric? The first column is a JSON dictionary that maps Unicode characters to unique values in the column. This could save a lot of disk space in most cases.
 [MeLater] Support OR logic for filtering.
 [MeLater] Support inner joins?
 [MeLater] Look at pandas for other functionality that might make sense to support.

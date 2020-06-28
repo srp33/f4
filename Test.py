@@ -2,7 +2,8 @@ import glob
 import gzip
 import os
 import sys
-from Builder import *
+#from Builder import *
+from Builder2 import *
 from Parser import *
 
 def get_delimited_file_handle(file_path):
@@ -63,7 +64,7 @@ def run_all_tests(in_file_path):
     for file_path in glob.glob(f"{f4_file_path}*"):
         os.unlink(file_path)
 
-    convert_delimited_file_to_f4(in_file_path, f4_file_path)
+    convert_delimited_file_to_f4(in_file_path, f4_file_path, lines_per_chunk=2)
 
     parser = Parser(f4_file_path)
 
@@ -79,37 +80,27 @@ def run_all_tests(in_file_path):
     check_result("Column types", "ID column", parser.get_column_type("ID"), "i")
     check_result("Column types", "FloatA column", parser.get_column_type("FloatA"), "f")
     check_result("Column types", "FloatB column", parser.get_column_type("FloatB"), "f")
-    check_result("Column types", "OrdinalA column", parser.get_column_type("OrdinalA"), "d")
-    check_result("Column types", "OrdinalB column", parser.get_column_type("OrdinalB"), "d")
+    check_result("Column types", "OrdinalA column", parser.get_column_type("OrdinalA"), "c")
+    check_result("Column types", "OrdinalB column", parser.get_column_type("OrdinalB"), "c")
     check_result("Column types", "IntA column", parser.get_column_type("IntA"), "i")
     check_result("Column types", "IntB column", parser.get_column_type("IntB"), "i")
-    check_result("Column types", "DiscreteA column", parser.get_column_type("DiscreteA"), "d")
-    check_result("Column types", "DiscreteB column", parser.get_column_type("DiscreteB"), "d")
-
-    check_result("Column unique values", "ID column", parser.does_column_have_unique_values("ID"), True)
-    check_result("Column unique values", "FloatA column", parser.does_column_have_unique_values("FloatA"), False)
-    check_result("Column unique values", "FloatB column", parser.does_column_have_unique_values("FloatB"), True)
-    check_result("Column unique values", "OrdinalA column", parser.does_column_have_unique_values("OrdinalA"), False)
-    check_result("Column unique values", "OrdinalB column", parser.does_column_have_unique_values("OrdinalB"), False)
-    check_result("Column unique values", "IntA column", parser.does_column_have_unique_values("IntA"), False)
-    check_result("Column unique values", "IntB column", parser.does_column_have_unique_values("IntB"), False)
-    check_result("Column unique values", "DiscreteA column", parser.does_column_have_unique_values("DiscreteA"), False)
-    check_result("Column unique values", "DiscreteB column", parser.does_column_have_unique_values("DiscreteB"), False)
+    check_result("Column types", "CategoricalA column", parser.get_column_type("CategoricalA"), "c")
+    check_result("Column types", "CategoricalB column", parser.get_column_type("CategoricalB"), "c")
 
     parser.query_and_save([], [], out_file_path)
     check_results("No filters, select all columns", read_file_into_lists(out_file_path), read_file_into_lists(in_file_path))
 
-    parser.query_and_save([], ["ID","FloatA","FloatB","OrdinalA","OrdinalB","IntA","IntB","DiscreteA","DiscreteB"], out_file_path)
+    parser.query_and_save([], ["ID","FloatA","FloatB","OrdinalA","OrdinalB","IntA","IntB","CategoricalA","CategoricalB"], out_file_path)
     check_results("No filters, select all columns explicitly", read_file_into_lists(out_file_path), read_file_into_lists(in_file_path))
 
     parser.query_and_save([], ["ID"], out_file_path)
     check_results("No filters, select first column", read_file_into_lists(out_file_path), [[b"ID"],[b"1"],[b"2"],[b"3"],[b"4"]])
 
-    parser.query_and_save([], ["DiscreteB"], out_file_path)
-    check_results("No filters, select last column", read_file_into_lists(out_file_path), [[b"DiscreteB"],[b"Yellow"],[b"Yellow"],[b"Brown"],[b"Orange"]])
+    parser.query_and_save([], ["CategoricalB"], out_file_path)
+    check_results("No filters, select last column", read_file_into_lists(out_file_path), [[b"CategoricalB"],[b"Yellow"],[b"Yellow"],[b"Brown"],[b"Orange"]])
 
-    parser.query_and_save([], ["FloatA", "DiscreteB"], out_file_path)
-    check_results("No filters, select two columns", read_file_into_lists(out_file_path), [[b"FloatA", b"DiscreteB"],[b"1.1", b"Yellow"],[b"2.2", b"Yellow"],[b"2.2", b"Brown"],[b"4.4", b"Orange"]])
+    parser.query_and_save([], ["FloatA", "CategoricalB"], out_file_path)
+    check_results("No filters, select two columns", read_file_into_lists(out_file_path), [[b"FloatA", b"CategoricalB"],[b"1.1", b"Yellow"],[b"2.2", b"Yellow"],[b"2.2", b"Brown"],[b"4.4", b"Orange"]])
 
     try:
         parser.query_and_save([], ["ID", "InvalidColumn"], out_file_path)
@@ -120,17 +111,14 @@ def run_all_tests(in_file_path):
     parser.query_and_save([NumericFilter("ID", operator.eq, 1)], ["FloatA"], out_file_path)
     check_results("Filter by ID", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"]])
 
-    parser.query_and_save([DiscreteFilter("ID", ["1","4"])], ["FloatA"], out_file_path)
-    check_results("Filter by IDs", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"],[b"4.4"]])
-
     parser.query_and_save([NumericFilter("FloatA", operator.ne, 1.1), NumericFilter("IntA", operator.eq, 5)], ["FloatA"], out_file_path)
     check_results("Two numeric filters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"4.4"]])
 
-    parser.query_and_save([DiscreteFilter("OrdinalA", ["Med", "High"]), DiscreteFilter("DiscreteB", ["Yellow", "Brown"])], ["FloatA"], out_file_path)
-    check_results("Two discrete filters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"2.2"]])
+    parser.query_and_save([CategoricalFilter("OrdinalA", ["Med", "High"]), CategoricalFilter("CategoricalB", ["Yellow", "Brown"])], ["FloatA"], out_file_path)
+    check_results("Two categorical filters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"2.2"]])
 
-    parser.query_and_save([DiscreteFilter("ID", ["1","2","4"]), NumericFilter("FloatB", operator.le, 44.4)], ["FloatA"], out_file_path)
-    check_results("Numeric and discrete filters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"4.4"]])
+    parser.query_and_save([CategoricalFilter("OrdinalA", ["Low","Med","High"]), NumericFilter("FloatB", operator.le, 44.4)], ["FloatA"], out_file_path)
+    check_results("Numeric and categorical filters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"4.4"]])
 
     try:
         parser.query_and_save([NumericFilter("InvalidColumn", operator.eq, 1)], ["FloatA"], out_file_path)
@@ -145,28 +133,40 @@ def run_all_tests(in_file_path):
         pass_test("Non-string column name in numeric filter.")
 
     try:
-        parser.query_and_save([DiscreteFilter("DiscreteA", [])], ["FloatA"], out_file_path)
-        fail_test("Empty values list in discrete filter.")
+        parser.query_and_save([CategoricalFilter("CategoricalA", [])], ["FloatA"], out_file_path)
+        fail_test("Empty values list in categorical filter.")
     except:
-        pass_test("Empty values list in discrete filter.")
+        pass_test("Empty values list in categorical filter.")
 
     try:
-        parser.query_and_save([DiscreteFilter("DiscreteA", [2, 3.3])], ["FloatA"], out_file_path)
-        fail_test("No string specified in discrete filter.")
+        parser.query_and_save([CategoricalFilter("CategoricalA", [2, 3.3])], ["FloatA"], out_file_path)
+        fail_test("No string specified in categorical filter.")
     except:
-        pass_test("No string specified in discrete filter.")
+        pass_test("No string specified in categorical filter.")
 
     try:
-        parser.query_and_save([DiscreteFilter(2, ["A"])], ["FloatA"], out_file_path)
-        fail_test("Non-string column name in discrete filter.")
+        parser.query_and_save([CategoricalFilter(2, ["A"])], ["FloatA"], out_file_path)
+        fail_test("Non-string column name in categorical filter.")
     except:
-        pass_test("Non-string column name in discrete filter.")
+        pass_test("Non-string column name in categorical filter.")
 
     try:
         parser.query_and_save([NumericFilter("FloatA", operator.eq, "2")], ["FloatA"], out_file_path)
         fail_test("Non-number specified in numeric filter.")
     except:
         pass_test("Non-number specified in numeric filter.")
+
+    try:
+        parser.query_and_save([NumericFilter("OrdinalA", operator.eq, 2)], ["FloatA"], out_file_path)
+        fail_test("Non-numeric column specified for numeric filter.")
+    except:
+        pass_test("Non-numeric column specified for numeric filter.")
+
+    try:
+        parser.query_and_save([CategoricalFilter("FloatA", ["Low", "Med"])], ["FloatA"], out_file_path)
+        fail_test("Non-categorical column specified for categorical filter.")
+    except:
+        pass_test("Non-categorical column specified for categorical filter.")
 
     try:
         parser.query_and_save(["abc"], ["FloatA"], out_file_path)

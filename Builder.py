@@ -3,9 +3,8 @@ import gzip
 from joblib import Parallel, delayed
 from Helper import *
 import sys
-import zstandard
 
-def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="\t", num_threads=1):
+def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="\t", num_threads=1, lines_per_chunk=None):
     if type(in_file_delimiter) != str:
         raise Exception("The in_file_delimiter value must be a string.")
     if in_file_delimiter not in ("\t"):
@@ -122,8 +121,8 @@ def __get_delimited_file_handle(file_path):
         return open(file_path, 'rb')
 
 def __parse_and_save_column_types(file_path, line_length, num_rows, num_cols, mccl, mcnl):
-    data_handle = open_read_file(file_path)
-    cc_handle = open_read_file(file_path, ".cc")
+    data_handle = _open_read_file(file_path)
+    cc_handle = _open_read_file(file_path, ".cc")
     col_coords = parse_data_coords(range(num_cols), cc_handle, mccl)
 
     column_types = [__parse_column_type(data_handle, num_rows, line_length, [col_coords[i]]) for i in range(num_cols)]
@@ -141,7 +140,7 @@ def __parse_column_type(data_handle, num_rows, line_length, col_coords):
     has_non_float = False
     has_non_int = False
     num_non_missing_values = 0
-    unique_values = set()
+    #unique_values = set()
 
     for row_index in range(num_rows):
         value = next(parse_data_values(row_index, line_length, col_coords, data_handle)).rstrip()
@@ -150,7 +149,7 @@ def __parse_column_type(data_handle, num_rows, line_length, col_coords):
             continue
 
         num_non_missing_values += 1
-        unique_values.add(value)
+        #unique_values.add(value)
 
         is_float = fastnumbers.isfloat(value)
         is_int = fastnumbers.isint(value)
@@ -164,15 +163,15 @@ def __parse_column_type(data_handle, num_rows, line_length, col_coords):
                 has_non_int = True
 
     if has_non_number:
-        column_type = b"d" #Discrete
+        column_type = b"c" #Categorical
     elif has_non_int:
         column_type = b"f" #Float
     else:
         column_type = b"i" #Int
 
-    # Are all values unique (is this a unique identifier)?
-    if len(unique_values) == num_non_missing_values:
-        column_type += b"u"
+    ## Are all values unique (is this a unique identifier)?
+    #if len(unique_values) == num_non_missing_values:
+    #    column_type += b"u"
 
     return column_type
 

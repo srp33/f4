@@ -1,6 +1,6 @@
-class DiscreteFilter:
+class CategoricalFilter:
     """
-    This class is used to construct filters for querying based on a column of a F4 file.
+    This class is used to construct filters for querying based on a categorical column of a F4 file.
 
     Args:
         column_name (str): The name of a column that should be evaluated. May not be an empty string.

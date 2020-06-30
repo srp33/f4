@@ -116,8 +116,8 @@ def run_all_tests(in_file_path):
     parser.query_and_save([InFilter("ID", ["1"], negate=True)], ["FloatA"], out_file_path)
     check_results("Filter by ID using InFilter with negation", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"2.2"],[b"4.4"],])
 
-    parser.query_and_save([NumericFilter("FloatA", operator.ne, 1.1), NumericFilter("IntA", operator.eq, 5)], ["FloatA"], out_file_path)
-    check_results("Two NumericFilters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"4.4"]])
+    parser.query_and_save([NumericFilter("FloatA", operator.ne, 1.1), NumericFilter("IntA", operator.eq, 7)], ["FloatA"], out_file_path)
+    check_results("Two NumericFilters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"]])
 
     parser.query_and_save([InFilter("OrdinalA", ["Med", "High"]), InFilter("IntB", ["44", "99", "77"])], ["FloatA"], out_file_path)
     check_results("Two InFilters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"2.2"],[b"4.4"]])

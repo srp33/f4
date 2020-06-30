@@ -1,9 +1,4 @@
 [Me] Support OR logic for filtering.
-[Me] They should be able to search for missing values. Tweak code and add test(s) for this. Modify test data.
-[Me] In Builder, implement chunking when saving to a file similar to what's in Parser.
-[Me] In convert_delimited_file_to_f4, have ways to short-circuit or raise exceptions when files are empty.
-[Me] Implement ability to query using arbitrary Python code, such as "endswith()". (RegExFilter)
-  Numeric1 > 0.1 and Discrete1 == "abc" and Discrete2 ~= "regex"
 [Me] Add parallelization support in Parser. TestParseTall.py
   Output file should be in same order as F4 file.
   Make query criteria identical to what we are using in the paper.

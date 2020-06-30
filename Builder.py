@@ -1,114 +1,115 @@
+import datetime
 import fastnumbers
+import glob
 import gzip
 from joblib import Parallel, delayed
 from Helper import *
+import os
+import shutil
 import sys
+import tempfile
 
-def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="\t", num_threads=1, lines_per_chunk=None):
+def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="\t", num_processes=1, lines_per_chunk=1000, tmp_dir_path=None):
     if type(in_file_delimiter) != str:
         raise Exception("The in_file_delimiter value must be a string.")
     if in_file_delimiter not in ("\t"):
         raise Exception("Invalid delimiter. Must be \t.")
 
+    __print_message(f"Parsing {in_file_path}")
+
     in_file_delimiter = in_file_delimiter.encode()
 
-    column_size_dict = {}
-    column_start_coords = []
-
-    # Initialize a dictionary that will hold the column index as key and width of the column as value.
+    # Get column info. Remove any leading or trailing white space around the column names.
     in_file = __get_delimited_file_handle(in_file_path)
-
-    # Remove any leading or trailing white space around the column names.
     column_names = [x.strip() for x in in_file.readline().rstrip(b"\n").split(in_file_delimiter)]
-
-    for i in range(len(column_names)):
-        column_size_dict[i] = 0
-
+    num_cols = len(column_names)
     in_file.close()
 
-    num_cols = len(column_names)
-
+    # Open file again. Ignore the header line because we already saved column names.
     in_file = __get_delimited_file_handle(in_file_path)
-
-    # Ignore the header line because we saved column names elsewhere.
     in_file.readline()
 
     # Iterate through the lines to find the max width of each column.
-    num_rows = 0
-    for line in in_file:
-        num_rows += 1
-        line_items = line.rstrip(b"\n").split(in_file_delimiter)
-
-        if len(line_items) != num_cols:
-            raise Exception(f"The number of elements in row {num_rows} was different from the number of column names.")
-
-        for i in range(len(line_items)):
-            column_size_dict[i] = max([column_size_dict[i], len(line_items[i])])
-
+    __print_message(f"Finding max width of each column")
+    chunk_results = Parallel(n_jobs=num_processes)(delayed(__parse_lines_chunk)(lines_chunk, in_file_delimiter, num_cols) for lines_chunk, chunk_number in __generate_lines_chunks(in_file, lines_per_chunk))
     in_file.close()
 
+    # Summarize the values across the chunks.
+    column_sizes = __merge_column_sizes([x[0] for x in chunk_results])
+    column_types = __merge_column_types([x[1] for x in chunk_results])
+    num_rows = sum([x[2] for x in chunk_results])
+
     # Calculate the length of the first line (and thus all the other lines).
-    line_length = sum([column_size_dict[i] for i in range(len(column_names))]) + 1
+    line_length = sum(column_sizes) + 1
 
     # Save value that indicates line length.
     __write_string_to_file(f4_file_path, ".ll", str(line_length).encode())
 
     # Calculate the position where each column starts.
+    column_start_coords = []
     cumulative_position = 0
-    for i in range(len(column_names)):
-        column_size = column_size_dict[i]
+    for column_size in column_sizes:
         column_start_coords.append(str(cumulative_position).encode())
         cumulative_position += column_size
     column_start_coords.append(str(cumulative_position).encode())
 
+    # Calculate and save the column coordinates and max length of these coordinates.
+    column_coords_string, max_column_coord_length = __build_string_map(column_start_coords)
+    __write_string_to_file(f4_file_path, ".cc", column_coords_string)
+    __write_string_to_file(f4_file_path, ".mccl", str(max_column_coord_length).encode())
+
     # Build a map of the column names and save this to a file.
-    column_names_string, max_col_name_length = __build_string_map([x for x in column_names])
+    column_names_string, max_col_name_length = __build_string_map(column_names)
     __write_string_to_file(f4_file_path, ".cn", column_names_string)
     __write_string_to_file(f4_file_path, ".mcnl", str(max_col_name_length).encode())
-
-    # Calculate the column coordinates and max length of these coordinates.
-    column_coords_string, max_column_coord_length = __build_string_map(column_start_coords)
-
-    # Save column coordinates.
-    __write_string_to_file(f4_file_path, ".cc", column_coords_string)
-
-    # Save value that indicates maximum length of column coords string.
-    __write_string_to_file(f4_file_path, ".mccl", str(max_column_coord_length).encode())
 
     # Save number of rows and cols.
     __write_string_to_file(f4_file_path, ".nrow", str(num_rows).encode())
     __write_string_to_file(f4_file_path, ".ncol", str(len(column_names)).encode())
 
-    # Save the data to output file.
-    in_file = __get_delimited_file_handle(in_file_path)
+    # Build a map of the column types and save this to a file.
+    column_types_string, max_col_type_length = __build_string_map(column_types)
+    __write_string_to_file(f4_file_path, ".ct", column_types_string)
+    __write_string_to_file(f4_file_path, ".mctl", str(max_col_type_length).encode())
 
-    # Ignore the header line because we saved column names elsewhere.
+    # Save the data to output file. Ignore the header line.
+    in_file = __get_delimited_file_handle(in_file_path)
     in_file.readline()
 
-    # Write the output file.
-    with open(f4_file_path, 'wb') as out_file:
-        out_lines = []
-        chunk_size = 1000
+    # Figure out where temp files will be stored.
+    if tmp_dir_path:
+        if not os.path.exists(tmp_dir_path):
+            os.mkdir(tmp_dir_path)
+    else:
+        tmp_dir_path = tempfile.mkdtemp()
+    if not tmp_dir_path.endswith("/"):
+        tmp_dir_path += "/"
 
-        for line in in_file:
-            line_items = line.rstrip(b"\n").split(in_file_delimiter)
-
-            line_out = b""
-            for i in sorted(column_size_dict.keys()):
-                line_out += __format_string_as_fixed_width(line_items[i], column_size_dict[i])
-
-            out_lines.append(line_out)
-
-            if len(out_lines) % chunk_size == 0:
-                out_file.write(b"\n".join(out_lines) + b"\n")
-                out_lines = []
-
-        if len(out_lines) > 0:
-            out_file.write(b"\n".join(out_lines) + b"\n")
-
+    # Parse chunks of the input file and save to temp files.
+    __print_message(f"Parsing chunks of the input file and saving to temp files")
+    max_line_sizes = Parallel(n_jobs=num_processes)(delayed(__save_lines_temp)(lines_chunk, in_file_delimiter, column_sizes, tmp_dir_path, chunk_number) for lines_chunk, chunk_number in __generate_lines_chunks(in_file, lines_per_chunk))
     in_file.close()
 
-    __parse_and_save_column_types(f4_file_path, line_length, num_rows, num_cols, max_column_coord_length, max_col_name_length)
+    # Merge the file chunks. This dictionary enables us to sort them properly.
+    __print_message(f"Merging the file chunks")
+    chunk_file_paths = {int(os.path.basename(file_path)): file_path for file_path in glob.glob(f"{tmp_dir_path}/*")}
+    with open(f4_file_path, "wb") as f4_file:
+        for chunk_number, chunk_file_path in chunk_file_paths.items():
+            with open(chunk_file_path, "rb") as chunk_file:
+                for line in chunk_file:
+                    f4_file.write(line)
+
+            os.remove(chunk_file_path)
+
+    # Remove the temp directory if it was generated by the code (not the user).
+    if tmp_dir_path:
+        try:
+            os.rmdir(tmp_dir_path)
+        except:
+            # Don't throw an exception if we can't delete the directory.
+            pass
+
+    __print_message(f"Done saving to {f4_file_path}")
 
 #####################################################
 # Private functions
@@ -120,60 +121,92 @@ def __get_delimited_file_handle(file_path):
     else:
         return open(file_path, 'rb')
 
-def __parse_and_save_column_types(file_path, line_length, num_rows, num_cols, mccl, mcnl):
-    data_handle = _open_read_file(file_path)
-    cc_handle = _open_read_file(file_path, ".cc")
-    col_coords = parse_data_coords(range(num_cols), cc_handle, mccl)
+def __merge_column_sizes(all_column_sizes):
+    max_column_sizes = []
 
-    column_types = [__parse_column_type(data_handle, num_rows, line_length, [col_coords[i]]) for i in range(num_cols)]
+    for col_i in range(len(all_column_sizes[0])):
+        max_column_sizes.append(max([all_column_sizes[row_i][col_i] for row_i in range(len(all_column_sizes))]))
 
-    # Save the column types and max length of these types.
-    column_types_string, max_column_types_length = __build_string_map(column_types)
-    __write_string_to_file(file_path, ".ct", column_types_string)
-    __write_string_to_file(file_path, ".mctl", str(max_column_types_length).encode())
+    return max_column_sizes
 
-    data_handle.close()
-    cc_handle.close()
+def __merge_column_types(all_column_types):
+    column_types = []
 
-def __parse_column_type(data_handle, num_rows, line_length, col_coords):
-    has_non_number = False
-    has_non_float = False
-    has_non_int = False
-    num_non_missing_values = 0
-    #unique_values = set()
+    for col_i in range(len(all_column_types[0])):
+        column_types.append(__infer_type_from_list([all_column_types[row_i][col_i] for row_i in range(len(all_column_types))]))
 
-    for row_index in range(num_rows):
-        value = next(parse_data_values(row_index, line_length, col_coords, data_handle)).rstrip()
+    return column_types
 
-        if is_missing_value(value):
-            continue
+def __generate_lines_chunks(file_handle, lines_per_chunk):
+    lines_chunk = []
+    chunk_number = 0
 
-        num_non_missing_values += 1
-        #unique_values.add(value)
+    for line in file_handle:
+        lines_chunk.append(line)
 
-        is_float = fastnumbers.isfloat(value)
-        is_int = fastnumbers.isint(value)
+        if len(lines_chunk) == lines_per_chunk:
+            chunk_number += 1
+            yield lines_chunk, chunk_number
+            lines_chunk = []
 
-        if not has_non_number and not is_float and not is_int:
-            has_non_number = True
-        else:
-            if not has_non_float and not is_float:
-                has_non_float = True
-            if not has_non_int and not is_int:
-                has_non_int = True
+    if len(lines_chunk) > 0:
+        chunk_number += 1
+        yield lines_chunk, chunk_number
 
-    if has_non_number:
-        column_type = b"c" #Categorical
-    elif has_non_int:
-        column_type = b"f" #Float
-    else:
-        column_type = b"i" #Int
+def __parse_lines_chunk(lines_chunk, delimiter, num_cols):
+    column_sizes = [0 for x in range(num_cols)]
+    column_types = [None for x in range(num_cols)]
 
-    ## Are all values unique (is this a unique identifier)?
-    #if len(unique_values) == num_non_missing_values:
-    #    column_type += b"u"
+    for line in lines_chunk:
+        line_items = line.rstrip(b"\n").split(delimiter)
 
-    return column_type
+        if len(line_items) != num_cols:
+            raise Exception(f"The number of elements in row {num_rows} was different from the number of column names.")
+
+        for i in range(len(line_items)):
+            column_sizes[i] = max([column_sizes[i], len(line_items[i])])
+            column_types[i] = __infer_type_from_list([column_types[i], __infer_type(line_items[i])])
+
+    return column_sizes, column_types, len(lines_chunk)
+
+def __save_lines_temp(lines_chunk, delimiter, column_sizes, tmp_dir_path, chunk_number):
+    max_line_size = 0
+
+    with open(f"{tmp_dir_path}{chunk_number}", 'wb') as tmp_file:
+        for line in lines_chunk:
+            line_items = line.rstrip(b"\n").split(delimiter)
+
+            line_out = b""
+            for i in range(len(column_sizes)):
+                line_out += __format_string_as_fixed_width(line_items[i], column_sizes[i])
+
+            max_line_size = max([max_line_size, len(line_out)])
+            tmp_file.write(line_out + b"\n")
+
+    return max_line_size
+
+def __infer_type(value):
+    if not value:
+        return None
+    if fastnumbers.isint(value):
+        return b"i"
+    if fastnumbers.isfloat(value):
+        return b"f"
+    return b"c"
+
+def __infer_type_from_list(types):
+    # Remove any None or missing values. Convert to set so only contains unique values and is faster.
+    types = set([x for x in types if x and not is_missing_value(x)])
+
+    if len(types) == 0:
+        return None
+    if len(types) == 1:
+        return list(types)[0]
+    if b"c" in types:
+        return b"c" # If any value is non-numeric, then we infer categorical.
+    if b"f" in types:
+        return b"f" # If any value if a float in a numeric column, then we infer float.
+    return b"i"
 
 def __format_string_as_fixed_width(x, size):
     formatted = "{:<" + str(size) + "}"
@@ -198,11 +231,5 @@ def __write_string_to_file(file_path, file_extension, the_string):
     with open(file_path + file_extension, 'wb') as the_file:
         the_file.write(the_string)
 
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        in_file_path = sys.argv[1]
-        f4_file_path = sys.argv[2]
-        in_file_delimiter = sys.argv[3]
-        num_threads = int(sys.argv[4])
-
-        convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter, num_threads)
+def __print_message(message):
+    print(f"{message} - {datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f')}")

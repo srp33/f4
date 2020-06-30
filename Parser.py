@@ -3,9 +3,11 @@ import fastnumbers
 from itertools import islice
 import operator
 import os
+import re
 from Helper import *
-from CategoricalFilter import *
+from InFilter import *
 from NumericFilter import *
+from RegExFilter import *
 
 class Parser:
     """
@@ -49,7 +51,7 @@ class Parser:
         and saves the output (for select columns) to an output file.
 
         Args:
-            filters (list): A list of Categorical and/or NumericFilter objects. This list may be empty; if so, no filtering will occur.
+            filters (list): A list of filter objects. This list may be empty; if so, no filtering will occur.
             select_columns (list): A list of strings that indicate the names of columns that should be selected. If this is an empty list, all columns will be selected.
             out_file_path(str): A path to a file that will store the output data.
             out_file_type (str): The output file type. Currently, the only supported value is tsv.
@@ -67,18 +69,17 @@ class Parser:
             filter_column_index = filter_column_indices.pop(0)
             filter_column_type = self.__get_column_type_from_index(filter_column_index)
 
-            if type(fltr) is CategoricalFilter:
-                if filter_column_type != "c":
-                    raise Exception(f"A CategoricalFilter may only be used with categorical columns, but {fltr.column_name.decode()} is not categorical.")
-
-                keep_row_indices = self.__filter_rows_categorical(keep_row_indices, filter_column_index, fltr.values_set)
+            if type(fltr) is InFilter:
+                keep_row_indices = self.__filter_rows_in(keep_row_indices, filter_column_index, fltr.values_set, fltr.negate)
             elif type(fltr) is NumericFilter:
                 if filter_column_type == "c":
                     raise Exception(f"A NumericFilter may only be used with numeric columns, but {fltr.column_name.decode()} is not a float or integer column.")
 
                 keep_row_indices = self.__filter_rows_numeric(keep_row_indices, filter_column_index, fltr.operator, fltr.query_value)
+            elif type(fltr) is RegExFilter:
+                keep_row_indices = self.__filter_rows_regex(keep_row_indices, filter_column_index, fltr.regular_expression, fltr.negate)
             else:
-                raise Exception("An object of type {} may not be used as a filter.".format(type(fltr)))
+                raise Exception(f"An object of type {type(fltr)} may not be used as a filter.")
 
         # By default, select all columns.
         if not select_columns or len(select_columns) == 0:
@@ -136,11 +137,15 @@ class Parser:
     def __get_column_type_from_index(self, column_index):
         return next(self.__parse_data_values(column_index, self.__mctl + 1, [[0, self.__mctl]], self.__ct_handle)).decode()
 
-    def __filter_rows_categorical(self, row_indices, column_index, values_set):
+    def __filter_rows_in(self, row_indices, column_index, values_set, negate):
         query_col_coords = self.__parse_data_coords([column_index])
 
         for row_index in row_indices:
-            if next(self.__parse_data_values(row_index, self.__ll, query_col_coords, self.__data_handle)).rstrip() in values_set:
+            value = next(self.__parse_data_values(row_index, self.__ll, query_col_coords, self.__data_handle)).rstrip()
+
+            if negate and value not in values_set:
+                yield row_index
+            elif not negate and value in values_set:
                 yield row_index
 
     def __filter_rows_numeric(self, row_indices, column_index, oper, query_value):
@@ -152,6 +157,19 @@ class Parser:
                 continue
 
             if oper(fastnumbers.float(value), query_value):
+                yield row_index
+
+    def __filter_rows_regex(self, row_indices, column_index, regular_expression, negate):
+        query_col_coords = self.__parse_data_coords([column_index])
+
+        for row_index in row_indices:
+            value = next(self.__parse_data_values(row_index, self.__ll, query_col_coords, self.__data_handle)).rstrip()
+            if is_missing_value(value):
+                continue
+
+            if negate and not regular_expression.search(value.decode()):
+                yield row_index
+            elif not negate and regular_expression.search(value.decode()):
                 yield row_index
 
     def __find_column_indices(self, query_column_names):
@@ -167,7 +185,7 @@ class Parser:
 
         unmatched_column_names = query_column_names_set - set(matching_column_dict.keys())
         if len(unmatched_column_names) > 0:
-            raise Exception("The following column name(s) could not be found for {}: {}.".format(self.data_file_path, ", ".join(sorted(list(unmatched_column_names)))))
+            raise Exception("The following column name(s) could not be found for {}: {}.".format(self.data_file_path, ", ".join(sorted([x.decode() for x in unmatched_column_names]))))
 
         return [matching_column_dict[column_name] for column_name in query_column_names]
 

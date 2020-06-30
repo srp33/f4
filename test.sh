@@ -1,5 +1,7 @@
 #! /bin/bash
 
-#time python3 Test.py
-#time python3 Test0.py
-time python3 Test2.py
+#python3 Test.py
+
+#time python3 TestBuildTall.py
+
+time python3 TestParseTall.py

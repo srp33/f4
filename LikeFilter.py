@@ -1,6 +1,6 @@
 import re
 
-class RegExFilter:
+class LikeFilter:
     """
     This class is used to construct regular-expression based filters for querying any column type in an F4 file.
 

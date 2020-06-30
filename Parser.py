@@ -7,7 +7,7 @@ import re
 from Helper import *
 from InFilter import *
 from NumericFilter import *
-from RegExFilter import *
+from LikeFilter import *
 
 class Parser:
     """
@@ -76,7 +76,7 @@ class Parser:
                     raise Exception(f"A NumericFilter may only be used with numeric columns, but {fltr.column_name.decode()} is not a float or integer column.")
 
                 keep_row_indices = self.__filter_rows_numeric(keep_row_indices, filter_column_index, fltr.operator, fltr.query_value)
-            elif type(fltr) is RegExFilter:
+            elif type(fltr) is LikeFilter:
                 keep_row_indices = self.__filter_rows_regex(keep_row_indices, filter_column_index, fltr.regular_expression, fltr.negate)
             else:
                 raise Exception(f"An object of type {type(fltr)} may not be used as a filter.")

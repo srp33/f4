@@ -125,14 +125,14 @@ def run_all_tests(in_file_path):
     parser.query_and_save([InFilter("OrdinalA", ["Low","Med","High"]), NumericFilter("FloatB", operator.le, 44.4)], ["FloatA"], out_file_path)
     check_results("NumericFilters and InFilters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"4.4"]])
 
-    parser.query_and_save([RegExFilter("CategoricalB", r"ow$")], ["FloatA"], out_file_path)
-    check_results("RegExFilter on categorical column", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"],[b"2.2"]])
+    parser.query_and_save([LikeFilter("CategoricalB", r"ow$")], ["FloatA"], out_file_path)
+    check_results("LikeFilter on categorical column", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"],[b"2.2"]])
 
-    parser.query_and_save([RegExFilter("CategoricalB", r"ow$", negate=True)], ["FloatA"], out_file_path)
-    check_results("RegExFilter on categorical column with negation", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"4.4"]])
+    parser.query_and_save([LikeFilter("CategoricalB", r"ow$", negate=True)], ["FloatA"], out_file_path)
+    check_results("LikeFilter on categorical column with negation", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"4.4"]])
 
-    parser.query_and_save([RegExFilter("FloatB", r"^\d\d\.\d$"), RegExFilter("FloatB", r"88")], ["FloatA"], out_file_path)
-    check_results("RegExFilter on categorical columns", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"]])
+    parser.query_and_save([LikeFilter("FloatB", r"^\d\d\.\d$"), LikeFilter("FloatB", r"88")], ["FloatA"], out_file_path)
+    check_results("LikeFilter on categorical columns", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"]])
 
     try:
         parser.query_and_save([NumericFilter("InvalidColumn", operator.eq, 1)], ["FloatA"], out_file_path)

@@ -1,3 +1,4 @@
+[Me] Change RegExFilter to LikeFilter.
 [Me] Support OR logic for filtering.
 [Me] Add parallelization support in Parser. TestParseTall.py
   Output file should be in same order as F4 file.

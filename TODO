@@ -1,5 +1,3 @@
-[Me] Change RegExFilter to LikeFilter.
-[Me] Support OR logic for filtering.
 [Me] Add parallelization support in Parser. TestParseTall.py
   Output file should be in same order as F4 file.
   Make query criteria identical to what we are using in the paper.
@@ -20,7 +18,7 @@
   CADD: Compare against tabix. We can also compare it in terms of size.
   Move to test.sh and generate formal statistics on it.
 [Me] Move functions out of Helper.py. If you keep any, document them.
-[Me] Remove commented code and complete all TODO items in code.
+[Me] Remove commented code and complete all TODO items in code. Make sure all public functions are fully validated.
 
 [MeLater] Store discrete data in separate table from numeric? The first column is a JSON dictionary that maps Unicode characters to unique values in the column. This could save a lot of disk space in most cases.
 [MeLater] Support joins.

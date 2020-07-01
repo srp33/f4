@@ -1,13 +1,9 @@
 import atexit
-import fastnumbers
 from itertools import islice
 import operator
 import os
-import re
 from Helper import *
-from InFilter import *
-from NumericFilter import *
-from LikeFilter import *
+from Filters import BaseFilter
 
 class Parser:
     """
@@ -43,7 +39,7 @@ class Parser:
 
         atexit.register(self.__cleanup)
 
-    def query_and_save(self, filters, select_columns, out_file_path, out_file_type="tsv", num_processes=1, lines_per_chunk=1000):
+    def query_and_save(self, fltr, select_columns, out_file_path, out_file_type="tsv", num_processes=1, lines_per_chunk=1000):
         """
         Query the data file using zero or more filters.
 
@@ -51,35 +47,24 @@ class Parser:
         and saves the output (for select columns) to an output file.
 
         Args:
-            filters (list): A list of filter objects. This list may be empty; if so, no filtering will occur.
+            fltr (BaseFilter): A filter.
             select_columns (list): A list of strings that indicate the names of columns that should be selected. If this is an empty list, all columns will be selected.
             out_file_path(str): A path to a file that will store the output data.
             out_file_type (str): The output file type. Currently, the only supported value is tsv.
         """
-        # Get column indices for column names to be filtered.
-        filter_column_indices = []
-        if len(filters) > 0:
-            filter_column_indices = self.__find_column_indices([x.column_name for x in filters])
+        if not fltr:
+            raise Exception("A filter must be specified.")
+        if not isinstance(fltr, BaseFilter):
+            raise Exception("An object that inherits from BaseFilter must be specified.")
 
-        # Start with keeping all row indices.
-        keep_row_indices = range(self.num_rows)
+        # Get index and type of column names that will be used.
+        filter_column_names = list(fltr.get_column_name_set())
+        filter_column_indices = self.__find_column_indices(filter_column_names)
+        column_index_dict = {filter_column_names[i]: filter_column_indices[i] for i in range(len(filter_column_indices))}
+        column_type_dict = {filter_column_names[i]: self.__get_column_type_from_index(filter_column_indices[i]) for i in range(len(filter_column_indices))}
 
         # Find rows that match the filtering criteria.
-        for fltr in filters:
-            filter_column_index = filter_column_indices.pop(0)
-            filter_column_type = self.__get_column_type_from_index(filter_column_index)
-
-            if type(fltr) is InFilter:
-                keep_row_indices = self.__filter_rows_in(keep_row_indices, filter_column_index, fltr.values_set, fltr.negate)
-            elif type(fltr) is NumericFilter:
-                if filter_column_type == "c":
-                    raise Exception(f"A NumericFilter may only be used with numeric columns, but {fltr.column_name.decode()} is not a float or integer column.")
-
-                keep_row_indices = self.__filter_rows_numeric(keep_row_indices, filter_column_index, fltr.operator, fltr.query_value)
-            elif type(fltr) is LikeFilter:
-                keep_row_indices = self.__filter_rows_regex(keep_row_indices, filter_column_index, fltr.regular_expression, fltr.negate)
-            else:
-                raise Exception(f"An object of type {type(fltr)} may not be used as a filter.")
+        keep_row_indices = [i for i in range(self.num_rows) if fltr.passes(self, i, column_index_dict, column_type_dict)]
 
         # By default, select all columns.
         if not select_columns or len(select_columns) == 0:
@@ -107,6 +92,10 @@ class Parser:
 
             if len(out_lines) > 0:
                 out_file.write(b"\n".join(out_lines) + b"\n")
+
+    def get_cell_value(self, row_index, column_index):
+        return next(self.__parse_data_values(row_index, self.__ll,
+            self.__parse_data_coords([column_index]), self.__data_handle)).rstrip()
 
     def get_column_type(self, column_name):
         """
@@ -136,41 +125,6 @@ class Parser:
 
     def __get_column_type_from_index(self, column_index):
         return next(self.__parse_data_values(column_index, self.__mctl + 1, [[0, self.__mctl]], self.__ct_handle)).decode()
-
-    def __filter_rows_in(self, row_indices, column_index, values_set, negate):
-        query_col_coords = self.__parse_data_coords([column_index])
-
-        for row_index in row_indices:
-            value = next(self.__parse_data_values(row_index, self.__ll, query_col_coords, self.__data_handle)).rstrip()
-
-            if negate and value not in values_set:
-                yield row_index
-            elif not negate and value in values_set:
-                yield row_index
-
-    def __filter_rows_numeric(self, row_indices, column_index, oper, query_value):
-        query_col_coords = self.__parse_data_coords([column_index])
-
-        for row_index in row_indices:
-            value = next(self.__parse_data_values(row_index, self.__ll, query_col_coords, self.__data_handle)).rstrip()
-            if is_missing_value(value):
-                continue
-
-            if oper(fastnumbers.float(value), query_value):
-                yield row_index
-
-    def __filter_rows_regex(self, row_indices, column_index, regular_expression, negate):
-        query_col_coords = self.__parse_data_coords([column_index])
-
-        for row_index in row_indices:
-            value = next(self.__parse_data_values(row_index, self.__ll, query_col_coords, self.__data_handle)).rstrip()
-            if is_missing_value(value):
-                continue
-
-            if negate and not regular_expression.search(value.decode()):
-                yield row_index
-            elif not negate and regular_expression.search(value.decode()):
-                yield row_index
 
     def __find_column_indices(self, query_column_names):
         query_column_names_set = set(query_column_names)

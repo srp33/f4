@@ -4,13 +4,11 @@ import os
 from Builder import *
 from Parser import *
 
-def run_test(f4_file_path):
-    convert_delimited_file_to_f4(in_file_path, f4_file_path, num_processes=20)
+parser = Parser("data/tall.f4")
+num_processes = 4
+lines_per_chunk = 1000
+#lines_per_chunk = 10000
 
-parser = Parser("data/test2.f4")
+fltr = AndFilter(OrFilter(LikeFilter("Discrete100", r"^A"), LikeFilter("Discrete100", r"Z$")), NumericFilter("Numeric900", operator.ge, 0.1))
 
-filters = [CategoricalFilter("Discrete1", ["AA", "BB", "CC"]), CategoricalFilter("Discrete100", ["XX", "YY", "ZZ"]), NumericFilter("Numeric1", operator.ge, 0.1), NumericFilter("Numeric900", operator.ge, 0.1)]
-
-# >= 0.1:
-#if value.startswith(b"A") or value.endswith(b"Z"):
-parser.query_and_save(filters, ["ID", "Discrete1", "Discrete100", "Numeric1", "Numeric900"], "/tmp/f4.tsv", out_file_type="tsv", num_processes=20, lines_per_chunk=1000)
+parser.query_and_save(fltr, ["ID", "Discrete1", "Discrete100", "Numeric1", "Numeric900"], "data/tall_query.tsv", out_file_type="tsv", num_processes=num_processes, lines_per_chunk=lines_per_chunk)

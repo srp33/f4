@@ -1,6 +1,4 @@
-[Me] Add parallelization support in Parser. TestParseTall.py
-  Output file should be in same order as F4 file.
-  Make query criteria identical to what we are using in the paper.
+Run some tests on wide falls similar to TestFixedWidth3.py.
 [Me] Support compression
   Make compression an option in convert function in Builder2.py.
   Make compression an option in parse function. Autodetect?
@@ -37,7 +35,7 @@
 [Student] Support in_file_delimiter="," and out_file_type="csv"
   Change in_file_delimiter to in_file_type?
   Make sure exception when invalid value specified.
-[Student] Support date columns.
+[Student] Support date and string (has at least one non-number and more than 50% of values are unique?) columns.
 [Student] Support conversion from pandas DataFrame to F4 and vice versa.
 [Student] Provide explicit support for VCF format?
 [Student] Provide a way to stream a file as input and/or output?

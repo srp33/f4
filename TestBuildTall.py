@@ -4,7 +4,7 @@ from Builder import *
 from Parser import *
 
 def run_test(in_file_path):
-    f4_file_path = "data/test2.f4"
+    f4_file_path = "data/tall.f4"
 
     # Clean up data files if they already exist
     for file_path in glob.glob(f"{f4_file_path}*"):

@@ -34,13 +34,14 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="
 
     # Iterate through the lines to find the max width of each column.
     __print_message(f"Finding max width of each column")
-    chunk_results = Parallel(n_jobs=num_processes)(delayed(__parse_lines_chunk)(lines_chunk, in_file_delimiter, num_cols) for lines_chunk, chunk_number in __generate_lines_chunks(in_file, lines_per_chunk))
+    chunk_results = Parallel(n_jobs=num_processes)(delayed(__parse_lines_chunk)(lines_chunk, chunk_number, in_file_delimiter, num_cols) for lines_chunk, chunk_number in __generate_lines_chunks(in_file, lines_per_chunk))
     in_file.close()
 
     # Summarize the values across the chunks.
     column_sizes = __merge_column_sizes([x[0] for x in chunk_results])
     column_types = __merge_column_types([x[1] for x in chunk_results])
     num_rows = sum([x[2] for x in chunk_results])
+    __print_message(f"Got here1")
 
     if num_rows == 0:
         raise Exception(f"A header rows but no data rows were detected in {in_file_path}")
@@ -58,6 +59,7 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="
         column_start_coords.append(str(cumulative_position).encode())
         cumulative_position += column_size
     column_start_coords.append(str(cumulative_position).encode())
+    __print_message(f"Got here2")
 
     # Calculate and save the column coordinates and max length of these coordinates.
     column_coords_string, max_column_coord_length = __build_string_map(column_start_coords)
@@ -78,6 +80,7 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="
     __write_string_to_file(f4_file_path, ".ct", column_types_string)
     __write_string_to_file(f4_file_path, ".mctl", str(max_col_type_length).encode())
 
+    __print_message(f"Got here3")
     # Save the data to output file. Ignore the header line.
     in_file = __get_delimited_file_handle(in_file_path)
     in_file.readline()
@@ -168,9 +171,11 @@ def __generate_lines_chunks(file_handle, lines_per_chunk):
         chunk_number += 1
         yield lines_chunk, chunk_number
 
-def __parse_lines_chunk(lines_chunk, delimiter, num_cols):
+def __parse_lines_chunk(lines_chunk, chunk_number, delimiter, num_cols):
     column_sizes = [0 for x in range(num_cols)]
     column_types = [None for x in range(num_cols)]
+
+    print(chunk_number)
 
     for line in lines_chunk:
         line_items = line.rstrip(b"\n").split(delimiter)
@@ -189,6 +194,7 @@ def __save_lines_temp(lines_chunk, delimiter, column_sizes, tmp_dir_path, chunk_
 
     with open(f"{tmp_dir_path}{chunk_number}", 'wb') as tmp_file:
         for line in lines_chunk:
+            __print_message(f"Saving to {tmp_dir_path}{chunk_number}")
             line_items = line.rstrip(b"\n").split(delimiter)
 
             line_out = b""
@@ -211,12 +217,15 @@ def __infer_type(value):
 
 def __infer_type_from_list(types):
     # Remove any None or missing values. Convert to set so only contains unique values and is faster.
-    types = set([x for x in types if x and not is_missing_value(x)])
+    types = [x for x in types if x and not is_missing_value(x)]
 
     if len(types) == 0:
         return None
     if len(types) == 1:
-        return list(types)[0]
+        return types[0]
+
+    types = set(types)
+
     if b"c" in types:
         return b"c" # If any value is non-numeric, then we infer categorical.
     if b"f" in types:

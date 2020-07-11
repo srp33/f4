@@ -59,13 +59,14 @@ def run_all_tests(in_file_path):
     f4_file_path = "data/test_data.f4"
     out_file_path = "/tmp/f4_out.tsv"
     num_processes = 2
+    num_cols_per_chunk = 2
     lines_per_chunk = 2
 
     # Clean up data files if they already exist
     for file_path in glob.glob(f"{f4_file_path}*"):
         os.unlink(file_path)
 
-    convert_delimited_file_to_f4(in_file_path, f4_file_path, lines_per_chunk=2, num_processes=num_processes)
+    convert_delimited_file_to_f4(in_file_path, f4_file_path, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk)
 
     parser = Parser(f4_file_path)
 

@@ -4,12 +4,13 @@ import glob
 import gzip
 from joblib import Parallel, delayed
 from Helper import *
+import math
 import os
 import shutil
 import sys
 import tempfile
 
-def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="\t", num_processes=1, lines_per_chunk=1000, tmp_dir_path=None):
+def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="\t", num_processes=1, num_cols_per_chunk=None, tmp_dir_path=None):
     if type(in_file_delimiter) != str:
         raise Exception("The in_file_delimiter value must be a string.")
     if in_file_delimiter not in ("\t"):
@@ -19,7 +20,7 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="
 
     in_file_delimiter = in_file_delimiter.encode()
 
-    # Get column info. Remove any leading or trailing white space around the column names.
+    # Get column names. Remove any leading or trailing white space around the column names.
     in_file = __get_delimited_file_handle(in_file_path)
     column_names = [x.strip() for x in in_file.readline().rstrip(b"\n").split(in_file_delimiter)]
     num_cols = len(column_names)
@@ -28,29 +29,25 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="
     if num_cols == 0:
         raise Exception(f"No data was detected in {in_file_path}.")
 
-    # Open file again. Ignore the header line because we already saved column names.
-    in_file = __get_delimited_file_handle(in_file_path)
-    in_file.readline()
+    column_chunk_indices = __generate_chunk_ranges(num_cols, num_cols_per_chunk)
 
     # Iterate through the lines to find the max width of each column.
     __print_message(f"Finding max width of each column")
-    chunk_results = Parallel(n_jobs=num_processes)(delayed(__parse_lines_chunk)(lines_chunk, chunk_number, in_file_delimiter, num_cols) for lines_chunk, chunk_number in __generate_lines_chunks(in_file, lines_per_chunk))
-    in_file.close()
+    chunk_results = Parallel(n_jobs=num_processes)(delayed(__parse_columns_chunk)(in_file_path, in_file_delimiter, column_chunk[0], column_chunk[1]) for column_chunk in column_chunk_indices)
 
-    # Summarize the values across the chunks.
-    column_sizes = __merge_column_sizes([x[0] for x in chunk_results])
-    column_types = __merge_column_types([x[1] for x in chunk_results])
-    num_rows = sum([x[2] for x in chunk_results])
-    __print_message(f"Got here1")
+    # Summarize the column sizes and types across the chunks.
+    column_sizes = []
+    column_types = []
+    for chunk_tuple in chunk_results:
+        for i, size in sorted(chunk_tuple[0].items()):
+            column_sizes.append(size)
+        for i, the_type in sorted(chunk_tuple[1].items()):
+            column_types.append(the_type)
+
+    num_rows = chunk_results[0][2]
 
     if num_rows == 0:
         raise Exception(f"A header rows but no data rows were detected in {in_file_path}")
-
-    # Calculate the length of the first line (and thus all the other lines).
-    line_length = sum(column_sizes) + 1
-
-    # Save value that indicates line length.
-    __write_string_to_file(f4_file_path, ".ll", str(line_length).encode())
 
     # Calculate the position where each column starts.
     column_start_coords = []
@@ -59,7 +56,6 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="
         column_start_coords.append(str(cumulative_position).encode())
         cumulative_position += column_size
     column_start_coords.append(str(cumulative_position).encode())
-    __print_message(f"Got here2")
 
     # Calculate and save the column coordinates and max length of these coordinates.
     column_coords_string, max_column_coord_length = __build_string_map(column_start_coords)
@@ -78,34 +74,35 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="
     # Build a map of the column types and save this to a file.
     column_types_string, max_col_type_length = __build_string_map(column_types)
     __write_string_to_file(f4_file_path, ".ct", column_types_string)
-    __write_string_to_file(f4_file_path, ".mctl", str(max_col_type_length).encode())
-
-    __print_message(f"Got here3")
-    # Save the data to output file. Ignore the header line.
-    in_file = __get_delimited_file_handle(in_file_path)
-    in_file.readline()
+    #__write_string_to_file(f4_file_path, ".mctl", str(max_col_type_length).encode())
 
     # Figure out where temp files will be stored.
     if tmp_dir_path:
         if not os.path.exists(tmp_dir_path):
-            os.mkdir(tmp_dir_path)
+            os.makedirs(tmp_dir_path)
     else:
         tmp_dir_path = tempfile.mkdtemp()
     if not tmp_dir_path.endswith("/"):
         tmp_dir_path += "/"
 
-    # Parse chunks of the input file and save to temp files.
     __print_message(f"Parsing chunks of the input file and saving to temp files")
-    max_line_sizes = Parallel(n_jobs=num_processes)(delayed(__save_lines_temp)(lines_chunk, in_file_delimiter, column_sizes, tmp_dir_path, chunk_number) for lines_chunk, chunk_number in __generate_lines_chunks(in_file, lines_per_chunk))
-    in_file.close()
+    row_chunk_indices = __generate_chunk_ranges(num_rows, math.ceil(num_rows / num_processes) + 1)
+    max_line_sizes = Parallel(n_jobs=num_processes)(delayed(__save_rows_chunk)(in_file_path, in_file_delimiter, column_sizes, tmp_dir_path, i, row_chunk[0], row_chunk[1]) for i, row_chunk in enumerate(row_chunk_indices))
+
+    # Find and save the line length.
+    #TODO: Update this when you enable compression?
+    line_length = max(max_line_sizes)
+    __write_string_to_file(f4_file_path, ".ll", str(line_length).encode())
 
     # Merge the file chunks. This dictionary enables us to sort them properly.
     __print_message(f"Merging the file chunks")
     chunk_file_paths = {int(os.path.basename(file_path)): file_path for file_path in glob.glob(f"{tmp_dir_path}/*")}
+
     with open(f4_file_path, "wb") as f4_file:
         out_lines = []
+        lines_per_chunk = 10 # This could be made configurable.
 
-        for chunk_number, chunk_file_path in chunk_file_paths.items():
+        for chunk_number, chunk_file_path in sorted(chunk_file_paths.items()):
             with open(chunk_file_path, "rb") as chunk_file:
                 for line in chunk_file:
                     out_lines.append(line)
@@ -117,7 +114,7 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="
             os.remove(chunk_file_path)
 
         if len(out_lines) > 0:
-            f4_file.write(b"\n".join(out_lines) + b"\n")
+            f4_file.write(b"".join(out_lines))
 
     # Remove the temp directory if it was generated by the code (not the user).
     if tmp_dir_path:
@@ -139,70 +136,73 @@ def __get_delimited_file_handle(file_path):
     else:
         return open(file_path, 'rb')
 
-def __merge_column_sizes(all_column_sizes):
-    max_column_sizes = []
+def __generate_chunk_ranges(num_cols, num_cols_per_chunk):
+    if num_cols_per_chunk:
+        last_end_index = 0
 
-    for col_i in range(len(all_column_sizes[0])):
-        max_column_sizes.append(max([all_column_sizes[row_i][col_i] for row_i in range(len(all_column_sizes))]))
+        while last_end_index != num_cols:
+            last_start_index = last_end_index
+            last_end_index = min([last_start_index + num_cols_per_chunk, num_cols])
+            yield [last_start_index, last_end_index]
+    else:
+        yield [0, num_cols]
 
-    return max_column_sizes
+def __parse_columns_chunk(file_path, delimiter, start_index, end_index):
+    in_file = __get_delimited_file_handle(file_path)
 
-def __merge_column_types(all_column_types):
-    column_types = []
+    # Ignore the header line because we don't need column names here.
+    in_file.readline()
 
-    for col_i in range(len(all_column_types[0])):
-        column_types.append(__infer_type_from_list([all_column_types[row_i][col_i] for row_i in range(len(all_column_types))]))
+    # Initialize the column sizes and types.
+    column_sizes_dict = {}
+    column_types_dict = {}
+    for i in range(start_index, end_index):
+        column_sizes_dict[i] = 0
+        column_types_dict[i] = None
 
-    return column_types
-
-def __generate_lines_chunks(file_handle, lines_per_chunk):
-    lines_chunk = []
-    chunk_number = 0
-
-    for line in file_handle:
-        lines_chunk.append(line)
-
-        if len(lines_chunk) == lines_per_chunk:
-            chunk_number += 1
-            yield lines_chunk, chunk_number
-            lines_chunk = []
-
-    if len(lines_chunk) > 0:
-        chunk_number += 1
-        yield lines_chunk, chunk_number
-
-def __parse_lines_chunk(lines_chunk, chunk_number, delimiter, num_cols):
-    column_sizes = [0 for x in range(num_cols)]
-    column_types = [None for x in range(num_cols)]
-
-    print(chunk_number)
-
-    for line in lines_chunk:
+    # Loop through the file for the specified columns.
+    num_rows = 0
+    for line in in_file:
         line_items = line.rstrip(b"\n").split(delimiter)
+        for i in range(start_index, end_index):
+            column_sizes_dict[i] = max([column_sizes_dict[i], len(line_items[i])])
+            column_types_dict[i] = __infer_type_from_list([column_types_dict[i], __infer_type(line_items[i])])
 
-        if len(line_items) != num_cols:
-            raise Exception(f"The number of elements in row {num_rows} was different from the number of column names.")
+        num_rows += 1
 
-        for i in range(len(line_items)):
-            column_sizes[i] = max([column_sizes[i], len(line_items[i])])
-            column_types[i] = __infer_type_from_list([column_types[i], __infer_type(line_items[i])])
+    in_file.close()
 
-    return column_sizes, column_types, len(lines_chunk)
+    return column_sizes_dict, column_types_dict, num_rows
 
-def __save_lines_temp(lines_chunk, delimiter, column_sizes, tmp_dir_path, chunk_number):
+def __save_rows_chunk(file_path, delimiter, column_sizes, tmp_dir_path, chunk_number, start_index, end_index):
     max_line_size = 0
 
+    # Save the data to output file. Ignore the header line.
+    in_file = __get_delimited_file_handle(file_path)
+    in_file.readline()
+
     with open(f"{tmp_dir_path}{chunk_number}", 'wb') as tmp_file:
-        for line in lines_chunk:
-            __print_message(f"Saving to {tmp_dir_path}{chunk_number}")
+        line_index = -1
+        for line in in_file:
+            # Check whether we should process the specified line.
+            line_index += 1
+            if line_index < start_index:
+                continue
+            if line_index == end_index:
+                break
+
+            # Parse the data from the input file.
             line_items = line.rstrip(b"\n").split(delimiter)
 
-            line_out = b""
-            for i in range(len(column_sizes)):
-                line_out += __format_string_as_fixed_width(line_items[i], column_sizes[i])
+            # Format the data using fixed widths and save to a temp file.
+            out_items = [__format_string_as_fixed_width(line_items[i], size) for i, size in enumerate(column_sizes)]
+            out_line = b"".join(out_items) + b"\n"
+            tmp_file.write(out_line)
 
-            max_line_size = max([max_line_size, len(line_out)])
-            tmp_file.write(line_out + b"\n")
+            # Update the maximum line size based on this line.
+            max_line_size = max([max_line_size, len(out_line)])
+
+    in_file.close()
 
     return max_line_size
 
@@ -233,8 +233,7 @@ def __infer_type_from_list(types):
     return b"i"
 
 def __format_string_as_fixed_width(x, size):
-    formatted = "{:<" + str(size) + "}"
-    return formatted.format(x.decode()).encode()
+    return x + b" " * (size - len(x))
 
 def __build_string_map(the_list):
     # Find maximum length of value.

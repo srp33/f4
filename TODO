@@ -1,4 +1,7 @@
-Run some tests on wide falls similar to TestFixedWidth3.py.
+When building F4 files, only need to concatenate temp files if more than one process. Otherwise, just move it.
+When inferring column sizes and types, account for missing values differently than I am?
+TestBuildLarge.py - Test one more time on non-gzipped files.
+TestBuildLarge.py - Test on gzipped files.
 [Me] Support compression
   Make compression an option in convert function in Builder2.py.
   Make compression an option in parse function. Autodetect?

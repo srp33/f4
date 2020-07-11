@@ -38,7 +38,7 @@ class Parser:
         self.__cn_handle = open_read_file(self.data_file_path, ".cn")
         self.__mcnl = read_int_from_file(self.data_file_path, ".mcnl")
         self.__ct_handle = open_read_file(self.data_file_path, ".ct")
-        self.__mctl = read_int_from_file(self.data_file_path, ".mctl")
+        #self.__mctl = read_int_from_file(self.data_file_path, ".mctl")
 
         atexit.register(self.close)
 
@@ -128,7 +128,8 @@ class Parser:
         return [matching_column_dict[column_name] for column_name in query_column_names]
 
     def get_column_type_from_index(self, column_index):
-        return next(self.__parse_data_values(column_index, self.__mctl + 1, [[0, self.__mctl]], self.__ct_handle)).decode()
+        #return next(self.__parse_data_values(column_index, self.__mctl + 1, [[0, self.__mctl]], self.__ct_handle)).decode()
+        return next(self.__parse_data_values(column_index, 2, [[0, 1]], self.__ct_handle)).decode()
 
     ##############################################
     # Private functions.

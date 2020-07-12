@@ -58,6 +58,9 @@ def run_all_tests(in_file_path):
 
     f4_file_path = "data/test_data.f4"
     out_file_path = "/tmp/f4_out.tsv"
+    #num_processes = 1
+    #num_cols_per_chunk = 1
+    #lines_per_chunk = 1
     num_processes = 2
     num_cols_per_chunk = 2
     lines_per_chunk = 2

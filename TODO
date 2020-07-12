@@ -1,11 +1,7 @@
-When building F4 files, only need to concatenate temp files if more than one process. Otherwise, just move it.
-When inferring column sizes and types, account for missing values differently than I am?
-TestBuildLarge.py - Test one more time on non-gzipped files.
-TestBuildLarge.py - Test on gzipped files.
 [Me] Support compression
-  Make compression an option in convert function in Builder2.py.
+  Make compression an option in convert function in Builder.py.
   Make compression an option in parse function. Autodetect?
-  Add whitespace buffer at the end of each line. Use max(max_line_sizes). __format_string_as_fixed_width(x, size)
+  Add whitespace buffer at the end of each line. Use max(max_line_sizes).
     Specify this in .ll file.
 [Me] Test parallelization/compression building/parsing on tall.tsv.gz.
   Remove print statements and import datetime from Builder2.py.
@@ -22,6 +18,7 @@ TestBuildLarge.py - Test on gzipped files.
 [Me] Remove commented code and complete all TODO items in code. Make sure all public functions are fully validated.
 
 [MeLater] Store discrete data in separate table from numeric? The first column is a JSON dictionary that maps Unicode characters to unique values in the column. This could save a lot of disk space in most cases.
+  When inferring column sizes and types, store missing values using a single character and replace them when the values are queried?
 [MeLater] Support joins.
 [MeLater] Look at pandas for other functionality that might make sense to support.
   Add to student's TODO list.

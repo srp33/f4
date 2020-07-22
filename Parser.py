@@ -3,6 +3,7 @@ import fastnumbers
 from Helper import *
 from itertools import chain
 from joblib import Parallel, delayed
+import math
 import operator
 import os
 import re
@@ -16,33 +17,48 @@ class Parser:
 
     Attributes:
         data_file_path (str): The path to an existing F4 file.
-        num_rows (int): The number of rows in the dataset.
-        num_cols (int): The number of columns in the dataset.
     """
 
-    def __init__(self, data_file_path):
-        #TODO: Remove this when everything is in a single file.
-        #for file_extension in ("", ".cc", ".cn", ".ct", ".ll", ".mccl", ".mcnl", ".mctl", ".ncol", ".nrow"):
-        #    file_path = f"{data_file_path}{file_extension}"
-        #    if not os.path.exists(file_path):
-        #        raise Exception(f"A file named {file_path} does not exist.")
-
+    def __init__(self, data_file_path, is_index=False):
         self.data_file_path = data_file_path
-        self.num_rows = read_int_from_file(self.data_file_path, ".nrow")
-        self.num_columns = read_int_from_file(self.data_file_path, ".ncol")
+        self.is_index = is_index
 
-        self.__data_handle = open_read_file(self.data_file_path)
-        self.__ll = read_int_from_file(self.data_file_path, ".ll")
-        self.__cc_handle = open_read_file(self.data_file_path, ".cc")
-        self.__mccl = read_int_from_file(self.data_file_path, ".mccl")
-        self.__cn_handle = open_read_file(self.data_file_path, ".cn")
-        self.__mcnl = read_int_from_file(self.data_file_path, ".mcnl")
-        self.__ct_handle = open_read_file(self.data_file_path, ".ct")
-        #self.__mctl = read_int_from_file(self.data_file_path, ".mctl")
+        self.__file_handles = {}
+        self.__stats = {}
+
+        # These file handles are sometimes used for index files.
+        for ext in ["", ".cc"]:
+            ext2 = ext
+            if is_index:
+                ext2 = f".idx{ext}"
+            self.__file_handles[ext] = open_read_file(data_file_path, ext2)
+
+        # These file handles are never used for index files.
+        for ext in [".cn", ".ct"]:
+            self.__file_handles[ext] = open_read_file(data_file_path, ext)
+
+        # These file handles are sometimes used for index files.
+        for ext in [".ll", ".mccl"]:
+            ext2 = ext
+            if is_index:
+                ext2 = f".idx{ext}"
+            self.__stats[ext] = read_int_from_file(data_file_path, ext2)
+
+        # These file handles are never used for index files.
+        for ext in [".nrow", ".ncol", ".mcnl"]:
+            self.__stats[ext] = read_int_from_file(data_file_path, ext)
 
         atexit.register(self.close)
 
-    def query_and_save(self, fltr, select_columns, out_file_path, out_file_type="tsv", num_processes=1, lines_per_chunk=1000):
+#    #num_rows (int): The number of rows in the dataset.
+#    def get_num_rows(self):
+#        return self.__get_stat(".nrow")
+
+#    #num_cols (int): The number of columns in the dataset.
+#    def get_num_columns(self):
+#        return self.__get_stat(".ncol", self.is_index)
+
+    def query_and_save(self, fltr, select_columns, out_file_path, out_file_type="tsv", num_processes=1, lines_per_chunk=10):
         """
         Query the data file using zero or more filters.
 
@@ -61,7 +77,7 @@ class Parser:
             raise Exception("An object that inherits from BaseFilter must be specified.")
 
         # Loop through the rows in parallel and find matching row indices.
-        keep_row_indices = sorted(chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(process_rows)(self.data_file_path, fltr, row_indices) for row_indices in self.__generate_row_chunks(lines_per_chunk))))
+        keep_row_indices = sorted(chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(_process_rows)(self.data_file_path, fltr, row_indices) for row_indices in self.__generate_row_chunks(num_processes))))
 
         # By default, select all columns.
         if not select_columns or len(select_columns) == 0:
@@ -72,7 +88,10 @@ class Parser:
             select_column_indices = self.get_column_indices(column_names)
 
         # Get the coords for each column to select
-        select_column_coords = self.__parse_data_coords(select_column_indices)
+        select_column_coords = self._parse_data_coords(select_column_indices)
+
+        data_file_handle = self.__file_handles[""]
+        line_length = self.__stats[".ll"]
 
         # Write output file (in chunks)
         with open(out_file_path, 'wb') as out_file:
@@ -81,7 +100,7 @@ class Parser:
 
             out_lines = []
             for row_index in keep_row_indices:
-                out_lines.append(b"\t".join([x.rstrip() for x in self.__parse_data_values(row_index, self.__ll, select_column_coords, self.__data_handle)]))
+                out_lines.append(b"\t".join([x.rstrip() for x in self.__parse_data_values(row_index, line_length, select_column_coords, data_file_handle)]))
 
                 if len(out_lines) % lines_per_chunk == 0:
                     out_file.write(b"\n".join(out_lines) + b"\n")
@@ -90,9 +109,15 @@ class Parser:
             if len(out_lines) > 0:
                 out_file.write(b"\n".join(out_lines) + b"\n")
 
-    def get_cell_value(self, row_index, column_index):
-        return next(self.__parse_data_values(row_index, self.__ll,
-            self.__parse_data_coords([column_index]), self.__data_handle)).rstrip()
+#    def get_column_values(self, column_coords):
+#        data_file_handle = self.__file_handles[""]
+#        line_length = self.__stats[".ll"]
+#
+#        for row_index in range(self.get_num_rows()):
+#            yield next(self.__parse_data_values(row_index, line_length, column_coords, data_file_handle)).rstrip()
+
+    def get_cell_value(self, row_index, column_coords):
+        return next(self.__parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""])).rstrip()
 
     def get_column_type(self, column_name):
         """
@@ -112,11 +137,13 @@ class Parser:
 
     def get_column_indices(self, query_column_names):
         query_column_names_set = set(query_column_names)
-        col_coords = [[0, self.__mcnl]]
+        mcnl = self.__stats[".mcnl"]
+        col_coords = [[0, mcnl]]
         matching_column_dict = {}
+        cn_file_handle = self.__file_handles[".cn"]
 
-        for col_index in range(self.num_columns):
-            column_name = next(self.__parse_data_values(col_index, self.__mcnl + 1, col_coords, self.__cn_handle)).rstrip()
+        for col_index in range(self.__stats[".ncol"]):
+            column_name = next(self.__parse_data_values(col_index, mcnl + 1, col_coords, cn_file_handle)).rstrip()
 
             if column_name in query_column_names_set:
                 matching_column_dict[column_name] = col_index
@@ -125,21 +152,56 @@ class Parser:
         if len(unmatched_column_names) > 0:
             raise Exception("The following column name(s) could not be found for {}: {}.".format(self.data_file_path, ", ".join(sorted([x.decode() for x in unmatched_column_names]))))
 
+        # This makes sure the indices are returned in the specified order.
         return [matching_column_dict[column_name] for column_name in query_column_names]
 
     def get_column_type_from_index(self, column_index):
-        #return next(self.__parse_data_values(column_index, self.__mctl + 1, [[0, self.__mctl]], self.__ct_handle)).decode()
-        return next(self.__parse_data_values(column_index, 2, [[0, 1]], self.__ct_handle)).decode()
+        return next(self.__parse_data_values(column_index, 2, [[0, 1]], self.__file_handles[".ct"])).decode()
+
+#    def get_column_tindices(self, columns):
+#        columns_set = set(columns)
+#        col_coords = [[0, self.__tmcnl]]
+#        matching_column_dict = {}
+
+#        for col_index, column in enumerate(columns):
+#            column_name = next(self.__parse_data_values(col_index, self.__tmcnl + 1, col_coords, self.__tcn_handle)).rstrip()
+
+#            if column_name in columns_set:
+#                matching_column_dict[column_name] = col_index
+
+#            col_index += 1
+
+#        unmatched_column_names = columns_set - set(matching_column_dict.keys())
+#        if len(unmatched_column_names) > 0:
+#            raise Exception("The following index column(s) could not be found for {}: {}.".format(self.data_file_path, ", ".join(sorted([x.decode() for x in unmatched_column_names]))))
+
+#        return [matching_column_dict[column_name] for column_name in columns]
+
+    def close(self):
+        for handle in self.__file_handles.values():
+            handle.close()
 
     ##############################################
     # Private functions.
     ##############################################
 
-    def close(self):
-        self.__data_handle.close()
-        self.__cc_handle.close()
-        self.__cn_handle.close()
-        self.__ct_handle.close()
+#    def __get_file_handle(self, ext, use_index=False):
+#        if use_index:
+#            ext = f".idx{ext}"
+#
+#        if not ext in self.__file_handles:
+#            self.__file_handles[ext] = open_read_file(self.data_file_path, ext)
+#
+#        return self.__file_handles[ext]
+
+#    def __get_stat(self, ext, use_index=False):
+#        if use_index:
+#            ext = f".idx{ext}"
+#
+#        if not ext in self.__stats:
+#            self.__stats[ext] = read_int_from_file(self.data_file_path, ext)
+#
+#        return self.__stats[ext]
 
     def __get_column_names(self):
         column_names = []
@@ -149,9 +211,12 @@ class Parser:
 
         return column_names
 
-    def __generate_row_chunks(self, rows_per_chunk):
+    def __generate_row_chunks(self, num_processes):
+        rows_per_chunk = math.ceil(self.__stats[".nrow"] / num_processes)
+
         row_indices = []
-        for row_index in range(self.num_rows):
+
+        for row_index in range(self.__stats[".nrow"]):
             row_indices.append(row_index)
 
             if len(row_indices) == rows_per_chunk:
@@ -161,21 +226,23 @@ class Parser:
         if len(row_indices) > 0:
             yield row_indices
 
-    def __parse_data_coords(self, line_indices):
+    def _parse_data_coords(self, indices):
         data_coords = []
         out_dict = {}
+        cc_file_handle = self.__file_handles[".cc"]
+        mccl = self.__stats[".mccl"] + 1
 
-        for index in line_indices:
-            start_pos = index * (self.__mccl + 1)
-            next_start_pos = start_pos + self.__mccl + 1
-            further_next_start_pos = next_start_pos + self.__mccl + 1
+        for index in indices:
+            start_pos = index * mccl
+            next_start_pos = start_pos + mccl
+            further_next_start_pos = next_start_pos + mccl
 
             # See if we already have cached the start position.
             if index in out_dict:
                 data_start_pos = out_dict[index]
             # If not, retrieve the start position from the cc file and then cache it.
             else:
-                data_start_pos = int(self.__cc_handle[start_pos:next_start_pos].rstrip())
+                data_start_pos = int(cc_file_handle[start_pos:next_start_pos].rstrip())
                 out_dict[index] = data_start_pos
 
             # See if we already have cached the end position.
@@ -183,7 +250,7 @@ class Parser:
                 data_end_pos = out_dict[index + 1]
             # If not, retrieve the end position from the cc file and then cache it.
             else:
-                data_end_pos = int(self.__cc_handle[next_start_pos:further_next_start_pos].rstrip())
+                data_end_pos = int(cc_file_handle[next_start_pos:further_next_start_pos].rstrip())
                 out_dict[index + 1] = data_end_pos
 
             data_coords.append([data_start_pos, data_end_pos])
@@ -196,18 +263,21 @@ class Parser:
         for coords in data_coords:
             yield str_like_object[(start_pos + coords[0]):(start_pos + coords[1])]
 
-#TODO: Modify this to yield passing row indices
-def process_rows(data_file_path, fltr, row_indices):
-    parser = Parser(data_file_path)
+    def parse_row_values(self, row_index, column_coords):
+        return list(self.__parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
+
+def _process_rows(data_file_path, fltr, row_indices):
+    is_index = os.path.exists(f"{data_file_path}.idx")
+    parser = Parser(data_file_path, is_index=is_index)
 
     filter_column_names = list(fltr.get_column_name_set())
     filter_column_indices = parser.get_column_indices(filter_column_names)
-    column_index_dict = {filter_column_names[i]: filter_column_indices[i] for i in range(len(filter_column_indices))}
+    column_coords_dict = {filter_column_names[i]: parser._parse_data_coords([filter_column_indices[i]]) for i in range(len(filter_column_indices))}
     column_type_dict = {filter_column_names[i]: parser.get_column_type_from_index(filter_column_indices[i]) for i in range(len(filter_column_indices))}
 
     passing_row_indices = []
     for row_index in row_indices:
-        if fltr.passes(parser, row_index, column_index_dict, column_type_dict):
+        if fltr.passes(parser, row_index, column_coords_dict, column_type_dict):
             passing_row_indices.append(row_index)
 
     parser.close()
@@ -221,7 +291,7 @@ class BaseFilter:
     def get_column_name_set(self):
         raise Exception("This function must be implemented by classes that inherit this class.")
 
-    def passes(self, parser, row_index, column_index_dict, column_type_dict):
+    def passes(self, parser, row_index, column_coords_dict, column_type_dict):
         raise Exception("This function must be implemented by classes that inherit this class.")
 
 """
@@ -231,7 +301,7 @@ class KeepAll(BaseFilter):
     def get_column_name_set(self):
         return set()
 
-    def passes(self, parser, row_index, column_index_dict, column_type_dict):
+    def passes(self, parser, row_index, column_coords_dict, column_type_dict):
         return True
 
 class InFilter(BaseFilter):
@@ -260,8 +330,8 @@ class InFilter(BaseFilter):
     def get_column_name_set(self):
         return set([self.__column_name])
 
-    def passes(self, parser, row_index, column_index_dict, column_type_dict):
-        value = parser.get_cell_value(row_index, column_index_dict[self.__column_name])
+    def passes(self, parser, row_index, column_coords_dict, column_type_dict):
+        value = parser.get_cell_value(row_index, column_coords_dict[self.__column_name])
 
         if self.__negate and value not in self.__values_set:
             return True
@@ -295,8 +365,8 @@ class LikeFilter(BaseFilter):
     def get_column_name_set(self):
         return set([self.__column_name])
 
-    def passes(self, parser, row_index, column_index_dict, column_type_dict):
-        value = parser.get_cell_value(row_index, column_index_dict[self.__column_name])
+    def passes(self, parser, row_index, column_coords_dict, column_type_dict):
+        value = parser.get_cell_value(row_index, column_coords_dict[self.__column_name])
 
         if is_missing_value(value):
             return False
@@ -334,12 +404,12 @@ class NumericFilter(BaseFilter):
     def get_column_name_set(self):
         return set([self.__column_name])
 
-    def passes(self, parser, row_index, column_index_dict, column_type_dict):
+    def passes(self, parser, row_index, column_coords_dict, column_type_dict):
         column_type = column_type_dict[self.__column_name]
         if column_type == "c":
             raise Exception(f"A numeric filter may only be used with numeric columns, but {self.__column_name.decode()} is not a float or integer column.")
 
-        value = parser.get_cell_value(row_index, column_index_dict[self.__column_name])
+        value = parser.get_cell_value(row_index, column_coords_dict[self.__column_name])
 
         if is_missing_value(value):
             return False
@@ -367,9 +437,9 @@ class AndFilter(BaseFilter):
 
         return column_name_set
 
-    def passes(self, parser, row_index, column_index_dict, column_type_dict):
+    def passes(self, parser, row_index, column_coords_dict, column_type_dict):
         for fltr in self.__filters:
-            if not fltr.passes(parser, row_index, column_index_dict, column_type_dict):
+            if not fltr.passes(parser, row_index, column_coords_dict, column_type_dict):
                 return False
 
         return True
@@ -395,9 +465,9 @@ class OrFilter(BaseFilter):
 
         return column_name_set
 
-    def passes(self, parser, row_index, column_index_dict, column_type_dict):
+    def passes(self, parser, row_index, column_coords_dict, column_type_dict):
         for fltr in self.__filters:
-            if fltr.passes(parser, row_index, column_index_dict, column_type_dict):
+            if fltr.passes(parser, row_index, column_coords_dict, column_type_dict):
                 return True
 
         return False

@@ -71,16 +71,16 @@ def run_all_tests(in_file_path):
 
     convert_delimited_file_to_f4(in_file_path, f4_file_path, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk)
 
-    parser = Parser(f4_file_path)
-
     try:
         parser = Parser("bogus_file_path")
         fail_test("Invalid file path.")
     except:
         pass_test("Invalid file path.")
 
-    check_result("Parser properties", "Number of rows", parser.num_rows, 4)
-    check_result("Parser properties", "Number of columns", parser.num_columns, 9)
+    parser = Parser(f4_file_path)
+
+#    check_result("Parser properties", "Number of rows", parser.get_num_rows(), 4)
+#    check_result("Parser properties", "Number of columns", parser.get_num_columns(), 9)
 
     check_result("Column types", "ID column", parser.get_column_type("ID"), "i")
     check_result("Column types", "FloatA column", parser.get_column_type("FloatA"), "f")
@@ -193,6 +193,12 @@ def run_all_tests(in_file_path):
         fail_test("Non-filter is passed as a filter.")
     except:
         pass_test("Non-filter is passed as a filter.")
+
+    # Test ability to query based on index columns.
+    convert_delimited_file_to_f4(in_file_path, f4_file_path, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk, index_columns=["ID", "FloatA", "OrdinalA"])
+    parser = Parser(f4_file_path)
+    parser.query_and_save(AndFilter(InFilter("ID", ["1", "2", "3"]), NumericFilter("FloatA", operator.ge, 2)), ["FloatA"], out_file_path)
+    check_results("Filter using two index columns", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])
 
     pass_test("Completed all tests succesfully!!")
 

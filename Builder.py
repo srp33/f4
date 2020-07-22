@@ -5,11 +5,12 @@ from joblib import Parallel, delayed
 from Helper import *
 import math
 import os
+from Parser import *
 import shutil
 import sys
 import tempfile
 
-def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="\t", num_processes=1, num_cols_per_chunk=None, tmp_dir_path=None):
+def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="\t", index_columns=None, num_processes=1, num_cols_per_chunk=None, tmp_dir_path=None):
     if type(in_file_delimiter) != str:
         raise Exception("The in_file_delimiter value must be a string.")
     if in_file_delimiter not in ("\t"):
@@ -27,6 +28,12 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="
 
     if num_cols == 0:
         raise Exception(f"No data was detected in {in_file_path}.")
+
+    if __should_index(index_columns, num_cols):
+        # We perform this here so we can check early whether the index column names are valid.
+        parser = Parser(f4_file_path)
+        index_columns = [x.encode() for x in index_columns]
+        index_column_indices = parser.get_column_indices(index_columns)
 
     column_chunk_indices = __generate_chunk_ranges(num_cols, num_cols_per_chunk)
 
@@ -48,15 +55,8 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="
     if num_rows == 0:
         raise Exception(f"A header rows but no data rows were detected in {in_file_path}")
 
-    # Calculate the position where each column starts.
-    column_start_coords = []
-    cumulative_position = 0
-    for column_size in column_sizes:
-        column_start_coords.append(str(cumulative_position).encode())
-        cumulative_position += column_size
-    column_start_coords.append(str(cumulative_position).encode())
-
     # Calculate and save the column coordinates and max length of these coordinates.
+    column_start_coords = __get_column_start_coords(column_sizes)
     column_coords_string, max_column_coord_length = __build_string_map(column_start_coords)
     __write_string_to_file(f4_file_path, ".cc", column_coords_string)
     __write_string_to_file(f4_file_path, ".mccl", str(max_column_coord_length).encode())
@@ -107,6 +107,14 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="
 
     __print_message(f"Done saving to {f4_file_path}")
 
+    # Save index column data if they are a subset of the full column set and if we are doing compression.
+    if __should_index(index_columns, num_cols):
+        __save_index(parser, index_columns, index_column_indices, num_rows)
+        parser.close()
+
+def __should_index(index_columns, num_cols):
+    return index_columns and len(index_columns) < num_cols
+
 #####################################################
 # Private functions
 #####################################################
@@ -116,6 +124,17 @@ def __get_delimited_file_handle(file_path):
         return gzip.open(file_path)
     else:
         return open(file_path, 'rb')
+
+def __get_column_start_coords(column_sizes):
+    # Calculate the position where each column starts.
+    column_start_coords = []
+    cumulative_position = 0
+    for column_size in column_sizes:
+        column_start_coords.append(str(cumulative_position).encode())
+        cumulative_position += column_size
+    column_start_coords.append(str(cumulative_position).encode())
+
+    return column_start_coords
 
 def __generate_chunk_ranges(num_cols, num_cols_per_chunk):
     if num_cols_per_chunk:
@@ -260,6 +279,67 @@ def __get_max_string_length(the_list):
 def __write_string_to_file(file_path, file_extension, the_string):
     with open(file_path + file_extension, 'wb') as the_file:
         the_file.write(the_string)
+
+def __save_index(parser, index_columns, index_column_indices, num_rows):
+    # Find coordinates of index columns.
+    index_column_coords = parser._parse_data_coords(index_column_indices)
+
+    # Store index column data.
+    with open(f"{parser.data_file_path}.idx", 'wb') as index_file:
+        for row_index in range(num_rows):
+            row = b"".join(parser.parse_row_values(row_index, index_column_coords)) + b"\n"
+            index_file.write(row)
+
+    # Save the length of the last row (all rows will have the same length).
+    __write_string_to_file(f"{parser.data_file_path}", ".idx.ll", str(len(row)).encode())
+
+    # Indicate the number of index columns
+    __write_string_to_file(f"{parser.data_file_path}", ".idx.ncol", str(len(index_columns)).encode())
+
+    # Calculate and save the index column coordinates and max length of these coordinates.
+    index_column_sizes = []
+    for coord in index_column_coords:
+        index_column_sizes.append(coord[1] - coord[0])
+    index_column_start_coords = __get_column_start_coords(index_column_sizes)
+    column_coords_string, max_column_coord_length = __build_string_map(index_column_start_coords)
+    __write_string_to_file(parser.data_file_path, ".idx.cc", column_coords_string)
+    __write_string_to_file(parser.data_file_path, ".idx.mccl", str(max_column_coord_length).encode())
+
+#def __save_transposed_index_columns(f4_file_path, index_columns, index_column_indices, num_rows):
+#    # Use a parser to work with index columns (will be transposed).
+#    parser = Parser(f4_file_path)
+#
+#    # Find coordinates of index columns.
+#    index_column_coords = parser._parse_data_coords(index_column_indices)
+#
+#    # Find width information for index columns.
+#    column_widths = []
+#
+#    for i, column_index in enumerate(index_column_indices):
+#        coords = index_column_coords[i]
+#        column_width = coords[1] - coords[0]
+#        column_widths.append(column_width)
+#
+#    max_line_length = max(column_widths) * num_rows
+#
+#    # Store index column data.
+#    with open(f"{f4_file_path}.t", 'wb') as transposed_file:
+#        for i, column_width in enumerate(column_widths):
+#            # Merge values into a transposed string.
+#            out_string = b"".join([__format_string_as_fixed_width(x, column_widths[i]) for x in parser.get_column_values([index_column_coords[i]])])
+#
+#            # Add buffer at the end of the line based on the max line length. Save to file.
+#            transposed_file.write(__format_string_as_fixed_width(out_string, max_line_length) + b"\n")
+#
+#    column_names_string, max_column_names_length = __build_string_map([x for x in index_columns])
+#    __write_string_to_file(f"{f4_file_path}", ".t.cn", column_names_string)
+#    __write_string_to_file(f"{f4_file_path}", ".t.mcnl", str(max_column_names_length).encode())
+#
+#    column_widths_string, max_column_widths_length = __build_string_map([str(x).encode() for x in column_widths])
+#    __write_string_to_file(f"{f4_file_path}", ".t.cw", column_widths_string)
+#    __write_string_to_file(f"{f4_file_path}", ".t.mcwl", str(max_column_widths_length).encode())
+#
+#    parser.close()
 
 def __print_message(message):
     print(f"{message} - {datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f')}")

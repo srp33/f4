@@ -1,21 +1,25 @@
+[Me] Add option to include index columns.
+  Test for speed on large files.
+[Me] Change Builder.py to be a class object so the code is cleaner and more consistent with Parser.py.
+[Me] Find any use of += (strings) in the code and replace it with join logic.
+  Or .append().
+  Re-test on the large files.
+[Me] Make the file handles and integers lazy loading. Also lazy closing.
 [Me] Support compression
   Make compression an option in convert function in Builder.py.
   Make compression an option in parse function. Autodetect?
-  Add whitespace buffer at the end of each line. Use max(max_line_sizes).
-    Specify this in .ll file.
-[Me] Test parallelization/compression building/parsing on tall.tsv.gz.
-  Remove print statements and import datetime from Builder2.py.
-[Me] In DataSetBuilder, add transposed (& compressed) optionf or index columns.
-  Provide an option where the user can specify which rows will be searched (thus reducing # of transposed rows that must be stored). Before querying these, make sure they exist.
+  Add whitespace buffer at the end of each line. Use max(max_line_sizes). Specify this in .ll file.
+  Test on tall and wide files.
 [Me] Remove ConvertTsvToFixedWidthFile3.py, TestBuild*.py?, TestParse*.py?
-[Me] Add documentation for convert_delimited_file_to_f4. Mention .gz file support.
+[Me] Remove commented code and complete all TODO items in code. Make sure all arguments to public functions are fully validated.
+[Me] Add documentation for all public functions.
+  Mention .gz file support.
   Mention that if they specify tmp_dir_path, we assume that it is empty. It will not work if it is not.
+  If possible, move functions out of Helper.py. If you keep any, document them.
 [Me] Test building and parsing on gnomad/CADD files.
   gnomad: See notes in TickTick.
   CADD: Compare against tabix. We can also compare it in terms of size.
   Move to test.sh and generate formal statistics on it.
-[Me] Move functions out of Helper.py. If you keep any, document them.
-[Me] Remove commented code and complete all TODO items in code. Make sure all public functions are fully validated.
 
 [MeLater] Store discrete data in separate table from numeric? The first column is a JSON dictionary that maps Unicode characters to unique values in the column. This could save a lot of disk space in most cases.
   When inferring column sizes and types, store missing values using a single character and replace them when the values are queried?

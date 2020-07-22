@@ -12,7 +12,7 @@ def run_test(in_file_path, out_file_prefix, num_processes, num_cols_per_chunk):
 
     convert_delimited_file_to_f4(in_file_path, f4_file_path, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk)
 
-##run_test("test_data.tsv", "test", 4, 3)
+run_test("test_data.tsv", "test", 4, 3)
 
 #run_test("tall.tsv", "tall", 20, 51) #3:13
 #run_test("tall.tsv.gz", "tall", 20, 51) #5:47

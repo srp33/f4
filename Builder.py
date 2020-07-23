@@ -30,10 +30,12 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="
         raise Exception(f"No data was detected in {in_file_path}.")
 
     if __should_index(index_columns, num_cols):
-        # We perform this here so we can check early whether the index column names are valid.
-        parser = Parser(f4_file_path)
         index_columns = [x.encode() for x in index_columns]
-        index_column_indices = parser.get_column_indices(index_columns)
+
+        # Check early whether the index column names are valid.
+        unmatched_column_names = set(index_columns) - set(column_names)
+        if len(unmatched_column_names) > 0:
+            raise Exception("The following index column name(s) could not be found for {}: {}.".format(f4_file_path, ", ".join(sorted([x.decode() for x in unmatched_column_names]))))
 
     column_chunk_indices = __generate_chunk_ranges(num_cols, num_cols_per_chunk)
 
@@ -109,8 +111,7 @@ def convert_delimited_file_to_f4(in_file_path, f4_file_path, in_file_delimiter="
 
     # Save index column data if they are a subset of the full column set and if we are doing compression.
     if __should_index(index_columns, num_cols):
-        __save_index(parser, index_columns, index_column_indices, num_rows)
-        parser.close()
+        __save_index(f4_file_path, index_columns, num_rows)
 
 def __should_index(index_columns, num_cols):
     return index_columns and len(index_columns) < num_cols
@@ -280,8 +281,11 @@ def __write_string_to_file(file_path, file_extension, the_string):
     with open(file_path + file_extension, 'wb') as the_file:
         the_file.write(the_string)
 
-def __save_index(parser, index_columns, index_column_indices, num_rows):
+def __save_index(f4_file_path, index_columns, num_rows):
+    parser = Parser(f4_file_path)
+
     # Find coordinates of index columns.
+    index_column_indices = parser.get_column_indices(index_columns)
     index_column_coords = parser._parse_data_coords(index_column_indices)
 
     # Store index column data.
@@ -304,6 +308,18 @@ def __save_index(parser, index_columns, index_column_indices, num_rows):
     column_coords_string, max_column_coord_length = __build_string_map(index_column_start_coords)
     __write_string_to_file(parser.data_file_path, ".idx.cc", column_coords_string)
     __write_string_to_file(parser.data_file_path, ".idx.mccl", str(max_column_coord_length).encode())
+
+    # Save the index column names and max length of these names.
+    index_column_names_string, max_col_name_length = __build_string_map(index_columns)
+    __write_string_to_file(f4_file_path, ".idx.cn", index_column_names_string)
+    __write_string_to_file(f4_file_path, ".idx.mcnl", str(max_col_name_length).encode())
+
+    # Save the index column types.
+    index_column_types = [parser.get_column_type_from_index(i).encode() for i in index_column_indices]
+    index_column_types_string, max_col_type_length = __build_string_map(index_column_types)
+    __write_string_to_file(f4_file_path, ".idx.ct", index_column_types_string)
+
+    parser.close()
 
 #def __save_transposed_index_columns(f4_file_path, index_columns, index_column_indices, num_rows):
 #    # Use a parser to work with index columns (will be transposed).

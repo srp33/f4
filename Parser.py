@@ -27,36 +27,24 @@ class Parser:
         self.__stats = {}
 
         # These file handles are sometimes used for index files.
-        for ext in ["", ".cc"]:
+        for ext in ["", ".cc", ".cn", ".ct"]:
             ext2 = ext
             if is_index:
                 ext2 = f".idx{ext}"
             self.__file_handles[ext] = open_read_file(data_file_path, ext2)
 
-        # These file handles are never used for index files.
-        for ext in [".cn", ".ct"]:
-            self.__file_handles[ext] = open_read_file(data_file_path, ext)
-
-        # These file handles are sometimes used for index files.
-        for ext in [".ll", ".mccl"]:
+        # These statistics are sometimes used for index files.
+        for ext in [".ll", ".mccl", ".mcnl"]:
             ext2 = ext
             if is_index:
                 ext2 = f".idx{ext}"
             self.__stats[ext] = read_int_from_file(data_file_path, ext2)
 
-        # These file handles are never used for index files.
-        for ext in [".nrow", ".ncol", ".mcnl"]:
+        # These file statistics are never used for index files.
+        for ext in [".nrow", ".ncol"]:
             self.__stats[ext] = read_int_from_file(data_file_path, ext)
 
         atexit.register(self.close)
-
-#    #num_rows (int): The number of rows in the dataset.
-#    def get_num_rows(self):
-#        return self.__get_stat(".nrow")
-
-#    #num_cols (int): The number of columns in the dataset.
-#    def get_num_columns(self):
-#        return self.__get_stat(".ncol", self.is_index)
 
     def query_and_save(self, fltr, select_columns, out_file_path, out_file_type="tsv", num_processes=1, lines_per_chunk=10):
         """
@@ -184,24 +172,6 @@ class Parser:
     ##############################################
     # Private functions.
     ##############################################
-
-#    def __get_file_handle(self, ext, use_index=False):
-#        if use_index:
-#            ext = f".idx{ext}"
-#
-#        if not ext in self.__file_handles:
-#            self.__file_handles[ext] = open_read_file(self.data_file_path, ext)
-#
-#        return self.__file_handles[ext]
-
-#    def __get_stat(self, ext, use_index=False):
-#        if use_index:
-#            ext = f".idx{ext}"
-#
-#        if not ext in self.__stats:
-#            self.__stats[ext] = read_int_from_file(self.data_file_path, ext)
-#
-#        return self.__stats[ext]
 
     def __get_column_names(self):
         column_names = []

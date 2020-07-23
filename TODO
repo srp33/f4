@@ -1,10 +1,8 @@
-[Me] Add option to include index columns.
-  Test for speed on large files.
-[Me] Change Builder.py to be a class object so the code is cleaner and more consistent with Parser.py.
 [Me] Find any use of += (strings) in the code and replace it with join logic.
   Or .append().
   Re-test on the large files.
-[Me] Make the file handles and integers lazy loading. Also lazy closing.
+[Me] Change Builder.py to be a class object so the code is cleaner and more consistent with Parser.py.
+  Test speed on large files.
 [Me] Support compression
   Make compression an option in convert function in Builder.py.
   Make compression an option in parse function. Autodetect?

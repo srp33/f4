@@ -1,6 +1,3 @@
-[Me] Find any use of += (strings) in the code and replace it with join logic.
-  Or .append().
-  Re-test on the large files.
 [Me] Change Builder.py to be a class object so the code is cleaner and more consistent with Parser.py.
   Test speed on large files.
 [Me] Support compression

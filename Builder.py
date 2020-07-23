@@ -267,12 +267,10 @@ def __build_string_map(the_list):
     max_value_length = __get_max_string_length(the_list)
 
     # Build output string.
-    output = ""
     formatter = "{:<" + str(max_value_length) + "}\n"
-    for value in the_list:
-        output += formatter.format(value.decode())
+    output_items = [formatter.format(value.decode()) for value in the_list]
 
-    return output.encode(), max_value_length
+    return ("".join(output_items)).encode(), max_value_length
 
 def __get_max_string_length(the_list):
     return max([len(x) for x in set(the_list)])

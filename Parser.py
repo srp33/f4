@@ -7,6 +7,7 @@ import math
 import operator
 import os
 import re
+import zstandard
 
 class Parser:
     """
@@ -22,6 +23,14 @@ class Parser:
     def __init__(self, data_file_path, is_index=False):
         self.data_file_path = data_file_path
         self.is_index = is_index
+
+        if is_index:
+            cmp_file_path = f"{data_file_path}.idx.cmp"
+        else:
+            cmp_file_path = f"{data_file_path}.cmp"
+        self.__decompressor = None
+        if read_str_from_file(cmp_file_path) == b"True":
+            self.__decompressor = zstandard.ZstdDecompressor()
 
         self.__file_handles = {}
         self.__stats = {}
@@ -64,6 +73,10 @@ class Parser:
         if not isinstance(fltr, BaseFilter):
             raise Exception("An object that inherits from BaseFilter must be specified.")
 
+        # Check whether filter types are valid for the types of the columns specified.
+        filter_column_type_dict = {name: self.__get_column_type(name) for name in fltr.get_column_name_set()}
+        fltr.check_types(self, filter_column_type_dict)
+
         # Loop through the rows in parallel and find matching row indices.
         keep_row_indices = sorted(chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(_process_rows)(self.data_file_path, fltr, row_indices) for row_indices in self.__generate_row_chunks(num_processes))))
 
@@ -78,8 +91,8 @@ class Parser:
         # Get the coords for each column to select
         select_column_coords = self._parse_data_coords(select_column_indices)
 
-        data_file_handle = self.__file_handles[""]
-        line_length = self.__stats[".ll"]
+        #data_file_handle = self.__file_handles[""]
+        #line_length = self.__stats[".ll"]
 
         # Write output file (in chunks)
         with open(out_file_path, 'wb') as out_file:
@@ -88,7 +101,7 @@ class Parser:
 
             out_lines = []
             for row_index in keep_row_indices:
-                out_lines.append(b"\t".join([x.rstrip() for x in self.__parse_data_values(row_index, line_length, select_column_coords, data_file_handle)]))
+                out_lines.append(b"\t".join([x.rstrip() for x in self.parse_row_values(row_index, select_column_coords)]))
 
                 if len(out_lines) % lines_per_chunk == 0:
                     out_file.write(b"\n".join(out_lines) + b"\n")
@@ -104,24 +117,8 @@ class Parser:
 #        for row_index in range(self.get_num_rows()):
 #            yield next(self.__parse_data_values(row_index, line_length, column_coords, data_file_handle)).rstrip()
 
-    def get_cell_value(self, row_index, column_coords):
-        return next(self.__parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""])).rstrip()
-
-    def get_column_type(self, column_name):
-        """
-        Find the type of a specified column.
-
-        Args:
-            column_name (str): Name of the column.
-        Returns:
-            A character indicating the data type for the specified column.
-            The character will be one of the following:
-                * c (categorical)
-                * f (float)
-                * i (integer)
-        """
-
-        return self.get_column_type_from_index(self.get_column_indices([column_name.encode()])[0])
+#    def get_cell_value(self, row_index, column_coords):
+#        return next(self.__parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""])).rstrip()
 
     def get_column_indices(self, query_column_names):
         query_column_names_set = set(query_column_names)
@@ -173,6 +170,23 @@ class Parser:
     # Private functions.
     ##############################################
 
+    def __get_column_type(self, column_name):
+        #TODO: Remove this documentation?
+        """
+        Find the type of a specified column.
+
+        Args:
+            column_name (str): Name of the column.
+        Returns:
+            A character indicating the data type for the specified column.
+            The character will be one of the following:
+                * c (categorical)
+                * f (float)
+                * i (integer)
+        """
+
+        return self.get_column_type_from_index(self.get_column_indices([column_name])[0])
+
     def __get_column_names(self):
         column_names = []
         with open(self.data_file_path + ".cn", 'rb') as the_file:
@@ -199,7 +213,6 @@ class Parser:
     def _parse_data_coords(self, indices):
         data_coords = []
         out_dict = {}
-        cc_file_handle = self.__file_handles[".cc"]
         mccl = self.__stats[".mccl"] + 1
 
         for index in indices:
@@ -212,7 +225,7 @@ class Parser:
                 data_start_pos = out_dict[index]
             # If not, retrieve the start position from the cc file and then cache it.
             else:
-                data_start_pos = int(cc_file_handle[start_pos:next_start_pos].rstrip())
+                data_start_pos = int(self.__file_handles[".cc"][start_pos:next_start_pos].rstrip())
                 out_dict[index] = data_start_pos
 
             # See if we already have cached the end position.
@@ -220,21 +233,44 @@ class Parser:
                 data_end_pos = out_dict[index + 1]
             # If not, retrieve the end position from the cc file and then cache it.
             else:
-                data_end_pos = int(cc_file_handle[next_start_pos:further_next_start_pos].rstrip())
+                data_end_pos = int(self.__file_handles[".cc"][next_start_pos:further_next_start_pos].rstrip())
                 out_dict[index + 1] = data_end_pos
 
             data_coords.append([data_start_pos, data_end_pos])
 
         return data_coords
 
-    def __parse_data_values(self, start_offset, segment_length, data_coords, str_like_object):
-        start_pos = start_offset * segment_length
+    def __parse_data_values(self, start_element, segment_length, data_coords, str_like_object):
+        start_pos = start_element * segment_length
 
         for coords in data_coords:
             yield str_like_object[(start_pos + coords[0]):(start_pos + coords[1])]
 
     def parse_row_values(self, row_index, column_coords):
-        return list(self.__parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
+        if self.__decompressor:
+            # Parse and then decompress the entire row.
+            row = next(self.__parse_data_values(row_index, self.__stats[".ll"], [[0, self.__stats[".ll"]]], self.__file_handles[""]))
+            row = self.__decompressor.decompress(row)
+
+            # Retrieve the desired columns from that row.
+            return [x for x in self.__parse_data_values(0, 0, column_coords, row)]
+        else:
+            return list(self.__parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
+
+    def parse_row_dict(self, row_index, column_name_coords_dict):
+        row_dict = {}
+
+        if self.__decompressor:
+            # Parse and then decompress the entire row.
+            row = self.__decompressor.decompress(next(self.__parse_data_values(row_index, self.__stats[".ll"], [[0, self.__stats[".ll"]]], self.__file_handles[""])))
+
+            for column_name, column_coords in column_name_coords_dict.items():
+                row_dict[column_name] = next(self.__parse_data_values(0, 0, column_coords, row)).rstrip(b" ")
+        else:
+            for column_name, column_coords in column_name_coords_dict.items():
+                row_dict[column_name] = next(self.__parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""])).rstrip(b" ")
+
+        return row_dict
 
 def _process_rows(data_file_path, fltr, row_indices):
     is_index = os.path.exists(f"{data_file_path}.idx")
@@ -242,12 +278,14 @@ def _process_rows(data_file_path, fltr, row_indices):
 
     filter_column_names = list(fltr.get_column_name_set())
     filter_column_indices = parser.get_column_indices(filter_column_names)
-    column_coords_dict = {filter_column_names[i]: parser._parse_data_coords([filter_column_indices[i]]) for i in range(len(filter_column_indices))}
-    column_type_dict = {filter_column_names[i]: parser.get_column_type_from_index(filter_column_indices[i]) for i in range(len(filter_column_indices))}
+
+    filter_column_coords = parser._parse_data_coords(filter_column_indices)
+    filter_column_coords_dict = {filter_column_names[i]: parser._parse_data_coords([filter_column_indices[i]]) for i in range(len(filter_column_indices))}
 
     passing_row_indices = []
     for row_index in row_indices:
-        if fltr.passes(parser, row_index, column_coords_dict, column_type_dict):
+        row_value_dict = parser.parse_row_dict(row_index, filter_column_coords_dict)
+        if fltr.passes(parser, row_value_dict):
             passing_row_indices.append(row_index)
 
     parser.close()
@@ -261,7 +299,10 @@ class BaseFilter:
     def get_column_name_set(self):
         raise Exception("This function must be implemented by classes that inherit this class.")
 
-    def passes(self, parser, row_index, column_coords_dict, column_type_dict):
+    def check_types(self, parser, column_type_dict):
+        pass
+
+    def passes(self, parser, row_value_dict):
         raise Exception("This function must be implemented by classes that inherit this class.")
 
 """
@@ -271,7 +312,7 @@ class KeepAll(BaseFilter):
     def get_column_name_set(self):
         return set()
 
-    def passes(self, parser, row_index, column_coords_dict, column_type_dict):
+    def passes(self, parser, row_value_dict):
         return True
 
 class InFilter(BaseFilter):
@@ -300,8 +341,9 @@ class InFilter(BaseFilter):
     def get_column_name_set(self):
         return set([self.__column_name])
 
-    def passes(self, parser, row_index, column_coords_dict, column_type_dict):
-        value = parser.get_cell_value(row_index, column_coords_dict[self.__column_name])
+    def passes(self, parser, row_value_dict):
+        #value = parser.get_cell_value(row_index, column_coords_dict[self.__column_name])
+        value = row_value_dict[self.__column_name]
 
         if self.__negate and value not in self.__values_set:
             return True
@@ -335,8 +377,9 @@ class LikeFilter(BaseFilter):
     def get_column_name_set(self):
         return set([self.__column_name])
 
-    def passes(self, parser, row_index, column_coords_dict, column_type_dict):
-        value = parser.get_cell_value(row_index, column_coords_dict[self.__column_name])
+    def passes(self, parser, row_value_dict):
+        #value = parser.get_cell_value(row_index, column_coords_dict[self.__column_name])
+        value = row_value_dict[self.__column_name]
 
         if is_missing_value(value):
             return False
@@ -374,12 +417,13 @@ class NumericFilter(BaseFilter):
     def get_column_name_set(self):
         return set([self.__column_name])
 
-    def passes(self, parser, row_index, column_coords_dict, column_type_dict):
-        column_type = column_type_dict[self.__column_name]
-        if column_type == "c":
-            raise Exception(f"A numeric filter may only be used with numeric columns, but {self.__column_name.decode()} is not a float or integer column.")
+    def check_types(self, parser, column_type_dict):
+        if column_type_dict[self.__column_name] == "c":
+            raise Exception(f"A numeric filter may only be used with numeric columns, but {self.__column_name.decode()} is not numeric (float or integer).")
 
-        value = parser.get_cell_value(row_index, column_coords_dict[self.__column_name])
+    def passes(self, parser, row_value_dict):
+        #value = parser.get_cell_value(row_index, column_coords_dict[self.__column_name])
+        value = row_value_dict[self.__column_name]
 
         if is_missing_value(value):
             return False
@@ -407,9 +451,13 @@ class AndFilter(BaseFilter):
 
         return column_name_set
 
-    def passes(self, parser, row_index, column_coords_dict, column_type_dict):
+    def check_types(self, parser, column_type_dict):
         for fltr in self.__filters:
-            if not fltr.passes(parser, row_index, column_coords_dict, column_type_dict):
+            fltr.check_types(parser, column_type_dict)
+
+    def passes(self, parser, row_value_dict):
+        for fltr in self.__filters:
+            if not fltr.passes(parser, row_value_dict):
                 return False
 
         return True
@@ -435,9 +483,13 @@ class OrFilter(BaseFilter):
 
         return column_name_set
 
-    def passes(self, parser, row_index, column_coords_dict, column_type_dict):
+    def check_types(self, parser, column_type_dict):
         for fltr in self.__filters:
-            if fltr.passes(parser, row_index, column_coords_dict, column_type_dict):
+            fltr.check_types(parser, column_type_dict)
+
+    def passes(self, parser, row_value_dict):
+        for fltr in self.__filters:
+            if fltr.passes(parser, row_value_dict):
                 return True
 
         return False

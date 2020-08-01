@@ -1,20 +1,24 @@
-[Me] Change Builder.py to be a class object so the code is cleaner and more consistent with Parser.py.
-  Test speed on large files.
-[Me] Support compression
-  Make compression an option in convert function in Builder.py.
-  Make compression an option in parse function. Autodetect?
-  Add whitespace buffer at the end of each line. Use max(max_line_sizes). Specify this in .ll file.
-  Test on tall and wide files.
+[Me] Make it a separate process to build index files (and save .nrow and .ncol files with them).
+  Put in Indexer.py?
+  Or just make it a public function on Builder?
+  The index is not being compressed yet. Add that, but separating this gives the user the opportunity to choose.
+  Parallelize and chunkify the indexing logic.
+[Me] Implement chunked writing in __save_rows_chunk in Builder.py.
+[Me] Look at mmap settings to see if something might perform better.
+[Me] Profile the code: https://docs.python.org/3/library/profile.html
 [Me] Remove ConvertTsvToFixedWidthFile3.py, TestBuild*.py?, TestParse*.py?
 [Me] Remove commented code and complete all TODO items in code. Make sure all arguments to public functions are fully validated.
 [Me] Add documentation for all public functions.
   Mention .gz file support.
   Mention that if they specify tmp_dir_path, we assume that it is empty. It will not work if it is not.
-  If possible, move functions out of Helper.py. If you keep any, document them.
+[Me] If possible, move functions out of Helper.py. If you keep any, document them.
 [Me] Test building and parsing on gnomad/CADD files.
   gnomad: See notes in TickTick.
   CADD: Compare against tabix. We can also compare it in terms of size.
   Move to test.sh and generate formal statistics on it.
+[Me] Support in_file_delimiter="," and out_file_type="csv"
+  Change in_file_delimiter to in_file_type?
+  Make sure exception when invalid value specified.
 
 [MeLater] Store discrete data in separate table from numeric? The first column is a JSON dictionary that maps Unicode characters to unique values in the column. This could save a lot of disk space in most cases.
   When inferring column sizes and types, store missing values using a single character and replace them when the values are queried?
@@ -23,19 +27,11 @@
   Add to student's TODO list.
 [MeLater] Set up readthedocs.
 
-[??] Rework the format so that everything is stored in a single file.
-  Modify constructor of Parser.py accordingly.
-
-[Student] Add function to DataSetParser to return all unique values for a discrete column.
-  Use this functionality in DataSetBuilder.
-  Add documentation.
-  Add validation. (Generalize the code for making sure column name is valid.)
-[Student] Add function to DataSetParser to get summary statistics for a numeric column.
-[Student] Support in_file_delimiter="," and out_file_type="csv"
-  Change in_file_delimiter to in_file_type?
-  Make sure exception when invalid value specified.
+[Student] Rework the format so that everything is stored in a single file.
+[Student] Add function to DataSetParser to return all unique values for a discrete column? Use this functionality in DataSetBuilder?
+[Student] Add function to DataSetParser to get summary statistics for a numeric column?
 [Student] Support date and string (has at least one non-number and more than 50% of values are unique?) columns.
-[Student] Support conversion from pandas DataFrame to F4 and vice versa.
+[Student] Support conversion from pandas DataFrame to F4 and vice versa?
 [Student] Provide explicit support for VCF format?
 [Student] Provide a way to stream a file as input and/or output?
 

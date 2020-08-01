@@ -51,25 +51,19 @@ def fail_test(message):
     print(f"FAIL: {message}")
     sys.exit(1)
 
-def run_all_tests(in_file_path):
-    print("--------------------------------------")
-    print(f"Running all tests for {in_file_path}")
-    print("--------------------------------------")
+def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1):
+    print("-------------------------------------------------------")
+    print(f"Running all tests for {in_file_path}, {num_processes}, {num_cols_per_chunk}, {lines_per_chunk}")
+    print("-------------------------------------------------------")
 
     f4_file_path = "data/test_data.f4"
     out_file_path = "/tmp/f4_out.tsv"
-    #num_processes = 1
-    #num_cols_per_chunk = 1
-    #lines_per_chunk = 1
-    num_processes = 2
-    num_cols_per_chunk = 2
-    lines_per_chunk = 2
 
     # Clean up data files if they already exist
     for file_path in glob.glob(f"{f4_file_path}*"):
         os.unlink(file_path)
 
-    convert_delimited_file_to_f4(in_file_path, f4_file_path, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk)
+    Builder(in_file_path, f4_file_path, compress=False).convert(num_processes, num_cols_per_chunk)
 
     try:
         parser = Parser("bogus_file_path")
@@ -79,18 +73,18 @@ def run_all_tests(in_file_path):
 
     parser = Parser(f4_file_path)
 
-#    check_result("Parser properties", "Number of rows", parser.get_num_rows(), 4)
-#    check_result("Parser properties", "Number of columns", parser.get_num_columns(), 9)
+##    check_result("Parser properties", "Number of rows", parser.get_num_rows(), 4)
+##    check_result("Parser properties", "Number of columns", parser.get_num_columns(), 9)
 
-    check_result("Column types", "ID column", parser.get_column_type("ID"), "i")
-    check_result("Column types", "FloatA column", parser.get_column_type("FloatA"), "f")
-    check_result("Column types", "FloatB column", parser.get_column_type("FloatB"), "f")
-    check_result("Column types", "OrdinalA column", parser.get_column_type("OrdinalA"), "c")
-    check_result("Column types", "OrdinalB column", parser.get_column_type("OrdinalB"), "c")
-    check_result("Column types", "IntA column", parser.get_column_type("IntA"), "i")
-    check_result("Column types", "IntB column", parser.get_column_type("IntB"), "i")
-    check_result("Column types", "CategoricalA column", parser.get_column_type("CategoricalA"), "c")
-    check_result("Column types", "CategoricalB column", parser.get_column_type("CategoricalB"), "c")
+##    check_result("Column types", "ID column", parser.get_column_type("ID"), "i")
+##    check_result("Column types", "FloatA column", parser.get_column_type("FloatA"), "f")
+##    check_result("Column types", "FloatB column", parser.get_column_type("FloatB"), "f")
+##    check_result("Column types", "OrdinalA column", parser.get_column_type("OrdinalA"), "c")
+##    check_result("Column types", "OrdinalB column", parser.get_column_type("OrdinalB"), "c")
+##    check_result("Column types", "IntA column", parser.get_column_type("IntA"), "i")
+##    check_result("Column types", "IntB column", parser.get_column_type("IntB"), "i")
+##    check_result("Column types", "CategoricalA column", parser.get_column_type("CategoricalA"), "c")
+##    check_result("Column types", "CategoricalB column", parser.get_column_type("CategoricalB"), "c")
 
     parser.query_and_save(KeepAll(), [], out_file_path, num_processes=num_processes, lines_per_chunk=lines_per_chunk)
     check_results("No filters, select all columns", read_file_into_lists(out_file_path), read_file_into_lists(in_file_path))
@@ -195,15 +189,23 @@ def run_all_tests(in_file_path):
         pass_test("Non-filter is passed as a filter.")
 
     # Test ability to query based on index columns.
-    convert_delimited_file_to_f4(in_file_path, f4_file_path, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk, index_columns=["ID", "FloatA", "OrdinalA"])
+    Builder(in_file_path, f4_file_path, index_columns=["ID", "FloatA", "OrdinalA"], compress=False).convert(num_processes, num_cols_per_chunk)
     parser = Parser(f4_file_path)
     parser.query_and_save(AndFilter(InFilter("ID", ["1", "2", "3"]), NumericFilter("FloatA", operator.ge, 2)), ["FloatA"], out_file_path)
     check_results("Filter using two index columns", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])
+
+    # Test ability to query when the data are compressed.
+    Builder(in_file_path, f4_file_path, index_columns=["ID", "FloatA", "OrdinalA"], compress=True).convert(num_processes, num_cols_per_chunk)
+    parser = Parser(f4_file_path)
+    parser.query_and_save(AndFilter(InFilter("ID", ["1", "2", "3"]), NumericFilter("FloatA", operator.ge, 2)), ["FloatA"], out_file_path)
+    check_results("Filter using two index columns (compressed)", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])
 
     pass_test("Completed all tests succesfully!!")
 
 if not os.path.exists("data"):
     os.mkdir("data")
 
-run_all_tests("test_data.tsv")
-run_all_tests("test_data.tsv.gz")
+run_all_tests("test_data.tsv", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
+run_all_tests("test_data.tsv.gz", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
+run_all_tests("test_data.tsv", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
+run_all_tests("test_data.tsv.gz", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)

@@ -1,11 +1,7 @@
-[Me] Make it a separate process to build index files (and save .nrow and .ncol files with them).
-  Put in Indexer.py?
-  Or just make it a public function on Builder?
-  The index is not being compressed yet. Add that, but separating this gives the user the opportunity to choose.
-  Parallelize and chunkify the indexing logic.
+[Me] Parallelize and chunkify the indexing logic.
 [Me] Implement chunked writing in __save_rows_chunk in Builder.py.
 [Me] Look at mmap settings to see if something might perform better.
-[Me] Profile the code: https://docs.python.org/3/library/profile.html
+[Me] Profile the parsing code: https://docs.python.org/3/library/profile.html
 [Me] Remove ConvertTsvToFixedWidthFile3.py, TestBuild*.py?, TestParse*.py?
 [Me] Remove commented code and complete all TODO items in code. Make sure all arguments to public functions are fully validated.
 [Me] Add documentation for all public functions.

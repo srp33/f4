@@ -1,10 +1,10 @@
-import datetime
 import fastnumbers
 import gzip
 from joblib import Parallel, delayed
 from Helper import *
 import math
 import os
+from Indexer import *
 from Parser import *
 import shutil
 import sys
@@ -12,7 +12,7 @@ import tempfile
 import zstandard
 
 class Builder:
-    def __init__(self, delimited_file_path, f4_file_path, delimiter="\t", index_columns=None, compress=True, tmp_dir_path=None, verbose=False):
+    def __init__(self, delimited_file_path, f4_file_path, delimiter="\t", compress=True, tmp_dir_path=None, verbose=False):
         if type(delimiter) != str:
             raise Exception("The delimiter value must be a string.")
         if delimiter not in ("\t"):
@@ -21,10 +21,6 @@ class Builder:
         self.__delimited_file_path = delimited_file_path
         self.__f4_file_path = f4_file_path
         self.__delimiter = delimiter.encode()
-
-        self.index_columns = None
-        if index_columns:
-            self.index_columns = [x.encode() for x in index_columns]
 
         self.__compress = compress
 
@@ -42,7 +38,7 @@ class Builder:
         self.__verbose = verbose
 
     def convert(self, num_processes=1, num_cols_per_chunk=None, num_rows_per_chunk=10):
-        self.__print_message(f"Converting from {self.__delimited_file_path}")
+        self.__print_message(f"Converting from {self.__delimited_file_path}.")
 
         # Get column names. Remove any leading or trailing white space around the column names.
         in_file = _get_delimited_file_handle(self.__delimited_file_path)
@@ -53,16 +49,10 @@ class Builder:
         if num_cols == 0:
             raise Exception(f"No data was detected in {self.__delimited_file_path}.")
 
-        if self.__should_index(num_cols):
-            # Check early whether the index column names are valid.
-            unmatched_column_names = set(self.index_columns) - set(column_names)
-            if len(unmatched_column_names) > 0:
-                raise Exception("The following index column name(s) could not be found for {}: {}.".format(self.__f4_file_path, ", ".join(sorted([x.decode() for x in unmatched_column_names]))))
-
         column_chunk_indices = _generate_chunk_ranges(num_cols, num_cols_per_chunk)
 
         # Iterate through the lines to find the max width of each column.
-        self.__print_message(f"Finding max width of each column in {self.__delimited_file_path}")
+        self.__print_message(f"Finding max width of each column in {self.__delimited_file_path}.")
         chunk_results = Parallel(n_jobs=num_processes)(delayed(self.__parse_columns_chunk)(column_chunk[0], column_chunk[1]) for column_chunk in column_chunk_indices)
 
         # Summarize the column sizes and types across the chunks.
@@ -80,38 +70,38 @@ class Builder:
             raise Exception(f"A header rows but no data rows were detected in {self.__delimited_file_path}")
 
         # Calculate and save the column coordinates and max length of these coordinates.
-        column_start_coords = _get_column_start_coords(column_sizes)
-        column_coords_string, max_column_coord_length = _build_string_map(column_start_coords)
-        _write_string_to_file(self.__f4_file_path, ".cc", column_coords_string)
-        _write_string_to_file(self.__f4_file_path, ".mccl", str(max_column_coord_length).encode())
+        column_start_coords = get_column_start_coords(column_sizes)
+        column_coords_string, max_column_coord_length = build_string_map(column_start_coords)
+        write_string_to_file(self.__f4_file_path, ".cc", column_coords_string)
+        write_string_to_file(self.__f4_file_path, ".mccl", str(max_column_coord_length).encode())
 
         # Build a map of the column names and save this to a file.
-        column_names_string, max_col_name_length = _build_string_map(column_names)
-        _write_string_to_file(self.__f4_file_path, ".cn", column_names_string)
-        _write_string_to_file(self.__f4_file_path, ".mcnl", str(max_col_name_length).encode())
+        column_names_string, max_col_name_length = build_string_map(column_names)
+        write_string_to_file(self.__f4_file_path, ".cn", column_names_string)
+        write_string_to_file(self.__f4_file_path, ".mcnl", str(max_col_name_length).encode())
 
         # Save number of rows and cols.
-        _write_string_to_file(self.__f4_file_path, ".nrow", str(num_rows).encode())
-        _write_string_to_file(self.__f4_file_path, ".ncol", str(len(column_names)).encode())
+        write_string_to_file(self.__f4_file_path, ".nrow", str(num_rows).encode())
+        write_string_to_file(self.__f4_file_path, ".ncol", str(len(column_names)).encode())
 
         # Build a map of the column types and save this to a file.
-        column_types_string, max_col_type_length = _build_string_map(column_types)
-        _write_string_to_file(self.__f4_file_path, ".ct", column_types_string)
-        #_write_string_to_file(self.__f4_file_path, ".mctl", str(max_col_type_length).encode())
+        column_types_string, max_col_type_length = build_string_map(column_types)
+        write_string_to_file(self.__f4_file_path, ".ct", column_types_string)
+        #write_string_to_file(self.__f4_file_path, ".mctl", str(max_col_type_length).encode())
 
-        self.__print_message(f"Parsing chunks of {self.__delimited_file_path} and saving to temp files")
+        self.__print_message(f"Parsing chunks of {self.__delimited_file_path} and saving to temp files.")
         row_chunk_indices = _generate_chunk_ranges(num_rows, math.ceil(num_rows / num_processes) + 1)
         max_line_sizes = Parallel(n_jobs=num_processes)(delayed(self.__save_rows_chunk)(column_sizes, i, row_chunk[0], row_chunk[1]) for i, row_chunk in enumerate(row_chunk_indices))
 
         # Find and save the line length.
         line_length = max(max_line_sizes)
-        _write_string_to_file(self.__f4_file_path, ".ll", str(line_length).encode())
+        write_string_to_file(self.__f4_file_path, ".ll", str(line_length).encode())
 
         # Indicate whether the lines are compressed.
-        _write_string_to_file(self.__f4_file_path, ".cmp", str(self.__compress).encode())
+        write_string_to_file(self.__f4_file_path, ".cmp", str(self.__compress).encode())
 
         # Merge the file chunks. This dictionary enables us to sort them properly.
-        self.__print_message(f"Merging the file chunks for {self.__delimited_file_path}")
+        self.__print_message(f"Merging the file chunks for {self.__delimited_file_path}.")
         self.__merge_chunk_files(num_processes, line_length, num_rows_per_chunk)
 
         # Remove the temp directory if it was generated by the code (not the user).
@@ -122,14 +112,7 @@ class Builder:
                 # Don't throw an exception if we can't delete the directory.
                 pass
 
-        self.__print_message(f"Done converting {self.__delimited_file_path} to {self.__f4_file_path}")
-
-        # Save index column data if needed.
-        if self.__should_index(num_cols):
-            self.__save_index(num_rows, num_processes)
-
-    def __should_index(self, num_cols):
-        return self.index_columns and len(self.index_columns) < num_cols
+        self.__print_message(f"Done converting {self.__delimited_file_path} to {self.__f4_file_path}.")
 
     def __parse_columns_chunk(self, start_index, end_index):
         in_file = _get_delimited_file_handle(self.__delimited_file_path)
@@ -236,64 +219,8 @@ class Builder:
             if len(out_lines) > 0:
                 f4_file.write(b"".join(out_lines))
 
-    def __save_index(self, num_rows, num_processes):
-        # Indicate whether the index is compressed.
-        shutil.copyfile(f"{self.__f4_file_path}.cmp", f"{self.__f4_file_path}.idx.cmp")
-
-        compressor = None
-        if self.__compress:
-            compressor = zstandard.ZstdCompressor(level=1)
-
-        parser = Parser(self.__f4_file_path)
-
-        # Find coordinates of index columns.
-        index_column_indices = parser.get_column_indices(self.index_columns)
-        index_column_coords = parser._parse_data_coords(index_column_indices)
-
-        # Store index column data.
-        max_line_length = 0
-        with open(f"{self.__f4_file_path}.idx", 'wb') as index_file:
-            for row_index in range(num_rows):
-                row = b"".join(parser.parse_row_values(row_index, index_column_coords))
-
-                if self.__compress:
-                    row = compressor.compress(row)
-                else:
-                    row += b"\n"
-
-                max_line_length = max([max_line_length, len(row)])
-                index_file.write(row)
-
-        # Save the length of the longest row. Row lengths may vary when compression is used.
-        _write_string_to_file(f"{self.__f4_file_path}", ".idx.ll", str(max_line_length).encode())
-
-        # Indicate the number of index columns.
-        _write_string_to_file(f"{self.__f4_file_path}", ".idx.ncol", str(len(self.index_columns)).encode())
-
-        # Calculate and save the index column coordinates and max length of these coordinates.
-        index_column_sizes = []
-        for coord in index_column_coords:
-            index_column_sizes.append(coord[1] - coord[0])
-        index_column_start_coords = _get_column_start_coords(index_column_sizes)
-        column_coords_string, max_column_coord_length = _build_string_map(index_column_start_coords)
-        _write_string_to_file(self.__f4_file_path, ".idx.cc", column_coords_string)
-        _write_string_to_file(self.__f4_file_path, ".idx.mccl", str(max_column_coord_length).encode())
-
-        # Save the index column names and max length of these names.
-        index_column_names_string, max_col_name_length = _build_string_map(self.index_columns)
-        _write_string_to_file(self.__f4_file_path, ".idx.cn", index_column_names_string)
-        _write_string_to_file(self.__f4_file_path, ".idx.mcnl", str(max_col_name_length).encode())
-
-        # Save the index column types.
-        index_column_types = [parser.get_column_type_from_index(i).encode() for i in index_column_indices]
-        index_column_types_string, max_col_type_length = _build_string_map(index_column_types)
-        _write_string_to_file(self.__f4_file_path, ".idx.ct", index_column_types_string)
-
-        parser.close()
-
     def __print_message(self, message):
-        if self.__verbose:
-            print(f"{message} - {datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f')}")
+        print_message(message, self.__verbose)
 
 #####################################################
 # Static functions
@@ -304,17 +231,6 @@ def _get_delimited_file_handle(file_path):
         return gzip.open(file_path)
     else:
         return open(file_path, 'rb')
-
-def _get_column_start_coords(column_sizes):
-    # Calculate the position where each column starts.
-    column_start_coords = []
-    cumulative_position = 0
-    for column_size in column_sizes:
-        column_start_coords.append(str(cumulative_position).encode())
-        cumulative_position += column_size
-    column_start_coords.append(str(cumulative_position).encode())
-
-    return column_start_coords
 
 def _generate_chunk_ranges(num_cols, num_cols_per_chunk):
     if num_cols_per_chunk:
@@ -355,20 +271,3 @@ def _infer_type_from_list(types):
 
 def _format_string_as_fixed_width(x, size):
     return x + b" " * (size - len(x))
-
-def _build_string_map(the_list):
-    # Find maximum length of value.
-    max_value_length = _get_max_string_length(the_list)
-
-    # Build output string.
-    formatter = "{:<" + str(max_value_length) + "}\n"
-    output_items = [formatter.format(value.decode()) for value in the_list]
-
-    return ("".join(output_items)).encode(), max_value_length
-
-def _get_max_string_length(the_list):
-    return max([len(x) for x in set(the_list)])
-
-def _write_string_to_file(file_path, file_extension, the_string):
-    with open(file_path + file_extension, 'wb') as the_file:
-        the_file.write(the_string)

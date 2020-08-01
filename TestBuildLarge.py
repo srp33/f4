@@ -10,7 +10,8 @@ def run_test(in_file_path, out_file_prefix, num_processes, num_cols_per_chunk, i
     for file_path in glob.glob(f"{f4_file_path}*"):
         os.unlink(file_path)
 
-    Builder(in_file_path, f4_file_path, index_columns=index_columns, compress=compress, verbose=True).convert(num_processes, num_cols_per_chunk)
+    Builder(in_file_path, f4_file_path, compress=compress, verbose=True).convert(num_processes, num_cols_per_chunk)
+    Indexer(f4_file_path, index_columns, compress=compress, verbose=True).save(num_processes)
 
 ##run_test("test_data.tsv", "test", 4, 3, index_columns=None, compress=False)
 
@@ -23,5 +24,5 @@ def run_test(in_file_path, out_file_prefix, num_processes, num_cols_per_chunk, i
 #run_test("tall.tsv", "tall_indexed", 20, 51, index_columns=["Discrete100", "Numeric900"], compress=False) #3:15
 #run_test("wide.tsv", "wide_indexed", 20, 50001, index_columns=["Discrete100", "Numeric900"], compress=False) #4:10
 
-#run_test("tall.tsv", "tall_indexed_compressed", 20, 51, index_columns=["Discrete100", "Numeric900"], compress=True) #3:40
+run_test("tall.tsv", "tall_indexed_compressed", 20, 51, index_columns=["Discrete100", "Numeric900"], compress=True) #3:40
 #run_test("wide.tsv", "wide_indexed_compressed", 20, 50001, index_columns=["Discrete100", "Numeric900"], compress=True) #4:13

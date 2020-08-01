@@ -3,7 +3,6 @@ import gzip
 import os
 import sys
 from Builder import *
-from Parser import *
 
 def get_delimited_file_handle(file_path):
     if file_path.endswith(".gz"):
@@ -189,13 +188,15 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
         pass_test("Non-filter is passed as a filter.")
 
     # Test ability to query based on index columns.
-    Builder(in_file_path, f4_file_path, index_columns=["ID", "FloatA", "OrdinalA"], compress=False).convert(num_processes, num_cols_per_chunk)
+    Builder(in_file_path, f4_file_path, compress=False).convert(num_processes, num_cols_per_chunk)
+    Indexer(f4_file_path, ["ID", "FloatA", "OrdinalA"], compress=False).save(num_processes)
     parser = Parser(f4_file_path)
     parser.query_and_save(AndFilter(InFilter("ID", ["1", "2", "3"]), NumericFilter("FloatA", operator.ge, 2)), ["FloatA"], out_file_path)
     check_results("Filter using two index columns", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])
 
     # Test ability to query when the data are compressed.
-    Builder(in_file_path, f4_file_path, index_columns=["ID", "FloatA", "OrdinalA"], compress=True).convert(num_processes, num_cols_per_chunk)
+    Builder(in_file_path, f4_file_path, compress=True).convert(num_processes, num_cols_per_chunk)
+    Indexer(f4_file_path, ["ID", "FloatA", "OrdinalA"], compress=True).save(num_processes)
     parser = Parser(f4_file_path)
     parser.query_and_save(AndFilter(InFilter("ID", ["1", "2", "3"]), NumericFilter("FloatA", operator.ge, 2)), ["FloatA"], out_file_path)
     check_results("Filter using two index columns (compressed)", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])

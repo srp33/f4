@@ -35,23 +35,19 @@ class Parser:
         self.__file_handles = {}
         self.__stats = {}
 
-        # These file handles are sometimes used for index files.
+        # Cache file handles in a dictionary.
         for ext in ["", ".cc", ".cn", ".ct"]:
             ext2 = ext
             if is_index:
                 ext2 = f".idx{ext}"
             self.__file_handles[ext] = open_read_file(data_file_path, ext2)
 
-        # These statistics are sometimes used for index files.
-        for ext in [".ll", ".mccl", ".mcnl"]:
+        # Cache statistics in a dictionary.
+        for ext in [".ll", ".mccl", ".mcnl", ".nrow", ".ncol"]:
             ext2 = ext
             if is_index:
                 ext2 = f".idx{ext}"
             self.__stats[ext] = read_int_from_file(data_file_path, ext2)
-
-        # These file statistics are never used for index files.
-        for ext in [".nrow", ".ncol"]:
-            self.__stats[ext] = read_int_from_file(data_file_path, ext)
 
         atexit.register(self.close)
 
@@ -82,7 +78,7 @@ class Parser:
 
         # By default, select all columns.
         if not select_columns or len(select_columns) == 0:
-            column_names = self.__get_column_names()
+            column_names = self.get_column_names()
             select_column_indices = range(len(column_names))
         else:
             column_names = [x.encode() for x in select_columns]
@@ -143,24 +139,13 @@ class Parser:
     def get_column_type_from_index(self, column_index):
         return next(self.__parse_data_values(column_index, 2, [[0, 1]], self.__file_handles[".ct"])).decode()
 
-#    def get_column_tindices(self, columns):
-#        columns_set = set(columns)
-#        col_coords = [[0, self.__tmcnl]]
-#        matching_column_dict = {}
+    def get_column_names(self):
+        column_names = []
+        with open(self.data_file_path + ".cn", 'rb') as the_file:
+            for line in the_file:
+                column_names.append(line.rstrip())
 
-#        for col_index, column in enumerate(columns):
-#            column_name = next(self.__parse_data_values(col_index, self.__tmcnl + 1, col_coords, self.__tcn_handle)).rstrip()
-
-#            if column_name in columns_set:
-#                matching_column_dict[column_name] = col_index
-
-#            col_index += 1
-
-#        unmatched_column_names = columns_set - set(matching_column_dict.keys())
-#        if len(unmatched_column_names) > 0:
-#            raise Exception("The following index column(s) could not be found for {}: {}.".format(self.data_file_path, ", ".join(sorted([x.decode() for x in unmatched_column_names]))))
-
-#        return [matching_column_dict[column_name] for column_name in columns]
+        return column_names
 
     def close(self):
         for handle in self.__file_handles.values():
@@ -186,14 +171,6 @@ class Parser:
         """
 
         return self.get_column_type_from_index(self.get_column_indices([column_name])[0])
-
-    def __get_column_names(self):
-        column_names = []
-        with open(self.data_file_path + ".cn", 'rb') as the_file:
-            for line in the_file:
-                column_names.append(line.rstrip())
-
-        return column_names
 
     def __generate_row_chunks(self, num_processes):
         rows_per_chunk = math.ceil(self.__stats[".nrow"] / num_processes)

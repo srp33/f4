@@ -10,7 +10,7 @@ class Indexer:
         self.__compress = compress
         self.__verbose = verbose
 
-    def save(self, num_processes=1):
+    def save(self, num_processes=1, num_rows_per_save=10):
         self.__print_message(f"Building index for {self.__f4_file_path}.")
 
         num_rows = read_int_from_file(self.__f4_file_path, ".nrow")
@@ -29,6 +29,8 @@ class Indexer:
             # Store index column data.
             max_line_length = 0
             with open(f"{self.__f4_file_path}.idx", 'wb') as index_file:
+                out_rows = []
+
                 for row_index in range(num_rows):
                     row = b"".join(parser.parse_row_values(row_index, index_column_coords))
 
@@ -38,7 +40,14 @@ class Indexer:
                         row += b"\n"
 
                     max_line_length = max([max_line_length, len(row)])
-                    index_file.write(row)
+                    out_rows.append(row)
+
+                    if len(out_rows) % num_rows_per_save == 0:
+                        index_file.write(b"".join(out_rows))
+                        out_rows = []
+
+                if len(out_rows) > 0:
+                    index_file.write(b"".join(out_rows))
 
             # Save the length of the longest row. Row lengths may vary when compression is used.
             write_string_to_file(f"{self.__f4_file_path}", ".idx.ll", str(max_line_length).encode())
@@ -72,4 +81,4 @@ class Indexer:
             parser.close()
 
     def __print_message(self, message):
-        print(message, self.__verbose)
+        print_message(message, self.__verbose)

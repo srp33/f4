@@ -1,4 +1,3 @@
-[Me] Implement chunked writing in __save_rows_chunk in Builder.py.
 [Me] Parallelize and chunkify the indexing logic.
 [Me] Look at mmap settings to see if something might perform better and test it on large files.
 [Me] Profile the parsing code: https://docs.python.org/3/library/profile.html

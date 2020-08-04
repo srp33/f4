@@ -24,7 +24,7 @@
 [MeLater] Support joins.
 
 [Student] Rework the format so that everything is stored in a single file.
-[Student] Add function to DataSetParser to return all unique values for a discrete column? Use this functionality in DataSetBuilder?
+[Student] Add function to DataSetParser to return all unique values for a discrete column?
 [Student] Add function to DataSetParser to get summary statistics for a numeric column?
 [Student] Support date and string (has at least one non-number and more than 50% of values are unique?) columns.
 [Student] Support conversion from pandas DataFrame to F4 and vice versa?

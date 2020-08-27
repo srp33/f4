@@ -53,7 +53,7 @@ class Builder:
 
         # Iterate through the lines to find the max width of each column.
         self.__print_message(f"Finding max width of each column in {self.__delimited_file_path}.")
-        chunk_results = Parallel(n_jobs=num_processes)(delayed(self.__parse_columns_chunk)(column_chunk[0], column_chunk[1]) for column_chunk in column_chunk_indices)
+        chunk_results = Parallel(n_jobs=num_processes)(delayed(self.parse_columns_chunk)(column_chunk[0], column_chunk[1]) for column_chunk in column_chunk_indices)
 
         # Summarize the column sizes and types across the chunks.
         column_sizes = []
@@ -91,7 +91,7 @@ class Builder:
 
         self.__print_message(f"Parsing chunks of {self.__delimited_file_path} and saving to temp files.")
         row_chunk_indices = _generate_chunk_ranges(num_rows, math.ceil(num_rows / num_processes) + 1)
-        max_line_sizes = Parallel(n_jobs=num_processes)(delayed(self.__save_rows_chunk)(column_sizes, i, row_chunk[0], row_chunk[1], num_rows_per_save) for i, row_chunk in enumerate(row_chunk_indices))
+        max_line_sizes = Parallel(n_jobs=num_processes)(delayed(self.save_rows_chunk)(column_sizes, i, row_chunk[0], row_chunk[1], num_rows_per_save) for i, row_chunk in enumerate(row_chunk_indices))
 
         # Find and save the line length.
         line_length = max(max_line_sizes)
@@ -114,7 +114,7 @@ class Builder:
 
         self.__print_message(f"Done converting {self.__delimited_file_path} to {self.__f4_file_path}.")
 
-    def __parse_columns_chunk(self, start_index, end_index):
+    def parse_columns_chunk(self, start_index, end_index):
         in_file = _get_delimited_file_handle(self.__delimited_file_path)
 
         # Ignore the header line because we don't need column names here.
@@ -141,7 +141,7 @@ class Builder:
 
         return column_sizes_dict, column_types_dict, num_rows
 
-    def __save_rows_chunk(self, column_sizes, chunk_number, start_index, end_index, num_rows_per_save):
+    def save_rows_chunk(self, column_sizes, chunk_number, start_index, end_index, num_rows_per_save):
         max_line_size = 0
 
         compressor = None

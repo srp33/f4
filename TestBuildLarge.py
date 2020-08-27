@@ -17,7 +17,7 @@ def run_test(in_file_path, out_file_prefix, num_processes, num_cols_per_chunk, i
 
 ##run_test("test_data.tsv", "test", 4, 3, index_columns=None, compress=False)
 
-#run_test("tall.tsv", "tall", 20, 51, index_columns=None, compress=False) #3:11
+run_test("tall.tsv", "tall", 20, 51, index_columns=None, compress=False) #3:11
 #run_test("tall.tsv.gz", "tall", 20, 51, index_columns=None, compress=False) #5:47
 
 #run_test("wide.tsv", "wide", 20, 50001, index_columns=None, compress=False) #4:06

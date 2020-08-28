@@ -1,4 +1,5 @@
 [Me] Profile the parsing code: https://docs.python.org/3/library/profile.html
+[Me] Change the name of this repository to F4py.
 [Me] Why Docker so slow? Volumes? Run the Docker tests when you copy the data inside the container.
 [Me] Remove ConvertTsvToFixedWidthFile3.py, TestBuild*.py?, TestParse*.py?
 [Me] Remove commented code and complete all TODO items in code. Make sure all arguments to public functions are fully validated.

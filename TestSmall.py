@@ -55,7 +55,7 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
     print(f"Running all tests for {in_file_path}, {num_processes}, {num_cols_per_chunk}, {lines_per_chunk}")
     print("-------------------------------------------------------")
 
-    f4_file_path = "data/test_data.f4"
+    f4_file_path = "data/small.f4"
     out_file_path = "/tmp/f4_out.tsv"
 
     # Clean up data files if they already exist
@@ -206,7 +206,7 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
 if not os.path.exists("data"):
     os.mkdir("data")
 
-run_all_tests("test_data.tsv", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
-run_all_tests("test_data.tsv.gz", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
-run_all_tests("test_data.tsv", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
-run_all_tests("test_data.tsv.gz", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
+run_all_tests("small.tsv", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
+run_all_tests("small.tsv.gz", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
+run_all_tests("small.tsv", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
+run_all_tests("small.tsv.gz", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)

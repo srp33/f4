@@ -152,7 +152,7 @@ class Parser:
             handle.close()
 
     ##############################################
-    # Private functions.
+    # Private methods.
     ##############################################
 
     def __get_column_type(self, column_name):

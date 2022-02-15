@@ -137,7 +137,8 @@ class Parser:
 
         unmatched_column_names = query_column_names_set - set(matching_column_dict.keys())
         if len(unmatched_column_names) > 0:
-            raise Exception("The following column name(s) could not be found for {}: {}.".format(self.data_file_path, ", ".join(sorted([x.decode() for x in unmatched_column_names]))))
+            unmatched_column_names = ", ".join(sorted(unmatched_column_names))
+            raise Exception("The following column name(s) could not be found for {}: {}.".format(self.data_file_path, unmatched_column_names))
 
         # This makes sure the indices are returned in the specified order.
         return [matching_column_dict[column_name] for column_name in query_column_names]

@@ -72,7 +72,7 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
 
     parser = Parser(f4_file_path)
 
-##    check_result("Parser properties", "Number of rows", parser.get_num_rows(), 4)
+    check_result("Parser properties", "Number of rows", parser.get_num_rows(), 4)
 ##    check_result("Parser properties", "Number of columns", parser.get_num_columns(), 9)
 
 ##    check_result("Column types", "ID column", parser.get_column_type("ID"), "i")

@@ -106,6 +106,9 @@ class Parser:
             if len(out_lines) > 0:
                 out_file.write(b"\n".join(out_lines) + b"\n")
 
+    def get_num_rows(self):
+        return self.__stats[".nrow"]
+
 #    def get_column_values(self, column_coords):
 #        data_file_handle = self.__file_handles[""]
 #        line_length = self.__stats[".ll"]

@@ -11,7 +11,7 @@ class Indexer:
         self.__verbose = verbose
 
     def save(self, num_processes=1, num_rows_per_save=10):
-        self.__print_message(f"Building index for {self.__f4_file_path}.")
+        self._print_message(f"Building index for {self.__f4_file_path}.")
 
         num_rows = read_int_from_file(self.__f4_file_path, ".nrow")
 
@@ -80,5 +80,9 @@ class Indexer:
         finally:
             parser.close()
 
-    def __print_message(self, message):
+    ##############################################
+    # Non-public function
+    ##############################################
+
+    def _print_message(self, message):
         print_message(message, self.__verbose)

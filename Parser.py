@@ -74,7 +74,7 @@ class Parser:
         fltr.check_types(self, filter_column_type_dict)
 
         # Loop through the rows in parallel and find matching row indices.
-        keep_row_indices = sorted(chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(_process_rows)(self.data_file_path, fltr, row_indices) for row_indices in self._generate_row_chunks(num_processes))))
+        keep_row_indices = sorted(chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(Parser._process_rows)(self.data_file_path, fltr, row_indices) for row_indices in self._generate_row_chunks(num_processes))))
 
         # By default, select all columns.
         if not select_columns or len(select_columns) == 0:
@@ -253,7 +253,7 @@ class Parser:
 # Class functions
 #####################################################
 
-def _process_rows(data_file_path, fltr, row_indices):
+def _process_rows(cls, data_file_path, fltr, row_indices):
     is_index = os.path.exists(f"{data_file_path}.idx")
     parser = Parser(data_file_path, is_index=is_index)
 

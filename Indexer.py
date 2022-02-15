@@ -32,7 +32,7 @@ class Indexer:
                 out_rows = []
 
                 for row_index in range(num_rows):
-                    row = b"".join(parser.parse_row_values(row_index, index_column_coords))
+                    row = b"".join(parser._parse_row_values(row_index, index_column_coords))
 
                     if self.__compress:
                         row = compressor.compress(row)

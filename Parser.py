@@ -70,11 +70,11 @@ class Parser:
             raise Exception("An object that inherits from BaseFilter must be specified.")
 
         # Check whether filter types are valid for the types of the columns specified.
-        filter_column_type_dict = {name: self.__get_column_type(name) for name in fltr.get_column_name_set()}
+        filter_column_type_dict = {name: self._get_column_type(name) for name in fltr.get_column_name_set()}
         fltr.check_types(self, filter_column_type_dict)
 
         # Loop through the rows in parallel and find matching row indices.
-        keep_row_indices = sorted(chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(_process_rows)(self.data_file_path, fltr, row_indices) for row_indices in self.__generate_row_chunks(num_processes))))
+        keep_row_indices = sorted(chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(_process_rows)(self.data_file_path, fltr, row_indices) for row_indices in self._generate_row_chunks(num_processes))))
 
         # By default, select all columns.
         if not select_columns or len(select_columns) == 0:
@@ -97,7 +97,7 @@ class Parser:
 
             out_lines = []
             for row_index in keep_row_indices:
-                out_lines.append(b"\t".join([x.rstrip() for x in self.parse_row_values(row_index, select_column_coords)]))
+                out_lines.append(b"\t".join([x.rstrip() for x in self._parse_row_values(row_index, select_column_coords)]))
 
                 if len(out_lines) % lines_per_chunk == 0:
                     out_file.write(b"\n".join(out_lines) + b"\n")
@@ -124,7 +124,7 @@ class Parser:
         cn_file_handle = self.__file_handles[".cn"]
 
         for col_index in range(self.__stats[".ncol"]):
-            column_name = next(self.__parse_data_values(col_index, mcnl + 1, col_coords, cn_file_handle)).rstrip()
+            column_name = next(self._parse_data_values(col_index, mcnl + 1, col_coords, cn_file_handle)).rstrip()
 
             if column_name in query_column_names_set:
                 matching_column_dict[column_name] = col_index
@@ -137,7 +137,7 @@ class Parser:
         return [matching_column_dict[column_name] for column_name in query_column_names]
 
     def get_column_type_from_index(self, column_index):
-        return next(self.__parse_data_values(column_index, 2, [[0, 1]], self.__file_handles[".ct"])).decode()
+        return next(self._parse_data_values(column_index, 2, [[0, 1]], self.__file_handles[".ct"])).decode()
 
     def get_column_names(self):
         column_names = []
@@ -152,10 +152,10 @@ class Parser:
             handle.close()
 
     ##############################################
-    # Private methods.
+    # Methods not designed for public use.
     ##############################################
 
-    def __get_column_type(self, column_name):
+    def _get_column_type(self, column_name):
         #TODO: Remove this documentation?
         """
         Find the type of a specified column.
@@ -172,7 +172,7 @@ class Parser:
 
         return self.get_column_type_from_index(self.get_column_indices([column_name])[0])
 
-    def __generate_row_chunks(self, num_processes):
+    def _generate_row_chunks(self, num_processes):
         rows_per_chunk = math.ceil(self.__stats[".nrow"] / num_processes)
 
         row_indices = []
@@ -217,35 +217,35 @@ class Parser:
 
         return data_coords
 
-    def __parse_data_values(self, start_element, segment_length, data_coords, str_like_object):
+    def _parse_data_values(self, start_element, segment_length, data_coords, str_like_object):
         start_pos = start_element * segment_length
 
         for coords in data_coords:
             yield str_like_object[(start_pos + coords[0]):(start_pos + coords[1])]
 
-    def parse_row_values(self, row_index, column_coords):
+    def _parse_row_values(self, row_index, column_coords):
         if self.__decompressor:
             # Parse and then decompress the entire row.
-            row = next(self.__parse_data_values(row_index, self.__stats[".ll"], [[0, self.__stats[".ll"]]], self.__file_handles[""]))
+            row = next(self._parse_data_values(row_index, self.__stats[".ll"], [[0, self.__stats[".ll"]]], self.__file_handles[""]))
             row = self.__decompressor.decompress(row)
 
             # Retrieve the desired columns from that row.
-            return [x for x in self.__parse_data_values(0, 0, column_coords, row)]
+            return [x for x in self._parse_data_values(0, 0, column_coords, row)]
         else:
-            return list(self.__parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
+            return list(self._parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
 
-    def parse_row_dict(self, row_index, column_name_coords_dict):
+    def _parse_row_dict(self, row_index, column_name_coords_dict):
         row_dict = {}
 
         if self.__decompressor:
             # Parse and then decompress the entire row.
-            row = self.__decompressor.decompress(next(self.__parse_data_values(row_index, self.__stats[".ll"], [[0, self.__stats[".ll"]]], self.__file_handles[""])))
+            row = self.__decompressor.decompress(next(self._parse_data_values(row_index, self.__stats[".ll"], [[0, self.__stats[".ll"]]], self.__file_handles[""])))
 
             for column_name, column_coords in column_name_coords_dict.items():
-                row_dict[column_name] = next(self.__parse_data_values(0, 0, column_coords, row)).rstrip(b" ")
+                row_dict[column_name] = next(self._parse_data_values(0, 0, column_coords, row)).rstrip(b" ")
         else:
             for column_name, column_coords in column_name_coords_dict.items():
-                row_dict[column_name] = next(self.__parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""])).rstrip(b" ")
+                row_dict[column_name] = next(self._parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""])).rstrip(b" ")
 
         return row_dict
 
@@ -256,12 +256,11 @@ def _process_rows(data_file_path, fltr, row_indices):
     filter_column_names = list(fltr.get_column_name_set())
     filter_column_indices = parser.get_column_indices(filter_column_names)
 
-    filter_column_coords = parser._parse_data_coords(filter_column_indices)
     filter_column_coords_dict = {filter_column_names[i]: parser._parse_data_coords([filter_column_indices[i]]) for i in range(len(filter_column_indices))}
 
     passing_row_indices = []
     for row_index in row_indices:
-        row_value_dict = parser.parse_row_dict(row_index, filter_column_coords_dict)
+        row_value_dict = parser._parse_row_dict(row_index, filter_column_coords_dict)
         if fltr.passes(parser, row_value_dict):
             passing_row_indices.append(row_index)
 

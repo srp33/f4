@@ -1,3 +1,4 @@
+Rename functions (consistent _ usage) in Parser.py. Builder.py?
 What to do with the commented code in TestSmall.py?
 
 [Me] Why Docker so slow? Volumes? Run the Docker tests when you copy the data inside the container.
@@ -13,6 +14,7 @@ What to do with the commented code in TestSmall.py?
 [Me] Remove ConvertTsvToFixedWidthFile3.py, TestBuild*.py?, TestParse*.py?
 [Me] If possible, move functions out of Helper.py. If you keep any, document them.
 [Me] Change the name of this repository to F4py.
+[Me] Make all code consistent with PEP8 spec (using PyCharm).
 
 
 [Me] Support joins.

@@ -70,7 +70,7 @@ class Parser:
             raise Exception("An object that inherits from BaseFilter must be specified.")
 
         # Check whether filter types are valid for the types of the columns specified.
-        filter_column_type_dict = {name: self._get_column_type(name) for name in fltr.get_column_name_set()}
+        filter_column_type_dict = {name: self.get_column_type(name) for name in fltr.get_column_name_set()}
         fltr.check_types(self, filter_column_type_dict)
 
         # Loop through the rows in parallel and find matching row indices.
@@ -153,16 +153,7 @@ class Parser:
 
         return column_names
 
-    def close(self):
-        for handle in self.__file_handles.values():
-            handle.close()
-
-    ##############################################
-    # Non-public functions
-    ##############################################
-
-    def _get_column_type(self, column_name):
-        #TODO: Remove this documentation?
+    def get_column_type(self, column_name):
         """
         Find the type of a specified column.
 
@@ -177,6 +168,14 @@ class Parser:
         """
 
         return self.get_column_type_from_index(self.get_column_indices([column_name])[0])
+
+    def close(self):
+        for handle in self.__file_handles.values():
+            handle.close()
+
+    ##############################################
+    # Non-public functions
+    ##############################################
 
     def _generate_row_chunks(self, num_processes):
         rows_per_chunk = math.ceil(self.get_num_rows() / num_processes)

@@ -110,7 +110,7 @@ class Parser:
         return self.__stats[".nrow"]
 
     def get_num_cols(self):
-        return self.__stats[".ncol"] + 1
+        return self.__stats[".ncol"]
 
 #    def get_column_values(self, column_coords):
 #        data_file_handle = self.__file_handles[""]
@@ -129,7 +129,7 @@ class Parser:
         matching_column_dict = {}
         cn_file_handle = self.__file_handles[".cn"]
 
-        for col_index in range(self.__stats[".ncol"]):
+        for col_index in range(self.get_num_cols()):
             column_name = next(self._parse_data_values(col_index, mcnl + 1, col_coords, cn_file_handle)).rstrip()
 
             if column_name in query_column_names_set:
@@ -179,11 +179,11 @@ class Parser:
         return self.get_column_type_from_index(self.get_column_indices([column_name])[0])
 
     def _generate_row_chunks(self, num_processes):
-        rows_per_chunk = math.ceil(self.__stats[".nrow"] / num_processes)
+        rows_per_chunk = math.ceil(self.get_num_rows() / num_processes)
 
         row_indices = []
 
-        for row_index in range(self.__stats[".nrow"]):
+        for row_index in range(self.get_num_rows()):
             row_indices.append(row_index)
 
             if len(row_indices) == rows_per_chunk:

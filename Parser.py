@@ -109,6 +109,9 @@ class Parser:
     def get_num_rows(self):
         return self.__stats[".nrow"]
 
+    def get_num_cols(self):
+        return self.__stats[".ncol"] + 1
+
 #    def get_column_values(self, column_coords):
 #        data_file_handle = self.__file_handles[""]
 #        line_length = self.__stats[".ll"]

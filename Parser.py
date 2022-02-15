@@ -152,7 +152,7 @@ class Parser:
             handle.close()
 
     ##############################################
-    # Methods not designed for public use.
+    # Non-public functions
     ##############################################
 
     def _get_column_type(self, column_name):
@@ -249,6 +249,10 @@ class Parser:
 
         return row_dict
 
+#####################################################
+# Class functions
+#####################################################
+
 def _process_rows(data_file_path, fltr, row_indices):
     is_index = os.path.exists(f"{data_file_path}.idx")
     parser = Parser(data_file_path, is_index=is_index)
@@ -267,6 +271,10 @@ def _process_rows(data_file_path, fltr, row_indices):
     parser.close()
 
     return passing_row_indices
+
+#####################################################
+# Classes used for filtering.
+#####################################################
 
 """
 This is a base class for all filters used in this package. It provides common class functions.

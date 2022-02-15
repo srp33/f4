@@ -10,7 +10,7 @@ def run_test(in_file_path, out_file_prefix, num_processes, num_cols_per_chunk, i
     for file_path in glob.glob(f"{f4_file_path}*"):
         os.unlink(file_path)
 
-    Builder(in_file_path, f4_file_path, compress=compress, verbose=True).convert(num_processes, num_cols_per_chunk)
+    Builder(in_file_path, f4_file_path, compress=compress, verbose=True).build(num_processes, num_cols_per_chunk)
 
     if index_columns:
         Indexer(f4_file_path, index_columns, compress=compress, verbose=True).save(num_processes)

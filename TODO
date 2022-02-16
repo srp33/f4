@@ -1,6 +1,3 @@
-Rename functions (consistent _ usage) in Parser.py. Builder.py?
-What to do with the commented code in TestSmall.py?
-
 [Me] Why Docker so slow? Volumes? Run the Docker tests when you copy the data inside the container.
 [Me] Profile the parsing code: https://docs.python.org/3/library/profile.html
 [Me] Remove commented code and complete all TODO items in code.

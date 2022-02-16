@@ -70,7 +70,7 @@ class Parser:
             raise Exception("An object that inherits from BaseFilter must be specified.")
 
         # Check whether filter types are valid for the types of the columns specified.
-        filter_column_type_dict = {name: self.get_column_type(name) for name in fltr.get_column_name_set()}
+        filter_column_type_dict = {name: self._get_column_type_encoded(name) for name in fltr.get_column_name_set()}
         fltr.check_types(self, filter_column_type_dict)
 
         # Loop through the rows in parallel and find matching row indices.
@@ -132,8 +132,11 @@ class Parser:
         for col_index in range(self.get_num_cols()):
             column_name = next(self._parse_data_values(col_index, mcnl + 1, col_coords, cn_file_handle)).rstrip()
 
+            print(column_name, column_name in query_column_names_set)
             if column_name in query_column_names_set:
                 matching_column_dict[column_name] = col_index
+
+        print(matching_column_dict)
 
         unmatched_column_names = query_column_names_set - set(matching_column_dict.keys())
         if len(unmatched_column_names) > 0:
@@ -168,7 +171,7 @@ class Parser:
                 * i (integer)
         """
 
-        return self.get_column_type_from_index(self.get_column_indices([column_name])[0])
+        return self._get_column_type_encoded(column_name.encode())
 
     def close(self):
         for handle in self.__file_handles.values():
@@ -177,6 +180,9 @@ class Parser:
     ##############################################
     # Non-public functions
     ##############################################
+
+    def _get_column_type_encoded(self, column_name):
+        return self.get_column_type_from_index(self.get_column_indices([column_name])[0])
 
     def _generate_row_chunks(self, num_processes):
         rows_per_chunk = math.ceil(self.get_num_rows() / num_processes)

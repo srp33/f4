@@ -1,4 +1,6 @@
-[Me] Why Docker so slow? Volumes? Run the Docker tests when you copy the data inside the container.
+[Me] Why Docker so slow? Volumes?
+  Volumes slow things down about 5-10%.
+
 [Me] Profile the parsing code: https://docs.python.org/3/library/profile.html
 [Me] Remove commented code and complete all TODO items in code.
 [Me] Rework the format so that everything is stored in a single file.

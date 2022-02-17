@@ -4,10 +4,10 @@ from Parser import *
 import zstandard
 
 class Indexer:
-    def __init__(self, f4_file_path, index_columns, compress=True, verbose=False):
+    def __init__(self, f4_file_path, index_columns, compression_level=22, verbose=False):
         self.__f4_file_path = f4_file_path
         self.__index_columns = [x.encode() for x in index_columns]
-        self.__compress = compress
+        self.__compression_level = compression_level
         self.__verbose = verbose
 
     def save(self, num_processes=1, num_rows_per_save=10):
@@ -19,8 +19,8 @@ class Indexer:
 
         try:
             compressor = None
-            if self.__compress:
-                compressor = zstandard.ZstdCompressor(level=1)
+            if self.__compression_level:
+                compressor = zstandard.ZstdCompressor(level=self.__compression_level)
 
             # Find coordinates of index columns.
             index_column_indices = parser.get_column_indices(self.__index_columns)
@@ -34,7 +34,7 @@ class Indexer:
                 for row_index in range(num_rows):
                     row = b"".join(parser._parse_row_values(row_index, index_column_coords))
 
-                    if self.__compress:
+                    if compressor:
                         row = compressor.compress(row)
                     else:
                         row += b"\n"
@@ -76,7 +76,7 @@ class Indexer:
             write_string_to_file(self.__f4_file_path, ".idx.ct", index_column_types_string)
 
             # Indicate whether the index is compressed.
-            write_string_to_file(self.__f4_file_path, ".idx.cmp", str(self.__compress).encode())
+            write_string_to_file(self.__f4_file_path, ".idx.cmp", str(self.__compression_level).encode())
         finally:
             parser.close()
 

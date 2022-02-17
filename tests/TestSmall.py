@@ -62,7 +62,7 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
     for file_path in glob.glob(f"{f4_file_path}*"):
         os.unlink(file_path)
 
-    Builder(in_file_path, f4_file_path, compress=False).build(num_processes, num_cols_per_chunk)
+    Builder(in_file_path, f4_file_path, compression_level=None).build(num_processes, num_cols_per_chunk)
 
     try:
         parser = Parser("bogus_file_path")
@@ -188,15 +188,15 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
         pass_test("Non-filter is passed as a filter.")
 
     # Test ability to query based on index columns.
-    Builder(in_file_path, f4_file_path, compress=False).build(num_processes, num_cols_per_chunk)
-    Indexer(f4_file_path, ["ID", "FloatA", "OrdinalA"], compress=False).save(num_processes)
+    Builder(in_file_path, f4_file_path, compression_level=None).build(num_processes, num_cols_per_chunk)
+    Indexer(f4_file_path, ["ID", "FloatA", "OrdinalA"], compression_level=None).save(num_processes)
     parser = Parser(f4_file_path)
     parser.query_and_save(AndFilter(InFilter("ID", ["1", "2", "3"]), NumericFilter("FloatA", operator.ge, 2)), ["FloatA"], out_file_path)
     check_results("Filter using two index columns", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])
 
     # Test ability to query when the data are compressed.
-    Builder(in_file_path, f4_file_path, compress=True).build(num_processes, num_cols_per_chunk)
-    Indexer(f4_file_path, ["ID", "FloatA", "OrdinalA"], compress=True).save(num_processes)
+    Builder(in_file_path, f4_file_path, compression_level=22).build(num_processes, num_cols_per_chunk)
+    Indexer(f4_file_path, ["ID", "FloatA", "OrdinalA"], compression_level=22).save(num_processes)
     parser = Parser(f4_file_path)
     parser.query_and_save(AndFilter(InFilter("ID", ["1", "2", "3"]), NumericFilter("FloatA", operator.ge, 2)), ["FloatA"], out_file_path)
     check_results("Filter using two index columns (compressed)", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])
@@ -206,7 +206,7 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
 if not os.path.exists("data"):
     os.mkdir("data")
 
-run_all_tests("small.tsv", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
-run_all_tests("small.tsv.gz", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
-run_all_tests("small.tsv", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
-run_all_tests("small.tsv.gz", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
+run_all_tests("data/small.tsv", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
+run_all_tests("data/small.tsv.gz", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
+run_all_tests("data/small.tsv", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
+run_all_tests("data/small.tsv.gz", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)

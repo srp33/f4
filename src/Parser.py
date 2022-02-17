@@ -29,7 +29,7 @@ class Parser:
         else:
             cmp_file_path = f"{data_file_path}.cmp"
         self.__decompressor = None
-        if read_str_from_file(cmp_file_path) == b"True":
+        if read_str_from_file(cmp_file_path) != b"None":
             self.__decompressor = zstandard.ZstdDecompressor()
 
         self.__file_handles = {}
@@ -132,11 +132,8 @@ class Parser:
         for col_index in range(self.get_num_cols()):
             column_name = next(self._parse_data_values(col_index, mcnl + 1, col_coords, cn_file_handle)).rstrip()
 
-            print(column_name, column_name in query_column_names_set)
             if column_name in query_column_names_set:
                 matching_column_dict[column_name] = col_index
-
-        print(matching_column_dict)
 
         unmatched_column_names = query_column_names_set - set(matching_column_dict.keys())
         if len(unmatched_column_names) > 0:

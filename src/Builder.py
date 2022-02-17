@@ -12,7 +12,9 @@ import tempfile
 import zstandard
 
 class Builder:
-    def __init__(self, delimited_file_path, f4_file_path, delimiter="\t", compress=True, tmp_dir_path=None, verbose=False):
+    # TODO:
+    #   documentation: Specify None for compression_level if you do not want compression.
+    def __init__(self, delimited_file_path, f4_file_path, delimiter="\t", compression_level=22, tmp_dir_path=None, verbose=False):
         if type(delimiter) != str:
             raise Exception("The delimiter value must be a string.")
         if delimiter not in ("\t"):
@@ -22,7 +24,7 @@ class Builder:
         self.__f4_file_path = f4_file_path
         self.__delimiter = delimiter.encode()
 
-        self.__compress = compress
+        self.__compression_level = compression_level
 
         # Figure out where temp files will be stored.
         if tmp_dir_path:
@@ -97,8 +99,8 @@ class Builder:
         line_length = max(max_line_sizes)
         write_string_to_file(self.__f4_file_path, ".ll", str(line_length).encode())
 
-        # Indicate whether the lines are compressed.
-        write_string_to_file(self.__f4_file_path, ".cmp", str(self.__compress).encode())
+        # Indicate compression level.
+        write_string_to_file(self.__f4_file_path, ".cmp", str(self.__compression_level).encode())
 
         # Merge the file chunks. This dictionary enables us to sort them properly.
         self._print_message(f"Merging the file chunks for {self.__delimited_file_path}")
@@ -149,8 +151,8 @@ class Builder:
         max_line_size = 0
 
         compressor = None
-        if self.__compress:
-            compressor = zstandard.ZstdCompressor(level=1)
+        if self.__compression_level:
+            compressor = zstandard.ZstdCompressor(level=self.__compression_level)
 
         # Save the data to output file. Ignore the header line.
         in_file = _get_delimited_file_handle(self.__delimited_file_path)
@@ -177,7 +179,7 @@ class Builder:
                     out_items = [_format_string_as_fixed_width(line_items[i], size) for i, size in enumerate(column_sizes)]
                     out_line = b"".join(out_items)
 
-                    if self.__compress:
+                    if self.__compression_level:
                         out_line = compressor.compress(out_line)
                     else:
                         # We add a newline character when the data are not compressed.

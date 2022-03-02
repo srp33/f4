@@ -4,15 +4,15 @@ import operator
 import os
 import pstats
 from pstats import SortKey
-from Builder import *
-from Parser import *
+from f4py.Builder import *
+from f4py.Parser import *
 
 def run_test(f4_file_prefix, num_processes, lines_per_chunk):
     parser = Parser(f"data/{f4_file_prefix}.f4")
 
     fltr = AndFilter(OrFilter(LikeFilter("Discrete100", r"^A"), LikeFilter("Discrete100", r"Z$")), NumericFilter("Numeric900", operator.ge, 0.1))
 
-    parser.query_and_save(fltr, ["ID", "Discrete1", "Discrete100", "Numeric1", "Numeric900"], f"data/{f4_file_prefix}.tsv", out_file_type="tsv", num_processes=num_processes, lines_per_chunk=lines_per_chunk)
+    parser.query_and_save(fltr, ["Discrete100", "Numeric100", "Numeric200", "Numeric300", "Numeric400", "Numeric500", "Numeric600", "Numeric700", "Numeric800", "Numeric900"], f"data/{f4_file_prefix}_filtered.tsv", out_file_type="tsv", num_processes=num_processes, lines_per_chunk=lines_per_chunk)
 
 #cProfile.run('run_test("tall", 1, 10)', "/tmp/stats")
 #p = pstats.Stats('/tmp/stats')

@@ -1,8 +1,12 @@
+from f4py.Builder import *
+from f4py.Filters import *
+from f4py.Indexer import *
+from f4py.Parser import *
 import glob
 import gzip
+import operator
 import os
 import sys
-from Builder import *
 
 def get_delimited_file_handle(file_path):
     if file_path.endswith(".gz"):
@@ -55,7 +59,7 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
     print(f"Running all tests for {in_file_path}, {num_processes}, {num_cols_per_chunk}, {lines_per_chunk}")
     print("-------------------------------------------------------")
 
-    f4_file_path = "data/small.f4"
+    f4_file_path = "/data/small.f4"
     out_file_path = "/tmp/f4_out.tsv"
 
     # Clean up data files if they already exist
@@ -85,23 +89,23 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
     check_result("Column types", "CategoricalA column", parser.get_column_type("CategoricalA"), "c")
     check_result("Column types", "CategoricalB column", parser.get_column_type("CategoricalB"), "c")
 
-    parser.query_and_save(KeepAll(), [], out_file_path, num_processes=num_processes, lines_per_chunk=lines_per_chunk)
+    parser.query_and_save(NoFilter(), [], out_file_path, num_processes=num_processes, lines_per_chunk=lines_per_chunk)
     check_results("No filters, select all columns", read_file_into_lists(out_file_path), read_file_into_lists(in_file_path))
 
-    parser.query_and_save(KeepAll(), ["ID","FloatA","FloatB","OrdinalA","OrdinalB","IntA","IntB","CategoricalA","CategoricalB"], out_file_path)
+    parser.query_and_save(NoFilter(), ["ID","FloatA","FloatB","OrdinalA","OrdinalB","IntA","IntB","CategoricalA","CategoricalB"], out_file_path)
     check_results("No filters, select all columns explicitly", read_file_into_lists(out_file_path), read_file_into_lists(in_file_path))
 
-    parser.query_and_save(KeepAll(), ["ID"], out_file_path)
+    parser.query_and_save(NoFilter(), ["ID"], out_file_path)
     check_results("No filters, select first column", read_file_into_lists(out_file_path), [[b"ID"],[b"1"],[b"2"],[b"3"],[b"4"]])
 
-    parser.query_and_save(KeepAll(), ["CategoricalB"], out_file_path)
+    parser.query_and_save(NoFilter(), ["CategoricalB"], out_file_path)
     check_results("No filters, select last column", read_file_into_lists(out_file_path), [[b"CategoricalB"],[b"Yellow"],[b"Yellow"],[b"Brown"],[b"Orange"]])
 
-    parser.query_and_save(KeepAll(), ["FloatA", "CategoricalB"], out_file_path)
+    parser.query_and_save(NoFilter(), ["FloatA", "CategoricalB"], out_file_path)
     check_results("No filters, select two columns", read_file_into_lists(out_file_path), [[b"FloatA", b"CategoricalB"],[b"1.1", b"Yellow"],[b"2.2", b"Yellow"],[b"2.2", b"Brown"],[b"4.4", b"Orange"]])
 
     try:
-        parser.query_and_save(KeepAll(), ["ID", "InvalidColumn"], out_file_path)
+        parser.query_and_save(NoFilter(), ["ID", "InvalidColumn"], out_file_path)
         fail_test("Invalid column name in select.")
     except:
         pass_test("Invalid column name in select.")
@@ -203,10 +207,7 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
 
     pass_test("Completed all tests succesfully!!")
 
-if not os.path.exists("data"):
-    os.mkdir("data")
-
-run_all_tests("data/small.tsv", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
-run_all_tests("data/small.tsv.gz", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
-run_all_tests("data/small.tsv", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
-run_all_tests("data/small.tsv.gz", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
+run_all_tests("/data/small.tsv", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
+run_all_tests("/data/small.tsv.gz", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
+run_all_tests("/data/small.tsv", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
+run_all_tests("/data/small.tsv.gz", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)

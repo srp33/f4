@@ -259,18 +259,16 @@ class Parser:
         return row_dict
 
     def _parse_row_dict_notcompressed(self, row_index, range_cache, filter_column_names, filter_column_coords):
-        #row_dict = {}
+        row_dict = {}
 
         # Declaring these variables seems to speed things up a little.
         ll = self.__stats[".ll"]
         file_handle = self.__file_handles[""]
 
         for i in range_cache:
-            x = 2
-            #row_dict[column_name] = next(self._parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""])).rstrip(b" ")
-            next(self._parse_data_values(row_index, ll, filter_column_coords[i], file_handle))
+            row_dict[filter_column_names[i]] = next(self._parse_data_values(row_index, ll, filter_column_coords[i], file_handle)).rstrip(b" ")
 
-        #return row_dict
+        return row_dict
 
 #####################################################
 # Class functions
@@ -295,16 +293,14 @@ def _process_rows(data_file_path, fltr, row_indices, is_compressed):
             #TODO
             row_value_dict = parser._parse_row_dict_compressed(row_index, filter_column_coords_dict)
 
-#            if fltr.passes(parser, row_value_dict):
-#                passing_row_indices.append(row_index)
+            if fltr.passes(parser, row_value_dict):
+                passing_row_indices.append(row_index)
     else:
         for row_index in row_indices:
             row_value_dict = parser._parse_row_dict_notcompressed(row_index, filter_column_index_range, filter_column_names, filter_column_coords)
-            #x = 1
-            #break
 
-#            if fltr.passes(parser, row_value_dict):
-#                passing_row_indices.append(row_index)
+            if fltr.passes(parser, row_value_dict):
+                passing_row_indices.append(row_index)
 
     parser.close()
 

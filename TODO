@@ -4,7 +4,20 @@
 Provide option to compress indices or not, regardless of whether they compress the data.
 When user specifies num_processes = 1, don't use the joblib/delayed code at all. Use the non-parallelized version that is in Parser.py.
 
+
 [Me] Profile the parsing code: https://docs.python.org/3/library/profile.html
+
+#TODO:
+#  Try tabix
+#    https://www.htslib.org/doc/tabix.html
+#    tabix sorted.gff.gz chr1:10,000,000-20,000,000
+#  Optimize search:
+#    Rust:
+#      https://dev-notes.eu/2020/03/Binary-Search-in-Rust/
+#      B-tree https://doc.rust-lang.org/std/collections/struct.BTreeMap.html
+#      https://docs.rs/sled/0.34.6/sled/struct.Tree.html
+#    Python:
+#      https://pypi.org/project/bplustree/
 
 [Me] Remove commented code and complete all TODO items in code.
 [Me] Rework the format so that everything is stored in a single file.

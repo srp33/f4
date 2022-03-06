@@ -61,6 +61,86 @@ class InFilter(BaseFilter):
             return True
         return False
 
+class StartsWithFilter(BaseFilter):
+    """
+    This class is used to check whether values start with a particular string.
+
+    Args:
+        column_name (str): The name of a column that should be evaluated. May not be an empty string.
+        query_string (str): The string to check for. Matches will be retained. May not be an empty string. Missing values will not be evaluated.
+        negate (bool): Whether to use negation. In other words, this will match rows that do not start with the specified string. Default: False.
+    """
+    def __init__(self, column_name, query_string, negate=False):
+        if not column_name or column_name == "":
+            raise Exception("An empty value is not supported for the column_name argument.")
+
+        if type(column_name) != str:
+            raise Exception("The column name must be a string.")
+
+        if type(query_string) != str:
+            raise Exception("The query string must be a string.")
+
+        self.__column_name = column_name.encode()
+        self.__query_string = query_string.encode()
+        self.__negate = negate
+
+    def get_column_name_set(self):
+        return set([self.__column_name])
+
+    def passes(self, parser, row_value_dict):
+        value = row_value_dict[self.__column_name]
+
+        #TODO
+        #if is_missing_value(value):
+        #    return False
+
+        #if self.__negate and not value.decode():
+        #    return True
+        #elif not self.__negate and self.__regular_expression.search(value.decode()):
+        #    return True
+        #return False
+        return value.startswith(self.__query_string)
+
+class EndsWithFilter(BaseFilter):
+    """
+    This class is used to check whether values start with a particular string.
+
+    Args:
+        column_name (str): The name of a column that should be evaluated. May not be an empty string.
+        query_string (str): The string to check for. Matches will be retained. May not be an empty string. Missing values will not be evaluated.
+        negate (bool): Whether to use negation. In other words, this will match rows that do not start with the specified string. Default: False.
+    """
+    def __init__(self, column_name, query_string, negate=False):
+        if not column_name or column_name == "":
+            raise Exception("An empty value is not supported for the column_name argument.")
+
+        if type(column_name) != str:
+            raise Exception("The column name must be a string.")
+
+        if type(query_string) != str:
+            raise Exception("The query string must be a string.")
+
+        self.__column_name = column_name.encode()
+        self.__query_string = query_string.encode()
+        self.__negate = negate
+
+    def get_column_name_set(self):
+        return set([self.__column_name])
+
+    def passes(self, parser, row_value_dict):
+        value = row_value_dict[self.__column_name]
+
+        #TODO
+        #if is_missing_value(value):
+        #    return False
+
+        #if self.__negate and not value.decode():
+        #    return True
+        #elif not self.__negate and self.__regular_expression.search(value.decode()):
+        #    return True
+        #return False
+        return value.endswith(self.__query_string)
+
 class LikeFilter(BaseFilter):
     """
     This class is used to construct regular-expression based filters for querying any column type in an F4 file.
@@ -68,7 +148,7 @@ class LikeFilter(BaseFilter):
     Args:
         column_name (str): The name of a column that should be evaluated. May not be an empty string.
         regular_expression (str): Values in the specified column will be compared against this regular expression. Matches will be retained. Can be a raw string. May not be an empty string. Missing values will not be evaluated.
-        negate (bool): Whether to use negation. In other words, this will match rows that do not contain the specified values in the specified column. Default: False.
+        negate (bool): Whether to use negation. In other words, this will match rows that do not match the regular expression. Default: False.
     """
     def __init__(self, column_name, regular_expression, negate=False):
         if not column_name or column_name == "":
@@ -135,8 +215,9 @@ class NumericFilter(BaseFilter):
         #value = parser.get_cell_value(row_index, column_coords_dict[self.__column_name])
         value = row_value_dict[self.__column_name]
 
-        if is_missing_value(value):
-            return False
+        #TODO:
+        #if is_missing_value(value):
+        #    return False
 
         return self.__operator(fastnumbers.float(value), self.__query_value)
 

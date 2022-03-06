@@ -1,6 +1,8 @@
 [Me] Why Docker so slow? Volumes?
   Volumes slow things down about 5-10%.
 
+Modify wide test (here and in main benchmarking tests) so that the wide output file is similar in size to the tall output file.
+
 Provide option to compress indices or not, regardless of whether they compress the data.
 When user specifies num_processes = 1, don't use the joblib/delayed code at all. Use the non-parallelized version that is in Parser.py.
 

@@ -79,9 +79,7 @@ class Parser:
         #for row_indices in self._generate_row_chunks(num_processes):
         row_indices = list(range(self.get_num_rows()))
             #keep_row_indices += _process_rows(self.data_file_path, fltr, row_indices, self.__decompressor is not None)
-        _process_rows(self.data_file_path, fltr, row_indices, self.__decompressor is not None)
-        #TODO
-        return
+        keep_row_indices = _process_rows(self.data_file_path, fltr, row_indices, self.__decompressor is not None)
 
         # By default, select all columns.
         if not select_columns or len(select_columns) == 0:
@@ -93,6 +91,9 @@ class Parser:
 
         # Get the coords for each column to select
         select_column_coords = self._parse_data_coords(select_column_indices)
+
+        #TODO:
+        return
 
         # Write output file (in chunks)
         with open(out_file_path, 'wb') as out_file:

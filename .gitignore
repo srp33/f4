@@ -1,2 +1,7 @@
+.idea
 __pycache__
+tests/data/small.f4*
+tests/data/tall*
+tests/data/wide*
 nohup*
+tests/nohup*

@@ -57,19 +57,21 @@ class Parser:
         and saves the output (for select columns) to an output file.
 
         Args:
-            fltr (BaseFilter): A filter.
+            fltr (__BaseFilter): A filter.
             select_columns (list): A list of strings that indicate the names of columns that should be selected. If this is an empty list, all columns will be selected.
             out_file_path(str): A path to a file that will store the output data.
             out_file_type (str): The output file type. Currently, the only supported value is tsv.
         """
         if not fltr:
             raise Exception("A filter must be specified.")
-        if not isinstance(fltr, BaseFilter):
-            raise Exception("An object that inherits from BaseFilter must be specified.")
+        #TODO
+        #if not isinstance(fltr, __BaseFilter):
+        #    raise Exception("An object that inherits from __BaseFilter must be specified.")
 
-        # Check whether filter types are valid for the types of the columns specified.
+        # Store column types in a dictionary so we only have to retrieve each once,
+        #   even if we use the same column in multiple filters.
         filter_column_type_dict = {name: self._get_column_type_encoded(name) for name in fltr.get_column_name_set()}
-        fltr.check_types(self, filter_column_type_dict)
+        fltr.check_types(filter_column_type_dict)
 
         # Loop through the rows in parallel and find matching row indices.
         #keep_row_indices = sorted(chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(_process_rows)(self.data_file_path, fltr, row_indices, self.__decompressor is not None) for row_indices in self._generate_row_chunks(num_processes))))
@@ -80,6 +82,11 @@ class Parser:
         row_indices = list(range(self.get_num_rows()))
             #keep_row_indices += _process_rows(self.data_file_path, fltr, row_indices, self.__decompressor is not None)
         keep_row_indices = _process_rows(self.data_file_path, fltr, row_indices, self.__decompressor is not None)
+        #for x in keep_row_indices:
+        #    print(x)
+        #print(keep_row_indices)
+        #import sys
+        #sys.exit()
 
         # By default, select all columns.
         if not select_columns or len(select_columns) == 0:
@@ -91,9 +98,6 @@ class Parser:
 
         # Get the coords for each column to select
         select_column_coords = self._parse_data_coords(select_column_indices)
-
-        #TODO:
-        return
 
         # Write output file (in chunks)
         with open(out_file_path, 'wb') as out_file:
@@ -174,6 +178,20 @@ class Parser:
         """
 
         return self._get_column_type_encoded(column_name.encode())
+
+    def get_file_handle(self, ext):
+        return self.__file_handles[ext]
+
+    def get_stat(self, ext):
+        return self.__stats[ext]
+
+    def parse_data_value(self, start_element, segment_length, coords, str_like_object):
+        start_pos = start_element * segment_length
+
+        return str_like_object[(start_pos + coords[0]):(start_pos + coords[1])]
+
+    #TODO:
+    #def parse_compressed_data_values(self):
 
     def close(self):
         for handle in self.__file_handles.values():
@@ -259,17 +277,32 @@ class Parser:
 
         return row_dict
 
-    def _parse_row_dict_notcompressed(self, row_index, range_cache, filter_column_names, filter_column_coords):
-        row_dict = {}
+#TODO:
+#    def _parse_row_dict_notcompressed(self, row_index, range_cache, filter_column_names, filter_column_coords):
+#        row_dict = {}
+#
+#        # Declaring these variables seems to speed things up a little.
+#        ll = self.__stats[".ll"]
+#        file_handle = self.__file_handles[""]
+#
+#        for i in range_cache:
+#            row_dict[filter_column_names[i]] = next(self._parse_data_values(row_index, ll, filter_column_coords[i], file_handle)).rstrip(b" ")
+#
+#        return row_dict
 
-        # Declaring these variables seems to speed things up a little.
-        ll = self.__stats[".ll"]
-        file_handle = self.__file_handles[""]
-
-        for i in range_cache:
-            row_dict[filter_column_names[i]] = next(self._parse_data_values(row_index, ll, filter_column_coords[i], file_handle)).rstrip(b" ")
-
-        return row_dict
+#    def _filter_column_values(self, row_indices, column_coords, fltr):
+#        data_file_handle = self.__file_handles[""]
+#        line_length = self.__stats[".ll"]
+#
+#        #TODO
+#        #return [i for i in row_indices if fltr.passes(next(self._parse_data_values(i, line_length, column_coords, data_file_handle)).rstrip())]
+#
+#        for i in row_indices:
+#            value = next(self._parse_data_value(i, line_length, column_coords, data_file_handle)).rstrip()
+#            print(value)
+#            break
+#        return row_indices
+#        #return [i for i in row_indices if fltr.passes(next(self._parse_data_values(i, line_length, column_coords, data_file_handle)).rstrip())]
 
 #####################################################
 # Class functions
@@ -279,14 +312,16 @@ def _process_rows(data_file_path, fltr, row_indices, is_compressed):
     is_index = os.path.exists(f"{data_file_path}.idx")
     parser = Parser(data_file_path, is_index=is_index)
 
-    #TODO: Try moving these out as global variables and see the effect on performance.
+    #TODO: Try moving these out of this function and passing them as arguments and see the effect on performance
+    #        when running in parallel.
     filter_column_names = sorted(fltr.get_column_name_set())
-    filter_column_coords = [[x] for x in parser._parse_data_coords(parser.get_column_indices(filter_column_names))]
-    filter_column_index_range = range(len(filter_column_names))
+    filter_column_coords = parser._parse_data_coords(parser.get_column_indices(filter_column_names))
 
-    #filter_column_coords_dict = {filter_column_names[i]: parser._parse_data_coords([filter_column_indices[i]]) for i in range(len(filter_column_indices))}
+    filter_column_coords_dict = {}
+    for i in range(len(filter_column_names)):
+        filter_column_coords_dict[filter_column_names[i]] = filter_column_coords[i]
 
-    passing_row_indices = []
+#    passing_row_indices = []
 
     # This code is somewhat duplicated, but means we only have to check ones for whether data is compressed.
     if is_compressed:
@@ -297,11 +332,12 @@ def _process_rows(data_file_path, fltr, row_indices, is_compressed):
             if fltr.passes(parser, row_value_dict):
                 passing_row_indices.append(row_index)
     else:
-        for row_index in row_indices:
-            row_value_dict = parser._parse_row_dict_notcompressed(row_index, filter_column_index_range, filter_column_names, filter_column_coords)
+        passing_row_indices = fltr.filter_column_values(parser, row_indices, filter_column_coords_dict)
+#        for row_index in row_indices:
+            #row_value_dict = parser._parse_row_dict_notcompressed(row_index, filter_column_index_range, filter_column_names, filter_column_coords)
 
-            if fltr.passes(parser, row_value_dict):
-                passing_row_indices.append(row_index)
+#            if fltr.passes(parser, row_value_dict):
+#                passing_row_indices.append(row_index)
 
     parser.close()
 

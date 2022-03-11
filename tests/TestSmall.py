@@ -89,26 +89,26 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
     check_result("Column types", "CategoricalA column", parser.get_column_type("CategoricalA"), "c")
     check_result("Column types", "CategoricalB column", parser.get_column_type("CategoricalB"), "c")
 
-    parser.query_and_save(NoFilter(), [], out_file_path, num_processes=num_processes, lines_per_chunk=lines_per_chunk)
-    check_results("No filters, select all columns", read_file_into_lists(out_file_path), read_file_into_lists(in_file_path))
-
-    parser.query_and_save(NoFilter(), ["ID","FloatA","FloatB","OrdinalA","OrdinalB","IntA","IntB","CategoricalA","CategoricalB"], out_file_path)
-    check_results("No filters, select all columns explicitly", read_file_into_lists(out_file_path), read_file_into_lists(in_file_path))
-
-    parser.query_and_save(NoFilter(), ["ID"], out_file_path)
-    check_results("No filters, select first column", read_file_into_lists(out_file_path), [[b"ID"],[b"1"],[b"2"],[b"3"],[b"4"]])
-
-    parser.query_and_save(NoFilter(), ["CategoricalB"], out_file_path)
-    check_results("No filters, select last column", read_file_into_lists(out_file_path), [[b"CategoricalB"],[b"Yellow"],[b"Yellow"],[b"Brown"],[b"Orange"]])
-
-    parser.query_and_save(NoFilter(), ["FloatA", "CategoricalB"], out_file_path)
-    check_results("No filters, select two columns", read_file_into_lists(out_file_path), [[b"FloatA", b"CategoricalB"],[b"1.1", b"Yellow"],[b"2.2", b"Yellow"],[b"2.2", b"Brown"],[b"4.4", b"Orange"]])
-
-    try:
-        parser.query_and_save(NoFilter(), ["ID", "InvalidColumn"], out_file_path)
-        fail_test("Invalid column name in select.")
-    except:
-        pass_test("Invalid column name in select.")
+#    parser.query_and_save(NoFilter(), [], out_file_path, num_processes=num_processes, lines_per_chunk=lines_per_chunk)
+#    check_results("No filters, select all columns", read_file_into_lists(out_file_path), read_file_into_lists(in_file_path))
+#
+#    parser.query_and_save(NoFilter(), ["ID","FloatA","FloatB","OrdinalA","OrdinalB","IntA","IntB","CategoricalA","CategoricalB"], out_file_path)
+#    check_results("No filters, select all columns explicitly", read_file_into_lists(out_file_path), read_file_into_lists(in_file_path))
+#
+#    parser.query_and_save(NoFilter(), ["ID"], out_file_path)
+#    check_results("No filters, select first column", read_file_into_lists(out_file_path), [[b"ID"],[b"1"],[b"2"],[b"3"],[b"4"]])
+#
+#    parser.query_and_save(NoFilter(), ["CategoricalB"], out_file_path)
+#    check_results("No filters, select last column", read_file_into_lists(out_file_path), [[b"CategoricalB"],[b"Yellow"],[b"Yellow"],[b"Brown"],[b"Orange"]])
+#
+#    parser.query_and_save(NoFilter(), ["FloatA", "CategoricalB"], out_file_path)
+#    check_results("No filters, select two columns", read_file_into_lists(out_file_path), [[b"FloatA", b"CategoricalB"],[b"1.1", b"Yellow"],[b"2.2", b"Yellow"],[b"2.2", b"Brown"],[b"4.4", b"Orange"]])
+#
+#    try:
+#        parser.query_and_save(NoFilter(), ["ID", "InvalidColumn"], out_file_path)
+#        fail_test("Invalid column name in select.")
+#    except:
+#        pass_test("Invalid column name in select.")
 
     parser.query_and_save(NumericFilter("ID", operator.eq, 1), ["FloatA"], out_file_path)
     check_results("Filter by ID using Numeric filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"]])
@@ -116,8 +116,8 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
     parser.query_and_save(InFilter("ID", ["1"]), ["FloatA"], out_file_path)
     check_results("Filter by ID using In filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"]])
 
-    parser.query_and_save(InFilter("ID", ["1"], negate=True), ["FloatA"], out_file_path)
-    check_results("Filter by ID using In filter with negation", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"2.2"],[b"4.4"],])
+    parser.query_and_save(NotInFilter("ID", ["1"]), ["FloatA"], out_file_path)
+    check_results("Filter by ID using NotIn filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"2.2"],[b"4.4"],])
 
     parser.query_and_save(AndFilter(NumericFilter("FloatA", operator.ne, 1.1), NumericFilter("IntA", operator.eq, 7)), ["FloatA"], out_file_path)
     check_results("Two Numeric filters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"]])
@@ -126,21 +126,30 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
     check_results("Two In filters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"2.2"],[b"4.4"]])
 
     parser.query_and_save(AndFilter(InFilter("OrdinalA", ["Low","Med","High"]), NumericFilter("FloatB", operator.le, 44.4)), ["FloatA"], out_file_path)
-    check_results("Numeric filters and In filters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"4.4"]])
+    check_results("Numeric filters and In filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"4.4"]])
 
     parser.query_and_save(LikeFilter("CategoricalB", r"ow$"), ["FloatA"], out_file_path)
     check_results("Like filter on categorical column", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"],[b"2.2"]])
 
-    parser.query_and_save(LikeFilter("CategoricalB", r"ow$", negate=True), ["FloatA"], out_file_path)
-    check_results("Like filter on categorical column with negation", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"4.4"]])
+    parser.query_and_save(NotLikeFilter("CategoricalB", r"ow$"), ["FloatA"], out_file_path)
+    check_results("NotLike filter on categorical column", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"4.4"]])
 
     parser.query_and_save(AndFilter(LikeFilter("FloatB", r"^\d\d\.\d$"), LikeFilter("FloatB", r"88")), ["FloatA"], out_file_path)
-    check_results("Like filter on categorical columns", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"]])
+    check_results("Like filter on numerical columns", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"]])
 
-    parser.query_and_save(OrFilter(LikeFilter("FloatB", r"^x$"), InFilter("FloatB", ["88.8"]), NumericFilter("FloatB", operator.eq, 44.4)), ["FloatA"], out_file_path)
-    check_results("Or filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"4.4"]])
+    parser.query_and_save(StartsWithFilter("CategoricalB", "Yell"), ["FloatA"], out_file_path)
+    check_results("StartsWith filter on categorical column", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"],[b"2.2"]])
 
-    parser.query_and_save(AndFilter(OrFilter(LikeFilter("FloatB", r"^x$"), InFilter("FloatB", ["88.8"]), NumericFilter("FloatB", operator.eq, 44.4)), AndFilter(NumericFilter("FloatA", operator.ge, 2.2), NumericFilter("FloatA", operator.le, 10), OrFilter(InFilter("FloatA", ["2.2"]), LikeFilter("FloatA", r"2\.2")))), ["FloatA"], out_file_path)
+    parser.query_and_save(EndsWithFilter("CategoricalB", "ow"), ["FloatA"], out_file_path)
+    check_results("EndsWith filter on categorical column", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"],[b"2.2"]])
+
+    parser.query_and_save(OrFilter(LikeFilter("FloatB", r"^x$"), InFilter("FloatB", ["88.8"])), ["FloatA"], out_file_path)
+    check_results("Or filter simple", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"]])
+
+    parser.query_and_save(OrFilter(OrFilter(LikeFilter("FloatB", r"^x$"), InFilter("FloatB", ["88.8"])), NumericFilter("FloatB", operator.eq, 44.4)), ["FloatA"], out_file_path)
+    check_results("Or filter multiple", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"4.4"]])
+
+    parser.query_and_save(AndFilter(OrFilter(LikeFilter("FloatB", r"^x$"), OrFilter(InFilter("FloatB", ["88.8"]), NumericFilter("FloatB", operator.eq, 44.4))), AndFilter(NumericFilter("FloatA", operator.ge, 2.2), AndFilter(NumericFilter("FloatA", operator.le, 10), OrFilter(InFilter("FloatA", ["2.2"]), LikeFilter("FloatA", r"2\.2"))))), ["FloatA"], out_file_path)
     check_results("Nested filters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"]])
 
     try:
@@ -199,13 +208,13 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
     check_results("Filter using two index columns", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])
 
     # Test ability to query when the data are compressed.
-    Builder(in_file_path, f4_file_path, compression_level=22).build(num_processes, num_cols_per_chunk)
-    Indexer(f4_file_path, ["ID", "FloatA", "OrdinalA"], compression_level=22).save(num_processes)
-    parser = Parser(f4_file_path)
-    parser.query_and_save(AndFilter(InFilter("ID", ["1", "2", "3"]), NumericFilter("FloatA", operator.ge, 2)), ["FloatA"], out_file_path)
-    check_results("Filter using two index columns (compressed)", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])
+    #Builder(in_file_path, f4_file_path, compression_level=22).build(num_processes, num_cols_per_chunk)
+    #Indexer(f4_file_path, ["ID", "FloatA", "OrdinalA"], compression_level=22).save(num_processes)
+    #parser = Parser(f4_file_path)
+    #parser.query_and_save(AndFilter(InFilter("ID", ["1", "2", "3"]), NumericFilter("FloatA", operator.ge, 2)), ["FloatA"], out_file_path)
+    #check_results("Filter using two index columns (compressed)", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])
 
-    pass_test("Completed all tests succesfully!!")
+    #pass_test("Completed all tests succesfully!!")
 
 run_all_tests("/data/small.tsv", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
 run_all_tests("/data/small.tsv.gz", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)

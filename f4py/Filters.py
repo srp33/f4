@@ -19,12 +19,14 @@ class __BaseFilter:
         data_file_handle = parser.get_file_handle("")
         line_length = parser.get_stat(".ll")
 
-        matching_row_indices = []
+        passing_row_indices = set()
+        #passing_row_indices = []
         for i in row_indices:
             if self.passes(parser.parse_data_value(i, line_length, column_coords_dict[self.column_name], data_file_handle).rstrip()):
-                matching_row_indices.append(i)
+                passing_row_indices.add(i)
+                #passing_row_indices.append(i)
 
-        return matching_row_indices
+        return passing_row_indices
 
     def passes(self, value):
         raise Exception("This function must be implemented by classes that inherit this class.")
@@ -205,8 +207,8 @@ class __CompositeBaseFilter(__BaseFilter):
 class AndFilter(__CompositeBaseFilter):
     """
     This class is used to construct a filter with multiple sub-filters that must all evaluate to True.
-    Order does matter; filter1 is applied first. Any rows that remain after filter1 will
-    be sent to filter2.
+    Order does matter; filter1 is applied first. Any rows that remain after filter1 has been applied
+    will be sent to filter2.
 
     Args:
         filter1: The first filter to be evaluated.
@@ -222,8 +224,8 @@ class AndFilter(__CompositeBaseFilter):
 class OrFilter(__CompositeBaseFilter):
     """
     This class is used to construct a filter with multiple sub-filters. At least one must evaluate to True.
-    Order does matter; filter1 is applied first. Any rows that did not pass after filter1
-    will be sent to filter2.
+    Order does matter; filter1 is applied first. Any rows that did not pass after filter1 has been
+    applied will be sent to filter2.
 
     Args:
         *args (list): A variable number of filters that should be evaluated. At least two filters must be specified.
@@ -232,7 +234,9 @@ class OrFilter(__CompositeBaseFilter):
         super().__init__(filter1, filter2)
 
     def filter_column_values(self, parser, row_indices, column_coords_dict):
+        #row_indices_1 = set(self.filter1.filter_column_values(parser, row_indices, column_coords_dict))
+        #row_indices_2 = set(self.filter2.filter_column_values(parser, set(row_indices) - row_indices_1, column_coords_dict))
         row_indices_1 = self.filter1.filter_column_values(parser, row_indices, column_coords_dict)
-        row_indices_2 = self.filter2.filter_column_values(parser, set(row_indices) - set(row_indices_1), column_coords_dict)
+        row_indices_2 = self.filter2.filter_column_values(parser, row_indices - row_indices_1, column_coords_dict)
 
-        return sorted(set(row_indices_1) | set(row_indices_2))
+        return row_indices_1 | row_indices_2

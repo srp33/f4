@@ -79,14 +79,10 @@ class Parser:
         ## This is a non-parallelized version of the above line of code.
         #keep_row_indices = []
         #for row_indices in self._generate_row_chunks(num_processes):
-        row_indices = list(range(self.get_num_rows()))
+        row_indices = set(range(self.get_num_rows()))
+        #row_indices = range(self.get_num_rows())
             #keep_row_indices += _process_rows(self.data_file_path, fltr, row_indices, self.__decompressor is not None)
         keep_row_indices = _process_rows(self.data_file_path, fltr, row_indices, self.__decompressor is not None)
-        #for x in keep_row_indices:
-        #    print(x)
-        #print(keep_row_indices)
-        #import sys
-        #sys.exit()
 
         # By default, select all columns.
         if not select_columns or len(select_columns) == 0:
@@ -321,23 +317,16 @@ def _process_rows(data_file_path, fltr, row_indices, is_compressed):
     for i in range(len(filter_column_names)):
         filter_column_coords_dict[filter_column_names[i]] = filter_column_coords[i]
 
-#    passing_row_indices = []
-
     # This code is somewhat duplicated, but means we only have to check ones for whether data is compressed.
-    if is_compressed:
-        for row_index in row_indices:
-            #TODO
-            row_value_dict = parser._parse_row_dict_compressed(row_index, filter_column_coords_dict)
-
-            if fltr.passes(parser, row_value_dict):
-                passing_row_indices.append(row_index)
-    else:
-        passing_row_indices = fltr.filter_column_values(parser, row_indices, filter_column_coords_dict)
+#    if is_compressed:
 #        for row_index in row_indices:
-            #row_value_dict = parser._parse_row_dict_notcompressed(row_index, filter_column_index_range, filter_column_names, filter_column_coords)
-
+#            #TODO
+#            row_value_dict = parser._parse_row_dict_compressed(row_index, filter_column_coords_dict)
+#
 #            if fltr.passes(parser, row_value_dict):
 #                passing_row_indices.append(row_index)
+#    else:
+    passing_row_indices = sorted(fltr.filter_column_values(parser, row_indices, filter_column_coords_dict))
 
     parser.close()
 

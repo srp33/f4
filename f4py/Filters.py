@@ -205,6 +205,8 @@ class __CompositeBaseFilter(__BaseFilter):
 class AndFilter(__CompositeBaseFilter):
     """
     This class is used to construct a filter with multiple sub-filters that must all evaluate to True.
+    Order does matter; filter1 is applied first. Any rows that remain after filter1 will
+    be sent to filter2.
 
     Args:
         filter1: The first filter to be evaluated.
@@ -220,6 +222,8 @@ class AndFilter(__CompositeBaseFilter):
 class OrFilter(__CompositeBaseFilter):
     """
     This class is used to construct a filter with multiple sub-filters. At least one must evaluate to True.
+    Order does matter; filter1 is applied first. Any rows that did not pass after filter1
+    will be sent to filter2.
 
     Args:
         *args (list): A variable number of filters that should be evaluated. At least two filters must be specified.

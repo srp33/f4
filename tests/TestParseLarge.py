@@ -12,9 +12,9 @@ def run_test(f4_file_prefix, num_processes, lines_per_chunk):
 
     #TODO:
     #fltr = AndFilter(OrFilter(LikeFilter("Discrete100", r"^A"), LikeFilter("Discrete100", r"Z$")), NumericFilter("Numeric900", operator.ge, 0.1))
-    #fltr = AndFilter(OrFilter(StartsWithFilter("Discrete100", "A"), EndsWithFilter("Discrete100", "Z")), NumericFilter("Numeric900", operator.ge, 0.1))
+    fltr = AndFilter(OrFilter(StartsWithFilter("Discrete100", "A"), EndsWithFilter("Discrete100", "Z")), NumericFilter("Numeric900", operator.ge, 0.1))
     #fltr = OrFilter(StartsWithFilter("Discrete100", "A"), EndsWithFilter("Discrete100", "Z"))
-    fltr = EndsWithFilter("Discrete100", "Z")
+    #fltr = EndsWithFilter("Discrete100", "Z")
     #fltr = NumericFilter("Numeric900", operator.ge, 0.1)
 
     parser.query_and_save(fltr, ["Discrete100", "Numeric100", "Numeric200", "Numeric300", "Numeric400", "Numeric500", "Numeric600", "Numeric700", "Numeric800", "Numeric900"], f"data/{f4_file_prefix}_filtered.tsv", out_file_type="tsv", num_processes=num_processes, lines_per_chunk=lines_per_chunk)

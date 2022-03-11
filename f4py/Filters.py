@@ -12,8 +12,8 @@ class __BaseFilter:
     def check_types(self, column_type_dict):
         pass
 
-    def get_filter_count(self):
-        return 1
+#    def get_filter_count(self):
+#        return 1
 
     def filter_column_values(self, parser, row_indices, column_coords_dict):
         data_file_handle = parser.get_file_handle("")
@@ -196,8 +196,8 @@ class __CompositeBaseFilter(__BaseFilter):
         self.filter1.check_types(column_type_dict)
         self.filter2.check_types(column_type_dict)
 
-    def get_filter_count(self):
-        return self.filter1.get_filter_count() + self.filter2.get_filter_count()
+#    def get_filter_count(self):
+#        return self.filter1.get_filter_count() + self.filter2.get_filter_count()
 
     def get_column_name_set(self):
         return self.filter1.get_column_name_set() | self.filter2.get_column_name_set()
@@ -214,14 +214,8 @@ class AndFilter(__CompositeBaseFilter):
         super().__init__(filter1, filter2)
 
     def filter_column_values(self, parser, row_indices, column_coords_dict):
-        # We want to process the simpler filter first under the assumption that it will be faster
-        # and thus that the second filter will have fewer indices to process.
-        if self.filter1.get_filter_count() < self.filter2.get_filter_count():
-            row_indices_1 = self.filter1.filter_column_values(parser, row_indices, column_coords_dict)
-            return self.filter2.filter_column_values(parser, row_indices_1, column_coords_dict)
-        else:
-            row_indices_2 = self.filter2.filter_column_values(parser, row_indices, column_coords_dict)
-            return self.filter1.filter_column_values(parser, row_indices_2, column_coords_dict)
+        row_indices_1 = self.filter1.filter_column_values(parser, row_indices, column_coords_dict)
+        return self.filter2.filter_column_values(parser, row_indices_1, column_coords_dict)
 
 class OrFilter(__CompositeBaseFilter):
     """
@@ -234,16 +228,7 @@ class OrFilter(__CompositeBaseFilter):
         super().__init__(filter1, filter2)
 
     def filter_column_values(self, parser, row_indices, column_coords_dict):
-        # We want to process the simpler filter first under the assumption that it will
-        # identify more positives, which will not need to be checked by the second filter.
-        if self.filter1.get_filter_count() < self.filter2.get_filter_count():
-            row_indices_1 = self.filter1.filter_column_values(parser, row_indices, column_coords_dict)
-            row_indices_2 = self.filter2.filter_column_values(parser, set(row_indices) - set(row_indices_1), column_coords_dict)
+        row_indices_1 = self.filter1.filter_column_values(parser, row_indices, column_coords_dict)
+        row_indices_2 = self.filter2.filter_column_values(parser, set(row_indices) - set(row_indices_1), column_coords_dict)
 
-            return sorted(set(row_indices_1) | set(row_indices_2))
-        else:
-            row_indices_2 = self.filter2.filter_column_values(parser, row_indices, column_coords_dict)
-            row_indices_1 = self.filter1.filter_column_values(parser, set(row_indices) - set(row_indices_2), column_coords_dict)
-
-            return sorted(set(row_indices_2) | set(row_indices_1))
-        #TODO: Change the row indices to sets so we can do set logic.
+        return sorted(set(row_indices_1) | set(row_indices_2))

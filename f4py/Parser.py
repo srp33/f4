@@ -219,7 +219,7 @@ class Parser:
         # TODO: Rework this code to do a binary search on disk
         #mcnl = self.__stats[".mcnl"]
         #col_coords = [[0, mcnl]]
-        all_column_names = [x.rstrip(b" ") for x in cn_file_handle[:].split(b"\n")]
+        all_column_names = [x.rstrip(b" ") for x in cn_file_handle[:].rstrip(b"\n").split(b"\n")]
 
         if len(select_columns) == 0:
             select_columns = all_column_names

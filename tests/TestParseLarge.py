@@ -23,9 +23,10 @@ def run_test(f4_file_prefix, num_processes, lines_per_chunk):
 #ps = pstats.Stats(profile)
 #ps.print_stats()
 
+#run_test("tall", 1, 10000) #3.329
 #run_test("tall", 4, 10000) #2.156
-#run_test("wide", 4, 10) #3.248
-run_test("wide", 1, 10) #3.248
+#run_test("wide", 1, 10) #0.412
+run_test("wide", 4, 10) #0.598
 
 #run_test("tall_indexed", 4, 10) #3.536
 #run_test("wide_indexed", 4, 10) #3.176

@@ -22,7 +22,12 @@ class Indexer:
                 compressor = zstandard.ZstdCompressor(level=self.__compression_level)
 
             # Find coordinates of index columns.
-            index_column_indices = parser.get_column_indices(self.__index_columns)
+            # TODO: Rework this after you implement binary search in parser.get_column_meta.
+            cn_file_handle = parser.get_file_handle(".cn")
+            all_column_names = [x.rstrip(b" ") for x in cn_file_handle[:].split(b"\n")]
+            index_column_indices = [all_column_names.index(name) for name in self.__index_columns]
+
+            #index_column_indices = parser.get_column_indices(self.__index_columns)
             index_column_coords = parser._parse_data_coords(index_column_indices)
 
             # Store index column data.

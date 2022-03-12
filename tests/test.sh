@@ -29,6 +29,6 @@ $dockerCommand python3 TestSmall.py
 #$dockerCommand bash -c "time python3 BuildTsv.py 100000 900000 1000 data/wide.tsv"
 #$dockerCommand bash -c "time python3 TestBuildLarge.py"
 
-$dockerCommand bash -c "time python3 TestParseLarge.py"
+#$dockerCommand bash -c "time python3 TestParseLarge.py"
 
 rm -rf f4py

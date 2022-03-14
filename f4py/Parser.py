@@ -68,15 +68,14 @@ class Parser:
         if not isinstance(fltr, BaseFilter):
             raise Exception("An object that inherits from BaseFilter must be specified.")
 
-        if not select_columns:
+        if out_file_type != "tsv":
+            raise Exception("The only out_file_type currently supported is tsv.")
+
+        if select_columns:
+            if not isinstance(select_columns, list):
+                raise Exception("You must specify select_column as a list.")
+        else:
             select_columns = []
-
-        #TODO: Make sure they specify a valid value for select_columns, out_file_path, and out_file_type.
-        #      For select columns, it must be a list (can be empty).
-        #      Might already have logic in Filters.py, but need to
-        #      verify that they have specified filter columns and select columns that
-        #      actually exist.
-
 
         # Store column indicies and types in dictionaries so we only have to retrieve
         # each once, even if we use the same column in multiple filters.
@@ -91,19 +90,6 @@ class Parser:
         else:
             # Loop through the rows in parallel and find matching row indices.
             keep_row_indices = chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(_process_rows)(self.data_file_path, fltr, row_indices, column_index_dict, column_coords_dict, self.__decompressor is not None) for row_indices in self._generate_row_chunks(num_processes)))
-            #keep_row_indices = sorted(chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(_process_rows)(self.data_file_path, fltr, row_indices, column_index_dict, column_coords_dict, self.__decompressor is not None) for row_indices in self._generate_row_chunks(num_processes))))
-
-        #TODO:
-        # This makes sure the indices are returned in the specified order.
-        #return [matching_column_dict[column_name] for column_name in query_column_names]
-
-        # By default, select all columns.
-        #if len(select_columns) == 0:
-        #    column_names = self.get_column_names()
-        #    select_column_indices = range(len(column_names))
-        #else:
-        #    column_names = [x.encode() for x in select_columns]
-        #    select_column_indices = self.get_column_indices(column_names)
 
         # Get the coords for each column to select
         select_column_coords = self._parse_data_coords([column_index_dict[x] for x in select_columns])
@@ -130,45 +116,6 @@ class Parser:
     def get_num_cols(self):
         return self.__stats[".ncol"]
 
-#    def get_column_values(self, column_coords):
-#        data_file_handle = self.__file_handles[""]
-#        line_length = self.__stats[".ll"]
-#
-#        for row_index in range(self.get_num_rows()):
-#            yield next(self.__parse_data_values(row_index, line_length, column_coords, data_file_handle)).rstrip()
-
-#    def get_cell_value(self, row_index, column_coords):
-#        return next(self.__parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""])).rstrip()
-
-#    def get_column_indices(self, query_column_names):
-#        query_column_names_set = set(query_column_names)
-#        mcnl = self.__stats[".mcnl"]
-#        col_coords = [[0, mcnl]]
-#        matching_column_dict = {}
-#        cn_file_handle = self.__file_handles[".cn"]
-#
-#        for col_index in range(self.get_num_cols()):
-#            column_name = next(self._parse_data_values(col_index, mcnl + 1, col_coords, cn_file_handle)).rstrip()
-#
-#            if column_name in query_column_names_set:
-#                matching_column_dict[column_name] = col_index
-#
-#        unmatched_column_names = query_column_names_set - set(matching_column_dict.keys())
-#        if len(unmatched_column_names) > 0:
-#            unmatched_column_names = ", ".join(sorted(unmatched_column_names))
-#            raise Exception("The following column name(s) could not be found for {}: {}.".format(self.data_file_path, unmatched_column_names))
-#
-#        # This makes sure the indices are returned in the specified order.
-#        return [matching_column_dict[column_name] for column_name in query_column_names]
-
-#    def get_column_names(self):
-#        column_names = []
-#        with open(self.data_file_path + ".cn", 'rb') as the_file:
-#            for line in the_file:
-#                column_names.append(line.rstrip())
-#
-#        return column_names
-
     def get_column_type(self, column_index):
         return next(self._parse_data_values(column_index, 2, [[0, 1]], self.__file_handles[".ct"])).decode()
 
@@ -188,9 +135,12 @@ class Parser:
 
         # TODO: Rework this when you implement binary search on disk in get_column_meta
         cn_file_handle = self.__file_handles[".cn"]
-        all_column_names = [x.rstrip(b" ") for x in cn_file_handle[:].split(b"\n")]
+        all_column_names = [x.rstrip(b" ") for x in cn_file_handle[:].rstrip(b"\n").split(b"\n")]
 
-        return self.get_column_type(all_column_names.index(column_name.encode()))
+        try:
+            return self.get_column_type(all_column_names.index(column_name.encode()))
+        except:
+            raise Exception(f"A column with the name {column_name} does not exist.")
 
     def get_file_handle(self, ext):
         return self.__file_handles[ext]
@@ -203,9 +153,6 @@ class Parser:
 
         return str_like_object[(start_pos + coords[0]):(start_pos + coords[1])]
 
-    #TODO:
-    #def parse_compressed_data_values(self):
-
     def close(self):
         for handle in self.__file_handles.values():
             handle.close()
@@ -216,20 +163,17 @@ class Parser:
 
     def _get_column_meta(self, fltr, select_columns):
         cn_file_handle = self.__file_handles[".cn"]
-        # TODO: Rework this code to do a binary search on disk
         #mcnl = self.__stats[".mcnl"]
         #col_coords = [[0, mcnl]]
         all_column_names = [x.rstrip(b" ") for x in cn_file_handle[:].rstrip(b"\n").split(b"\n")]
 
         if len(select_columns) == 0:
             select_columns = all_column_names
+            column_index_dict = {name: index for index, name in enumerate(all_column_names)}
         else:
             select_columns = [x.encode() for x in select_columns]
+            column_index_dict = {name: all_column_names.index(name) for name in fltr.get_column_name_set() | set(select_columns)}
 
-        #TODO: This will be slow if they select all columns. Use different logic for that within the if statement above.
-        column_index_dict = {name: all_column_names.index(name) for name in fltr.get_column_name_set() | set(select_columns)}
-
-        # TODO: Make this into a dictionary comprehension?
         filter_column_type_dict = {}
         for column_name in fltr.get_column_name_set():
             column_index = column_index_dict[column_name]
@@ -237,40 +181,49 @@ class Parser:
 
         column_indices = list(column_index_dict.values())
         column_coords = self._parse_data_coords(column_indices)
-        # TODO: Make this into a dictionary comprehension?
         column_coords_dict = {}
         for i in range(len(column_indices)):
             column_coords_dict[column_indices[i]] = column_coords[i]
 
         return select_columns, column_index_dict, filter_column_type_dict, column_coords_dict
 
-        #for col_index in range(self.get_num_cols()):
-        #    column_name = next(self._parse_data_values(col_index, mcnl + 1, col_coords, cn_file_handle)).rstrip()
-
-        #    if column_name in query_column_names_set:
-        #        matching_column_dict[column_name] = col_index
-
-        #unmatched_column_names = query_column_names_set - set(matching_column_dict.keys())
-        #if len(unmatched_column_names) > 0:
-        #    unmatched_column_names = ", ".join(sorted(unmatched_column_names))
-        #    raise Exception("The following column name(s) could not be found for {}: {}.".format(self.data_file_path, unmatched_column_names))
-
-#    def _get_column_type_encoded(self, column_name):
-#        return self.get_column_type_from_index(self.get_column_indices([column_name])[0])
+#    def _get_column_meta(self, fltr, select_columns):
+#        cn_file_handle = self.__file_handles[".cn"]
+#        # TODO: Rework this code to do a binary search on disk
+#        #mcnl = self.__stats[".mcnl"]
+#        #col_coords = [[0, mcnl]]
+#        all_column_names = [x.rstrip(b" ") for x in cn_file_handle[:].rstrip(b"\n").split(b"\n")]
+#
+#        if len(select_columns) == 0:
+#            select_columns = all_column_names
+#            column_index_dict = {name: index for index, name in enumerate(all_column_names)}
+#        else:
+#            select_columns = [x.encode() for x in select_columns]
+#            column_index_dict = {name: all_column_names.index(name) for name in fltr.get_column_name_set() | set(select_columns)}
+#
+#        filter_column_type_dict = {}
+#        for column_name in fltr.get_column_name_set():
+#            column_index = column_index_dict[column_name]
+#            filter_column_type_dict[column_index] = self.get_column_type(column_index)
+#
+#        column_indices = list(column_index_dict.values())
+#        column_coords = self._parse_data_coords(column_indices)
+#        column_coords_dict = {}
+#        for i in range(len(column_indices)):
+#            column_coords_dict[column_indices[i]] = column_coords[i]
+#
+#        return select_columns, column_index_dict, filter_column_type_dict, column_coords_dict
 
     def _generate_row_chunks(self, num_processes):
         rows_per_chunk = math.ceil(self.get_num_rows() / num_processes)
 
-        #row_indices = []
         row_indices = set()
 
         for row_index in range(self.get_num_rows()):
-            #row_indices.append(row_index)
             row_indices.add(row_index)
 
             if len(row_indices) == rows_per_chunk:
                 yield row_indices
-                #row_indices = []
                 row_indices = set()
 
         if len(row_indices) > 0:
@@ -313,79 +266,17 @@ class Parser:
             yield str_like_object[(start_pos + coords[0]):(start_pos + coords[1])]
 
     def _parse_row_values(self, row_index, column_coords):
-#        if self.__decompressor:
-#            # Parse and then decompress the entire row.
-#            row = next(self._parse_data_values(row_index, self.__stats[".ll"], [[0, self.__stats[".ll"]]], self.__file_handles[""]))
-#            row = self.__decompressor.decompress(row)
-#
-#            # Retrieve the desired columns from that row.
-#            return [x for x in self._parse_data_values(0, 0, column_coords, row)]
-#        else:
-#            return list(self._parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
         return list(self._parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
-
-#    def _parse_row_dict_compressed(self, row_index, column_name_coords_dict):
-#        row_dict = {}
-#
-#        # Parse and then decompress the entire row.
-#        row = self.__decompressor.decompress(next(self._parse_data_values(row_index, self.__stats[".ll"], [[0, self.__stats[".ll"]]], self.__file_handles[""])))
-#
-#        for column_name, column_coords in column_name_coords_dict.items():
-#            row_dict[column_name] = next(self._parse_data_values(0, 0, column_coords, row)).rstrip(b" ")
-#
-#        return row_dict
-
-#TODO:
-#    def _parse_row_dict_notcompressed(self, row_index, range_cache, filter_column_names, filter_column_coords):
-#        row_dict = {}
-#
-#        # Declaring these variables seems to speed things up a little.
-#        ll = self.__stats[".ll"]
-#        file_handle = self.__file_handles[""]
-#
-#        for i in range_cache:
-#            row_dict[filter_column_names[i]] = next(self._parse_data_values(row_index, ll, filter_column_coords[i], file_handle)).rstrip(b" ")
-#
-#        return row_dict
-
-#    def _filter_column_values(self, row_indices, column_coords, fltr):
-#        data_file_handle = self.__file_handles[""]
-#        line_length = self.__stats[".ll"]
-#
-#        #TODO
-#        #return [i for i in row_indices if fltr.passes(next(self._parse_data_values(i, line_length, column_coords, data_file_handle)).rstrip())]
-#
-#        for i in row_indices:
-#            value = next(self._parse_data_value(i, line_length, column_coords, data_file_handle)).rstrip()
-#            print(value)
-#            break
-#        return row_indices
-#        #return [i for i in row_indices if fltr.passes(next(self._parse_data_values(i, line_length, column_coords, data_file_handle)).rstrip())]
 
 #####################################################
 # Class functions
 #####################################################
 
-# TODO: Is there a way to make this a regular function?
 def _process_rows(data_file_path, fltr, row_indices, column_index_dict, column_coords_dict, is_compressed):
     is_index = os.path.exists(f"{data_file_path}.idx")
+
     parser = Parser(data_file_path, is_index=is_index)
-
-#    filter_column_coords_dict = {}
-#    for i in range(len(filter_column_names)):
-#        filter_column_coords_dict[filter_column_names[i]] = filter_column_coords[i]
-
-    # This code is somewhat duplicated, but means we only have to check ones for whether data is compressed.
-#    if is_compressed:
-#        for row_index in row_indices:
-#            #TODO
-#            row_value_dict = parser._parse_row_dict_compressed(row_index, filter_column_coords_dict)
-#
-#            if fltr.passes(parser, row_value_dict):
-#                passing_row_indices.append(row_index)
-#    else:
     passing_row_indices = sorted(fltr.filter_column_values(parser, row_indices, column_index_dict, column_coords_dict))
-
     parser.close()
 
     return passing_row_indices

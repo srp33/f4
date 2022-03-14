@@ -1,11 +1,10 @@
-Remove commented code and complete all TODO items in code.
+Implement binary search functionality for numeric columns.
+  Need to modify Builder.py to create index files. What does Indexer.py even do?
 
-Modify wide test (here and in main benchmarking tests) so that the wide output file is similar in size to the tall output file. Make sure performance is comparable for both.
-  Maybe use NumericFilter where value < 0.99 or something like that, which would return most of the rows each time.
-
-Implement on-disk binary search for finding column indices based on names (Parser.py).
-   https://pypi.org/project/bplustree/
-Generalize the binary search functionality so it works with categorical and numeric columns
+Support fast searches on categorical columns.
+  In Builder.py, store comma-separated positions for one indexed column per line.
+  Have a header that indicates where the index line for each column begins.
+  What if they want to index every column? How much disk space does it use?
 
 Modify TestSmall.py so that it tests the scenario when an index and/or compression are used.
   Using inheritance, create different versions of Parser.py (and Indexer.py?).
@@ -25,10 +24,17 @@ Test parsing CADD files.
 Do demo/tests on LINCS data (see WishBuilder)?
 
 Remove ConvertTsvToFixedWidthFile3.py, TestBuild*.py?, TestParse*.py?
+Remove commented code and complete all TODO items in code.
 
 #####################################################
-# After benchmark paper
+# After benchmark paper (for software packages)
 #####################################################
+
+Implement on-disk binary search for finding column indices based on names (Parser.py).
+  This would be beneficial if we want to support datasets with more than 1 million columns.
+  _get_column_meta function in Parser.py
+  Rework the logic in the get_column_type_from_name() function in Parser.py to use the same logic.
+  Rework the logic in the save() function in Indexer.py to use same logic as used in Parser.py for binary search.
 
 Store discrete data in separate table from numeric? The first column is a JSON dictionary that maps Unicode characters to unique values in the column. This could save a lot of disk space in most cases.
   When inferring column sizes and types, store missing values using a single character and replace them when the values are queried?

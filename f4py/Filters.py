@@ -21,11 +21,9 @@ class BaseFilter:
         data_file_handle = parser.get_file_handle("")
 
         passing_row_indices = set()
-        #passing_row_indices = []
         for i in row_indices:
             if self.passes(parser.parse_data_value(i, line_length, coords, data_file_handle).rstrip()):
                 passing_row_indices.add(i)
-                #passing_row_indices.append(i)
 
         return passing_row_indices
 
@@ -235,8 +233,6 @@ class OrFilter(__CompositeBaseFilter):
         super().__init__(filter1, filter2)
 
     def filter_column_values(self, parser, row_indices, column_index_dict, column_coords_dict):
-        #row_indices_1 = set(self.filter1.filter_column_values(parser, row_indices, column_index_dict, column_coords_dict))
-        #row_indices_2 = set(self.filter2.filter_column_values(parser, set(row_indices) - row_indices_1, column_index_dict, column_coords_dict))
         row_indices_1 = self.filter1.filter_column_values(parser, row_indices, column_index_dict, column_coords_dict)
         row_indices_2 = self.filter2.filter_column_values(parser, row_indices - row_indices_1, column_index_dict, column_coords_dict)
 

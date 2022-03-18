@@ -1,17 +1,17 @@
-Implement binary search functionality for numeric columns.
-  Need to modify Builder.py to create index files. What does Indexer.py even do?
+Support searches on categorical columns.
 
-Support fast searches on categorical columns.
-  In Builder.py, store comma-separated positions for one indexed column per line.
-  Have a header that indicates where the index line for each column begins.
-  What if they want to index every column? How much disk space does it use?
+Support searches on identifier columns.
+
+Support binary search for numeric columns.
+  What to do when there is a tie?
+
 
 Modify TestSmall.py so that it tests the scenario when an index and/or compression are used.
   Using inheritance, create different versions of Parser.py (and Indexer.py?).
   I think we need three options:
     1) uncompressed + no index
     2) compressed + non-compressed index
-    3) compressed + compressed index
+    3) compressed + compressed index (when they want to be able to query any column).
 
 Check the build code for optimization. Then build F4 files for CADD.
 

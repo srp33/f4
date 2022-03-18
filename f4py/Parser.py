@@ -161,7 +161,7 @@ class Parser:
     # Non-public functions
     ##############################################
 
-    def _get_column_meta(self, fltr, select_columns):
+    def _get_column_meta(self, fltr, select_columns, get_types_for_select_columns=False):
         cn_file_handle = self.__file_handles[".cn"]
         #mcnl = self.__stats[".mcnl"]
         #col_coords = [[0, mcnl]]
@@ -174,8 +174,9 @@ class Parser:
             select_columns = [x.encode() for x in select_columns]
             column_index_dict = {name: all_column_names.index(name) for name in fltr.get_column_name_set() | set(select_columns)}
 
+        type_columns = fltr.get_column_name_set() | set(select_columns)
         filter_column_type_dict = {}
-        for column_name in fltr.get_column_name_set():
+        for column_name in type_columns:
             column_index = column_index_dict[column_name]
             filter_column_type_dict[column_index] = self.get_column_type(column_index)
 

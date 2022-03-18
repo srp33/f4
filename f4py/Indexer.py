@@ -1,11 +1,13 @@
 from f4py.Parser import *
 from f4py.Utilities import *
+from operator import itemgetter
+import pynumparser
 import zstandard
 
 class Indexer:
     def __init__(self, f4_file_path, index_columns, compression_level=22, verbose=False):
         self.__f4_file_path = f4_file_path
-        self.__index_columns = [x.encode() for x in index_columns]
+        self.__index_columns = index_columns
         self.__compression_level = compression_level
         self.__verbose = verbose
 
@@ -14,75 +16,43 @@ class Indexer:
 
         num_rows = read_int_from_file(self.__f4_file_path, ".nrow")
 
-        parser = Parser(self.__f4_file_path)
+        parser = None
 
         try:
-            compressor = None
-            if self.__compression_level:
-                compressor = zstandard.ZstdCompressor(level=self.__compression_level)
+            parser = Parser(self.__f4_file_path)
 
-            # Find coordinates of index columns.
-            # TODO: Rework this after you implement binary search in parser.get_column_meta.
-            cn_file_handle = parser.get_file_handle(".cn")
-            all_column_names = [x.rstrip(b" ") for x in cn_file_handle[:].split(b"\n")]
-            index_column_indices = [all_column_names.index(name) for name in self.__index_columns]
+#            compressor = None
+#            if self.__compression_level:
+#                compressor = zstandard.ZstdCompressor(level=self.__compression_level)
 
-            #index_column_indices = parser.get_column_indices(self.__index_columns)
-            index_column_coords = parser._parse_data_coords(index_column_indices)
+            # Get information about index columns.
+            index_columns, column_index_dict, column_type_dict, column_coords_dict = parser._get_column_meta(NoFilter(), self.__index_columns, get_types_for_select_columns=True)
+            data_file_handle = parser.get_file_handle("")
+            line_length = parser.get_stat(".ll")
 
-            # Store index column data.
-            max_line_length = 0
-            with open(f"{self.__f4_file_path}.idx", 'wb') as index_file:
-                out_rows = []
+            for index_column in index_columns:
+                index_column_type = column_type_dict[column_index_dict[index_column]]
+                coords = column_coords_dict[column_index_dict[index_column]]
 
-                for row_index in range(num_rows):
-                    row = b"".join(parser._parse_row_values(row_index, index_column_coords))
+                values_positions = []
+                for row_index in range(parser.get_num_rows()):
+                    value = parser.parse_data_value(row_index, line_length, coords, data_file_handle)
+                    values_positions.append([value, row_index])
 
-                    if compressor:
-                        row = compressor.compress(row)
-                    else:
-                        row += b"\n"
+                if index_column_type == "c":
+                    index_string = _CategoricalIndexHelper().build(values_positions)
+                elif index_column_type == "f":
+                    index_string = _NumericIndexHelper().build(values_positions)
+                else: # i
+                    index_string = _IdentifierIndexHelper().build(values_positions)
 
-                    max_line_length = max([max_line_length, len(row)])
-                    out_rows.append(row)
-
-                    if len(out_rows) % num_rows_per_save == 0:
-                        index_file.write(b"".join(out_rows))
-                        out_rows = []
-
-                if len(out_rows) > 0:
-                    index_file.write(b"".join(out_rows))
-
-            # Save the length of the longest row. Row lengths may vary when compression is used.
-            write_string_to_file(f"{self.__f4_file_path}", ".idx.ll", str(max_line_length).encode())
-
-            # Indicate the number of index rows and columns.
-            write_string_to_file(f"{self.__f4_file_path}", ".idx.nrow", str(num_rows).encode())
-            write_string_to_file(f"{self.__f4_file_path}", ".idx.ncol", str(len(self.__index_columns)).encode())
-
-            # Calculate and save the index column coordinates and max length of these coordinates.
-            index_column_sizes = []
-            for coord in index_column_coords:
-                index_column_sizes.append(coord[1] - coord[0])
-            index_column_start_coords = get_column_start_coords(index_column_sizes)
-            column_coords_string, max_column_coord_length = build_string_map(index_column_start_coords)
-            write_string_to_file(self.__f4_file_path, ".idx.cc", column_coords_string)
-            write_string_to_file(self.__f4_file_path, ".idx.mccl", str(max_column_coord_length).encode())
-
-            # Save the index column names and max length of these names.
-            index_column_names_string, max_col_name_length = build_string_map(self.__index_columns)
-            write_string_to_file(self.__f4_file_path, ".idx.cn", index_column_names_string)
-            write_string_to_file(self.__f4_file_path, ".idx.mcnl", str(max_col_name_length).encode())
-
-            # Save the index column types.
-            index_column_types = [parser.get_column_type(i).encode() for i in index_column_indices]
-            index_column_types_string, max_col_type_length = build_string_map(index_column_types)
-            write_string_to_file(self.__f4_file_path, ".idx.ct", index_column_types_string)
+                write_string_to_file(parser.data_file_path, f".idx_{column_index_dict[index_column]}", index_string)
 
             # Indicate whether the index is compressed.
-            write_string_to_file(self.__f4_file_path, ".idx.cmp", str(self.__compression_level).encode())
+            #write_string_to_file(self.__f4_file_path, ".idx.cmp", str(self.__compression_level).encode())
         finally:
-            parser.close()
+            if parser:
+                parser.close()
 
     ##############################################
     # Non-public function
@@ -90,3 +60,67 @@ class Indexer:
 
     def _print_message(self, message):
         print_message(message, self.__verbose)
+
+class __BaseIndexHelper():
+    def build(self, values_positions):
+        raise Exception("This function must be implemented by classes that inherit this class.")
+
+class _CategoricalIndexHelper(__BaseIndexHelper):
+    def build(self, values_positions):
+        value_dict = {}
+        for i in range(len(values_positions)):
+            value = values_positions[i][0]
+            row_index = values_positions[i][1]
+
+            value_dict[value] = value_dict.setdefault(value, []) + [row_index]
+
+        index_string = b""
+        for value, row_indices in value_dict.items():
+            row_indices_string = pynumparser.NumberSequence().encode(row_indices)
+            index_string += (f"{value.decode()}\t{row_indices_string}\n").encode()
+
+        return index_string
+
+class _NumericIndexHelper(__BaseIndexHelper):
+    def build(self, values_positions):
+        for i in range(len(values_positions)):
+            values_positions[i][0] = float(values_positions[i][0])
+        values_positions.sort(key=itemgetter(0))
+
+        values = [str(x[0]).encode() for x in values_positions]
+        positions = [str(x[1]).encode() for x in values_positions]
+
+        values_max_length = get_max_string_length(values)
+        positions_max_length = get_max_string_length(positions)
+
+        values_fixed_width = format_column_items(values, values_max_length)
+        positions_fixed_width = format_column_items(positions, positions_max_length)
+
+        rows = []
+        for i, value in enumerate(values_fixed_width):
+            position = positions_fixed_width[i]
+            rows.append(value + position)
+
+        column_coords_string, rows_max_length = build_string_map(rows)
+        return column_coords_string
+
+class _IdentifierIndexHelper(__BaseIndexHelper):
+    def build(self, values_positions):
+        values_positions.sort(key=itemgetter(0))
+
+        values = [x[0] for x in values_positions]
+        positions = [str(x[1]).encode() for x in values_positions]
+
+        values_max_length = get_max_string_length(values)
+        positions_max_length = get_max_string_length(positions)
+
+        values_fixed_width = format_column_items(values, values_max_length)
+        positions_fixed_width = format_column_items(positions, positions_max_length)
+
+        rows = []
+        for i, value in enumerate(values_fixed_width):
+            position = positions_fixed_width[i]
+            rows.append(value + position)
+
+        column_coords_string, rows_max_length = build_string_map(rows)
+        return column_coords_string

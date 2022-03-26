@@ -1,10 +1,10 @@
 import atexit
-from f4py.Filters import *
-from f4py.Utilities import *
+import f4py
+#from f4py.Filters import *
+#from f4py.Utilities import *
 from itertools import chain
 from joblib import Parallel, delayed
 import math
-import os
 import zstandard
 
 class Parser:
@@ -18,34 +18,36 @@ class Parser:
         data_file_path (str): The path to an existing F4 file.
     """
 
-    def __init__(self, data_file_path, is_index=False):
+    #def __init__(self, data_file_path, is_index=False):
+    def __init__(self, data_file_path, fixed_file_extensions=["", ".cc", ".cn", ".ct"], stats_file_extensions=[".ll", ".mccl", ".mcnl", ".nrow", ".ncol"]):
         self.data_file_path = data_file_path
-        self.is_index = is_index
+        #self.is_index = is_index
 
-        if is_index:
-            cmp_file_path = f"{data_file_path}.idx.cmp"
-        else:
-            cmp_file_path = f"{data_file_path}.cmp"
+        self.compression_level = f4py.read_str_from_file(data_file_path, ".cmp")
+        #if is_index:
+        #    cmp_file_path = f"{data_file_path}.idx.cmp"
+        #else:
+        #    cmp_file_path = f"{data_file_path}.cmp"
         self.__decompressor = None
-        if read_str_from_file(cmp_file_path) != b"None":
-            self.__decompressor = zstandard.ZstdDecompressor()
+        #if read_str_from_file(cmp_file_path) != b"None":
+        #    self.__decompressor = zstandard.ZstdDecompressor()
 
         self.__file_handles = {}
         self.__stats = {}
 
         # Cache file handles in a dictionary.
-        for ext in ["", ".cc", ".cn", ".ct"]:
+        for ext in fixed_file_extensions:
             ext2 = ext
-            if is_index:
-                ext2 = f".idx{ext}"
-            self.__file_handles[ext] = open_read_file(data_file_path, ext2)
+            #if is_index:
+            #    ext2 = f".idx{ext}"
+            self.__file_handles[ext] = f4py.open_read_file(data_file_path, ext2)
 
         # Cache statistics in a dictionary.
-        for ext in [".ll", ".mccl", ".mcnl", ".nrow", ".ncol"]:
+        for ext in stats_file_extensions:
             ext2 = ext
-            if is_index:
-                ext2 = f".idx{ext}"
-            self.__stats[ext] = read_int_from_file(data_file_path, ext2)
+            #if is_index:
+            #    ext2 = f".idx{ext}"
+            self.__stats[ext] = f4py.read_int_from_file(data_file_path, ext2)
 
         atexit.register(self.close)
 
@@ -65,7 +67,7 @@ class Parser:
         if not fltr:
             raise Exception("A filter must be specified.")
 
-        if not isinstance(fltr, BaseFilter):
+        if not isinstance(fltr, f4py.BaseFilter):
             raise Exception("An object that inherits from BaseFilter must be specified.")
 
         if out_file_type != "tsv":
@@ -79,17 +81,22 @@ class Parser:
 
         # Store column indicies and types in dictionaries so we only have to retrieve
         # each once, even if we use the same column in multiple filters.
-        select_columns, column_index_dict, select_column_type_dict, column_coords_dict = self._get_column_meta(fltr, select_columns)
+        select_columns, column_index_dict, column_type_dict, column_coords_dict = self._get_column_meta(fltr, select_columns)
 
-        fltr.check_types(column_index_dict, select_column_type_dict)
+        fltr.check_types(column_index_dict, column_type_dict)
+
+        # self.__decompressor is not None
 
         if num_processes == 1:
             # This is a non-parallelized version of the code.
             row_indices = set(range(self.get_num_rows()))
-            keep_row_indices = _process_rows(self.data_file_path, fltr, row_indices, column_index_dict, column_coords_dict, self.__decompressor is not None)
+            keep_row_indices = _process_rows(self, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict)
+            #TODO
+            #keep_row_indices = self._process_rows(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict)
         else:
             # Loop through the rows in parallel and find matching row indices.
-            keep_row_indices = chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(_process_rows)(self.data_file_path, fltr, row_indices, column_index_dict, column_coords_dict, self.__decompressor is not None) for row_indices in self._generate_row_chunks(num_processes)))
+            #keep_row_indices = chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(self._process_rows)(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict) for row_indices in self._generate_row_chunks(num_processes)))
+            keep_row_indices = chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(_process_rows)(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict) for row_indices in self._generate_row_chunks(num_processes)))
 
         # Get the coords for each column to select
         select_column_coords = self._parse_data_coords([column_index_dict[x] for x in select_columns])
@@ -161,7 +168,7 @@ class Parser:
     # Non-public functions
     ##############################################
 
-    def _get_column_meta(self, fltr, select_columns, get_types_for_select_columns=False):
+    def _get_column_meta(self, fltr, select_columns):
         cn_file_handle = self.__file_handles[".cn"]
         #mcnl = self.__stats[".mcnl"]
         #col_coords = [[0, mcnl]]
@@ -269,15 +276,71 @@ class Parser:
     def _parse_row_values(self, row_index, column_coords):
         return list(self._parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
 
+#    def _process_rows2(self, fltr, row_indices, column_index_dict, column_coords_dict, is_compressed):
+#        line_length = self.get_stat(".ll")
+#        coords = column_coords_dict[column_index_dict[fltr.column_name]]
+#        data_file_handle = self.get_file_handle("")
+
+#        return NonCompressedIndexRetriever().filter(fltr, row_indices, column_index_dict, column_coords_dict):
+#        return row_indices
+
+#        passing_row_indices = set()
+#        for i in row_indices:
+#            if fltr.passes(self.parse_data_value(i, line_length, coords, data_file_handle).rstrip()):
+#                passing_row_indices.add(i)
+#
+#        return passing_row_indices
+
+
+        #is_index = os.path.exists(f"{self.data_file_path}.idx_{fltr.column_name}")
+
+#        return row_indices
+
+        #parser = Parser(data_file_path, is_index=is_index)
+        #passing_row_indices = sorted(parser.filter_column_values(fltr, row_indices, column_index_dict, column_coords_dict))
+        #parser.close()
+
+        #return passing_row_indices
+
+#    def _filter_column_values(self, fltr, row_indices, column_index_dict, column_coords_dict):
+#        line_length = self.get_stat(".ll")
+#        coords = column_coords_dict[column_index_dict[fltr.column_name]]
+#        data_file_handle = self.get_file_handle("")
+#
+#        passing_row_indices = set()
+#        for i in row_indices:
+#            if fltr.passes(self.parse_data_value(i, line_length, coords, data_file_handle).rstrip()):
+#                passing_row_indices.add(i)
+#
+#        return passing_row_indices
+
+
 #####################################################
 # Class functions
 #####################################################
 
-def _process_rows(data_file_path, fltr, row_indices, column_index_dict, column_coords_dict, is_compressed):
-    is_index = os.path.exists(f"{data_file_path}.idx")
+def _process_rows(parser, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict):
+#    is_index = os.path.exists(f"{data_file_path}.idx")
 
-    parser = Parser(data_file_path, is_index=is_index)
-    passing_row_indices = sorted(fltr.filter_column_values(parser, row_indices, column_index_dict, column_coords_dict))
-    parser.close()
+    #parser = Parser(data_file_path, is_index=is_index)
+    passing_row_indices = sorted(fltr.filter_column_values(parser, row_indices, column_index_dict, column_type_dict, column_coords_dict))
+    #parser.close()
 
     return passing_row_indices
+
+class NonCompressedIndexRetriever:
+#    def __init__(self):
+#        self.column_index_dict = column_index_dict
+#        self.column_coords_dict = column_coords_dict
+
+    def filter(self, fltr, row_indices, column_index_dict, column_coords_dict):
+#        line_length = self.get_stat(".ll")
+#        coords = column_coords_dict[column_index_dict[fltr.column_name]]
+#        data_file_handle = self.get_file_handle("")
+
+        passing_row_indices = set()
+        for i in row_indices:
+            if fltr.passes(self.parse_data_value(i, line_length, coords, data_file_handle).rstrip()):
+                passing_row_indices.add(i)
+
+        return passing_row_indices

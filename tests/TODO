@@ -5,7 +5,9 @@ Support searches on identifier columns.
 Support binary search for numeric columns.
   What to do when there is a tie?
 
+Change .ct files to use n rather than f to identify numeric columns.
 
+--Only do what's necessary for the first paper--
 Modify TestSmall.py so that it tests the scenario when an index and/or compression are used.
   Using inheritance, create different versions of Parser.py (and Indexer.py?).
   I think we need three options:
@@ -29,6 +31,9 @@ Remove commented code and complete all TODO items in code.
 #####################################################
 # After benchmark paper (for software packages)
 #####################################################
+
+Bring back the filters that I commented out in Filters.py.
+  Make sure we have tests for them in TestSmall.py.
 
 Implement on-disk binary search for finding column indices based on names (Parser.py).
   This would be beneficial if we want to support datasets with more than 1 million columns.

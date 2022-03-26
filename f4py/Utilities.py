@@ -34,12 +34,6 @@ def build_string_map(the_list):
     # Find maximum length of value.
     max_value_length = get_max_string_length(the_list)
 
-#    # Build output string.
-#    formatter = "{:<" + str(max_value_length) + "}\n"
-#    output_items = [formatter.format(value.decode()) for value in the_list]
-
-#    return ("".join(output_items)).encode(), max_value_length
-
     column_items = format_column_items(the_list, max_value_length)
     return b"\n".join(column_items), max_value_length
 

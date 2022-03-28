@@ -256,6 +256,10 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
     parser.query_and_save(fltr, ["FloatA"], out_file_path)
     check_results("Filter using two index columns", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])
 
+    # TODO: Add some more (simple) tests for indexed columns.
+    #         Simplify the above test first?
+    #       Make sure we can find values in the first or last row.
+
     # Test ability to query when the data are compressed.
     #Builder().convert_delimited_file(in_file_path, f4_file_path, compression_level=22, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk)
     #Indexer(f4_file_path, ["ID", "FloatA", "OrdinalA"], compression_level=22).save(num_processes)

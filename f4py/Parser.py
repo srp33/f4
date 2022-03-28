@@ -2,6 +2,7 @@ import atexit
 import f4py
 #from f4py.Filters import *
 #from f4py.Utilities import *
+import glob
 from itertools import chain
 from joblib import Parallel, delayed
 import math
@@ -87,16 +88,30 @@ class Parser:
 
         # self.__decompressor is not None
 
-        if num_processes == 1:
-            # This is a non-parallelized version of the code.
-            row_indices = set(range(self.get_num_rows()))
-            keep_row_indices = _process_rows(self, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict)
-            #TODO
-            #keep_row_indices = self._process_rows(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict)
+        #TODO: The current design supports filtering on all non-indexed columns or all indexed
+        #      columns but not a combination of both. What to do if the user violates this?
+        #        Maybe if there is not an index for all filter columns, we revert to the slow
+        #        version and just give them a warning.
+        #      Maybe also optimize this code by having a flag file that indicates whether any
+        #      column is indexed.
+        has_index = len(glob.glob(self.data_file_path + ".idx_*")) > 0
+
+        if has_index:
+            #if num_processes == 1:
+                keep_row_indices = sorted(fltr.filter_indexed_column_values(self, column_index_dict, column_type_dict, column_coords_dict, 0, self.get_num_rows()))
+            #else:
+            #    TODO
         else:
-            # Loop through the rows in parallel and find matching row indices.
-            #keep_row_indices = chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(self._process_rows)(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict) for row_indices in self._generate_row_chunks(num_processes)))
-            keep_row_indices = chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(_process_rows)(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict) for row_indices in self._generate_row_chunks(num_processes)))
+            if num_processes == 1:
+                # This is a non-parallelized version of the code.
+                row_indices = set(range(self.get_num_rows()))
+                keep_row_indices = _process_rows(self, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict)
+                #TODO
+                #keep_row_indices = self._process_rows(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict)
+            else:
+                # Loop through the rows in parallel and find matching row indices.
+                #keep_row_indices = chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(self._process_rows)(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict) for row_indices in self._generate_row_chunks(num_processes)))
+                keep_row_indices = chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(_process_rows)(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict) for row_indices in self._generate_row_chunks(num_processes)))
 
         # Get the coords for each column to select
         select_column_coords = self._parse_data_coords([column_index_dict[x] for x in select_columns])

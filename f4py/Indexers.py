@@ -12,8 +12,27 @@ class BaseIndexer():
         raise Exception("This function must be implemented by classes that inherit this class.")
 
     #TODO: Make private?
-    def filter(self, index_file_path, row_indices, fltr):
+    #TODO: Is start_index necessary?
+    def filter(self, index_file_path, fltr, start_index, end_index):
         raise Exception("This function must be implemented by classes that inherit this class.")
+
+    # https://www.geeksforgeeks.org/binary-search/
+    def binary_search(self, parser, line_length, value_coords, data_file_handle, value_to_find, l, r):
+        # Check base case
+        if r >= l:
+            mid = l + (r - l) // 2
+
+            mid_value = parser.parse_data_value(mid, line_length, value_coords, data_file_handle).rstrip()
+
+            if mid_value == value_to_find:
+                # If element is present at the middle itself
+                return mid
+            elif mid_value > value_to_find:
+                # If element is smaller than mid, then it can only be present in left subarray
+                return self.binary_search(parser, line_length, value_coords, data_file_handle, value_to_find, l, mid-1)
+            else:
+                # Else the element can only be present in right subarray
+                return self.binary_search(parser, line_length, value_coords, data_file_handle, value_to_find, mid+1, r)
 
 class CategoricalIndexer(BaseIndexer):
     #TODO: Can these be pushed to base class?
@@ -35,7 +54,7 @@ class CategoricalIndexer(BaseIndexer):
 
         return index_string
 
-    def filter(self, index_file_path, row_indices, fltr):
+    def filter(self, index_file_path, fltr, start_index, end_index):
         return row_indices
 
 class IdentifierIndexer(BaseIndexer):
@@ -65,49 +84,20 @@ class IdentifierIndexer(BaseIndexer):
 
         return column_coords_string
 
-    def filter(self, index_file_path, row_indices, fltr):
-        parser = f4py.Parser(index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
+    def filter(self, index_file_path, fltr, start_index, end_index):
+        index_parser = f4py.Parser(index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
 
-        line_length = parser.get_stat(".ll")
-        data_file_handle = parser.get_file_handle("")
-        value_coords = parser._parse_data_coords([0])[0]
-        position_coords = parser._parse_data_coords([1])[0]
+        line_length = index_parser.get_stat(".ll")
+        data_file_handle = index_parser.get_file_handle("")
+        value_coords = index_parser._parse_data_coords([0])[0]
+        position_coords = index_parser._parse_data_coords([1])[0]
 
-        passing_row_indices = set()
+        matching_position = self.binary_search(index_parser, line_length, value_coords, data_file_handle, fltr.value, start_index, end_index)
+        if matching_position:
+            matching_row_index = int(index_parser.parse_data_value(matching_position, line_length, position_coords, data_file_handle).rstrip())
+            return set([matching_row_index])
 
-#        #TODO: This is the brute-force search. Implement binary search.
-        for i in row_indices:
-            if fltr.passes(parser.parse_data_value(i, line_length, value_coords, data_file_handle).rstrip()):
-                passing_row_indices.add(i)
-
-        parser.close()
-
-#def binary_search(list1, n):
-#    low = 0
-#    high = len(list1) - 1
-#    mid = 0
-#
-#    while low <= high:
-#        # for get integer result
-#        mid = (high + low) // 2
-#
-#        # Check if n is present at mid
-#        if list1[mid] < n:
-#            low = mid + 1
-#
-#        # If n is greater, compare to the right of mid
-#        elif list1[mid] > n:
-#            high = mid - 1
-#
-#        # If n is smaller, compared to the left of mid
-#        else:
-#            return mid
-#
-#            # element was not present in the list, return -1
-#    return -1
-
-        #TODO: Refactor some of this logic to the base class?
-        return passing_row_indices
+        return set()
 
 class NumericIndexer(BaseIndexer):
     def __init__(self, f4_file_path, compression_level):
@@ -138,21 +128,22 @@ class NumericIndexer(BaseIndexer):
 
         return column_coords_string
 
-    def filter(self, index_file_path, row_indices, fltr):
-        parser = f4py.Parser(index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
+    def filter(self, index_file_path, fltr, start_index, end_index):
+#        index_parser = f4py.Parser(index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
 
-        line_length = parser.get_stat(".ll")
-        data_file_handle = parser.get_file_handle("")
-        value_coords = parser._parse_data_coords([0])[0]
-        position_coords = parser._parse_data_coords([1])[0]
+#        line_length = index_parser.get_stat(".ll")
+#        data_file_handle = index_parser.get_file_handle("")
+#        value_coords = index_parser._parse_data_coords([0])[0]
+#        position_coords = index_parser._parse_data_coords([1])[0]
+
+#        matching_position = self.binary_search(index_parser, line_length, value_coords, data_file_handle, fltr.value, start_index, end_index)
+#        if matching_position:
+#            matching_row_index = int(index_parser.parse_data_value(matching_position, line_length, position_coords, data_file_handle).rstrip())
+#           return set([matching_row_index])
 
         passing_row_indices = set()
 
-        #TODO: This is the brute-force search. Move to binary search.
-        for i in row_indices:
-            if fltr.passes(parser.parse_data_value(i, line_length, value_coords, data_file_handle).rstrip()):
+        for i in range(start_index, end_index):
                 passing_row_indices.add(i)
-
-        parser.close()
 
         return passing_row_indices

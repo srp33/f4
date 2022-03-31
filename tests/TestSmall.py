@@ -243,6 +243,25 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
     f4py.IndexHelper.save(f4_file_path, "OrdinalA", compression_level=None)
 
     parser = f4py.Parser(f4_file_path)
+
+    parser.query_and_save(f4py.StringEqualsFilter("ID", "1"), ["FloatA"], out_file_path)
+    check_results("Indexed filter ID = 1", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"]])
+    parser.query_and_save(f4py.StringEqualsFilter("ID", "2"), ["FloatA"], out_file_path)
+    check_results("Indexed filter ID = 2", read_file_into_lists(out_file_path), [[b"FloatA"], [b"2.2"]])
+    parser.query_and_save(f4py.StringEqualsFilter("ID", "4"), ["FloatA"], out_file_path)
+    check_results("Indexed filter ID = 4", read_file_into_lists(out_file_path), [[b"FloatA"], [b"4.4"]])
+
+    parser.query_and_save(f4py.NumericFilter("FloatA", operator.ge, 0), ["FloatA"], out_file_path)
+    check_results("Indexed filter FloatA > 0", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
+    parser.query_and_save(f4py.NumericFilter("FloatA", operator.ge, 1.1), ["FloatA"], out_file_path)
+    check_results("Indexed filter FloatA > 1.1", read_file_into_lists(out_file_path), [[b"FloatA"], [b"2.2"], [b"2.2"], [b"4.4"]])
+    parser.query_and_save(f4py.NumericFilter("FloatA", operator.ge, 2.2), ["FloatA"], out_file_path)
+    check_results("Indexed filter FloatA > 2.2", read_file_into_lists(out_file_path), [[b"FloatA"], [b"4.4"]])
+    parser.query_and_save(f4py.NumericFilter("FloatA", operator.ge, 100), ["FloatA"], out_file_path)
+    check_results("Indexed filter FloatA > 100", read_file_into_lists(out_file_path), [[b"FloatA"]])
+
+    # Make it work for >=, <, <=, and ==.
+
     fltr = f4py.AndFilter(
              f4py.OrFilter(
                f4py.OrFilter(

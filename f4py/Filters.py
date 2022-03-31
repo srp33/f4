@@ -33,7 +33,7 @@ class BaseFilter:
         return passing_row_indices
 
     def filter_indexed_column_values(self, parser, column_index_dict, column_type_dict, column_coords_dict, start_index, end_index):
-        index_file_path = f"{parser.data_file_path}.idx_{self.column_name.decode()}"
+        #index_file_path = f"{parser.data_file_path}.idx_{self.column_name.decode()}"
         index_column_type = column_type_dict[column_index_dict[self.column_name]]
 
         return f4py.IndexHelper.filter(parser.data_file_path, parser.compression_level, self.column_name, index_column_type, self, start_index, end_index)

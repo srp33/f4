@@ -77,7 +77,7 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
 
     parser = f4py.Parser(f4_file_path)
 
-    check_result("Parser properties", "Number of rows", parser.get_num_rows(), 4)
+    check_result("Parser properties", "Number of rows", parser.get_num_rows(), 5)
     check_result("Parser properties", "Number of columns", parser.get_num_cols(), 9)
 
     check_result("Column types", "ID column", parser.get_column_type_from_name("ID"), "i")
@@ -97,13 +97,13 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
     check_results("No filters, select all columns explicitly", read_file_into_lists(out_file_path), read_file_into_lists(in_file_path))
 
     parser.query_and_save(f4py.NoFilter(), ["ID"], out_file_path)
-    check_results("No filters, select first column", read_file_into_lists(out_file_path), [[b"ID"],[b"1"],[b"2"],[b"3"],[b"4"]])
+    check_results("No filters, select first column", read_file_into_lists(out_file_path), [[b"ID"],[b"9"],[b"1"],[b"2"],[b"3"],[b"4"]])
 
     parser.query_and_save(f4py.NoFilter(), ["CategoricalB"], out_file_path)
-    check_results("No filters, select last column", read_file_into_lists(out_file_path), [[b"CategoricalB"],[b"Yellow"],[b"Yellow"],[b"Brown"],[b"Orange"]])
+    check_results("No filters, select last column", read_file_into_lists(out_file_path), [[b"CategoricalB"],[b"Brown"],[b"Yellow"],[b"Yellow"],[b"Brown"],[b"Orange"]])
 
     parser.query_and_save(f4py.NoFilter(), ["FloatA", "CategoricalB"], out_file_path)
-    check_results("No filters, select two columns", read_file_into_lists(out_file_path), [[b"FloatA", b"CategoricalB"],[b"1.1", b"Yellow"],[b"2.2", b"Yellow"],[b"2.2", b"Brown"],[b"4.4", b"Orange"]])
+    check_results("No filters, select two columns", read_file_into_lists(out_file_path), [[b"FloatA", b"CategoricalB"],[b"9.9", b"Brown"],[b"1.1", b"Yellow"],[b"2.2", b"Yellow"],[b"2.2", b"Brown"],[b"4.4", b"Orange"]])
 
     try:
         parser.query_and_save(f4py.NoFilter(), ["ID", "InvalidColumn"], out_file_path)
@@ -118,7 +118,7 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
     check_results("Filter by ID using equals filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"]])
 
     parser.query_and_save(f4py.StringNotEqualsFilter("ID", "1"), ["FloatA"], out_file_path)
-    check_results("Filter by ID using not equals filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"2.2"],[b"4.4"],])
+    check_results("Filter by ID using not equals filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"],[b"2.2"],[b"2.2"],[b"4.4"],])
 
     parser.query_and_save(f4py.AndFilter(f4py.NumericFilter("FloatA", operator.ne, 1.1), f4py.NumericFilter("IntA", operator.eq, 7)), ["FloatA"], out_file_path)
     check_results("Two Numeric filters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"]])
@@ -150,13 +150,13 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
              f4py.NumericFilter("FloatB", operator.le, 44.4)
            )
     parser.query_and_save(fltr, ["FloatA"], out_file_path)
-    check_results("Numeric filters and string filters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"4.4"]])
+    check_results("Numeric filters and string filters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"],[b"2.2"],[b"4.4"]])
 
     parser.query_and_save(f4py.LikeFilter("CategoricalB", r"ow$"), ["FloatA"], out_file_path)
     check_results("Like filter on categorical column", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"],[b"2.2"]])
 
     parser.query_and_save(f4py.NotLikeFilter("CategoricalB", r"ow$"), ["FloatA"], out_file_path)
-    check_results("NotLike filter on categorical column", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"4.4"]])
+    check_results("NotLike filter on categorical column", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"],[b"2.2"],[b"4.4"]])
 
     parser.query_and_save(f4py.AndFilter(f4py.LikeFilter("FloatB", r"^\d\d\.\d$"), f4py.LikeFilter("FloatB", r"88")), ["FloatA"], out_file_path)
     check_results("Like filter on numerical columns", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"]])
@@ -250,17 +250,21 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
     check_results("Indexed filter ID = 2", read_file_into_lists(out_file_path), [[b"FloatA"], [b"2.2"]])
     parser.query_and_save(f4py.StringEqualsFilter("ID", "4"), ["FloatA"], out_file_path)
     check_results("Indexed filter ID = 4", read_file_into_lists(out_file_path), [[b"FloatA"], [b"4.4"]])
+    parser.query_and_save(f4py.StringEqualsFilter("ID", "9"), ["FloatA"], out_file_path)
+    check_results("Indexed filter ID = 9", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"]])
 
     parser.query_and_save(f4py.NumericFilter("FloatA", operator.ge, 0), ["FloatA"], out_file_path)
-    check_results("Indexed filter FloatA > 0", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
+    check_results("Indexed filter FloatA > 0", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
     parser.query_and_save(f4py.NumericFilter("FloatA", operator.ge, 1.1), ["FloatA"], out_file_path)
-    check_results("Indexed filter FloatA > 1.1", read_file_into_lists(out_file_path), [[b"FloatA"], [b"2.2"], [b"2.2"], [b"4.4"]])
+    check_results("Indexed filter FloatA > 1.1", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"2.2"], [b"2.2"], [b"4.4"]])
     parser.query_and_save(f4py.NumericFilter("FloatA", operator.ge, 2.2), ["FloatA"], out_file_path)
-    check_results("Indexed filter FloatA > 2.2", read_file_into_lists(out_file_path), [[b"FloatA"], [b"4.4"]])
+    check_results("Indexed filter FloatA > 2.2", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"4.4"]])
+    parser.query_and_save(f4py.NumericFilter("FloatA", operator.ge, 4.4), ["FloatA"], out_file_path)
+    check_results("Indexed filter FloatA > 4.4", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"]])
     parser.query_and_save(f4py.NumericFilter("FloatA", operator.ge, 100), ["FloatA"], out_file_path)
     check_results("Indexed filter FloatA > 100", read_file_into_lists(out_file_path), [[b"FloatA"]])
 
-    # Make it work for >=, <, <=, and ==.
+    # TODO: Make it work for >=, <, <=, and ==.
 
     fltr = f4py.AndFilter(
              f4py.OrFilter(

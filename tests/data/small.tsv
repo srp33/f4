@@ -1,0 +1,6 @@
+ID	FloatA	FloatB	OrdinalA	OrdinalB	IntA	IntB	CategoricalA	CategoricalB
+9	9.9	-99.9	Low	High	6	66	Brown	Brown
+1	1.1	99.9	Low	High	5	99	Red	Yellow
+2	2.2	22.2	High	Low	8	44	Red	Yellow
+3	2.2	88.8	Med	Med	7	77	Orange	Brown
+4	4.4	44.4	Med	Med	5	44	Brown	Orange

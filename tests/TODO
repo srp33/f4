@@ -1,9 +1,8 @@
-Support searches on categorical columns.
+Make NumericIndexer work for >=, <, <=, and ==.
+Add some more (simple) tests for indexed columns.
+  Simplify the following test first?
 
-Support searches on identifier columns.
-
-Support binary search for numeric columns.
-  What to do when there is a tie?
+Write code to generate medium-sized files and write tests to make sure the filters work on those.
 
 Change .ct files to use n rather than f to identify numeric columns.
 

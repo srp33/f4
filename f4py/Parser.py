@@ -98,7 +98,7 @@ class Parser:
 
         if has_index:
             #if num_processes == 1:
-                keep_row_indices = sorted(fltr.filter_indexed_column_values(self, column_index_dict, column_type_dict, column_coords_dict, 0, self.get_num_rows()))
+                keep_row_indices = sorted(fltr.filter_indexed_column_values(self, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows()))
             #else:
             #    TODO
         else:

@@ -50,20 +50,20 @@ class IndexHelper:
             if parser:
                 parser.close()
 
-    def filter(f4_file_path, compression_level, index_column, index_column_type, fltr, start_index, end_index):
+    def filter(f4_file_path, compression_level, index_column, index_column_type, fltr, end_index):
         index_file_path, index_file_path_extension = IndexHelper.get_index_file_path(f4_file_path, index_column.decode())
 
         if index_column_type == "i":
             if isinstance(fltr, f4py.StringEqualsFilter):
-                return f4py.IdentifierIndexer(f4_file_path, compression_level).filter(index_file_path, fltr, start_index, end_index)
+                return f4py.IdentifierIndexer(f4_file_path, compression_level).filter(index_file_path, fltr, end_index)
             else:
                 raise Exception("TODO: Not yet supported.")
 
         if index_column_type == "c":
-            return f4py.CategoricalIndexer(f4_file_path, compression_level).filter(index_file_path, fltr, start_index, end_index)
+            return f4py.CategoricalIndexer(f4_file_path, compression_level).filter(index_file_path, fltr, end_index)
 
         if isinstance(fltr, f4py.NumericFilter):
-            return f4py.NumericIndexer(f4_file_path, compression_level).filter(index_file_path, fltr, start_index, end_index)
+            return f4py.NumericIndexer(f4_file_path, compression_level).filter(index_file_path, fltr, end_index)
         else:
             raise Exception("TODO: Not yet supported.")
 

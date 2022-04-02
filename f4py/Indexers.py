@@ -2,6 +2,7 @@ import f4py
 #from f4py.IndexHelpers import *
 #from f4py.Parser import *
 #from f4py.Utilities import *
+import operator
 from operator import itemgetter
 import pynumparser
 #import zstandard
@@ -12,12 +13,10 @@ class BaseIndexer():
         raise Exception("This function must be implemented by classes that inherit this class.")
 
     #TODO: Make private?
-    #TODO: Is start_index necessary?
-    def filter(self, index_file_path, fltr, start_index, end_index):
+    def filter(self, index_file_path, fltr, end_index):
         raise Exception("This function must be implemented by classes that inherit this class.")
 
 class CategoricalIndexer(BaseIndexer):
-    #TODO: Can these be pushed to base class?
     def __init__(self, f4_file_path, compression_level):
         self.__f4_file_path = f4_file_path
 
@@ -31,12 +30,26 @@ class CategoricalIndexer(BaseIndexer):
 
         index_string = b""
         for value, row_indices in value_dict.items():
-            row_indices_string = pynumparser.NumberSequence().encode(row_indices)
+            row_indices_string = pynumparser.NumberSequence(int).encode(row_indices)
             index_string += (f"{value.decode()}\t{row_indices_string}\n").encode()
 
         return index_string
 
-    def filter(self, index_file_path, fltr, start_index, end_index):
+    def filter(self, index_file_path, fltr, end_index):
+        index_file = f4py.open_read_file(index_file_path, file_extension="")
+        row_indices = set()
+
+        while True:
+            line_items = index_file.readline().rstrip(b"\n").split(b"\t")
+
+            if len(line_items) < 2:
+                break
+
+            if line_items[0].rstrip() == fltr.value:
+                row_indices = set(pynumparser.NumberSequence(int).parse(line_items[1].decode()))
+
+        index_file.close()
+
         return row_indices
 
 class IdentifierIndexer(BaseIndexer):
@@ -66,7 +79,7 @@ class IdentifierIndexer(BaseIndexer):
 
         return column_coords_string
 
-    def filter(self, index_file_path, fltr, start_index, end_index):
+    def filter(self, index_file_path, fltr, end_index):
         if end_index == 0:
             return set()
 
@@ -77,7 +90,7 @@ class IdentifierIndexer(BaseIndexer):
         value_coords = index_parser._parse_data_coords([0])[0]
         position_coords = index_parser._parse_data_coords([1])[0]
 
-        matching_position = self.binary_search(index_parser, line_length, value_coords, data_file_handle, fltr.value, start_index, end_index)
+        matching_position = self.binary_search(index_parser, line_length, value_coords, data_file_handle, fltr.value, 0, end_index)
 
         if matching_position != None:
             matching_row_index = int(index_parser.parse_data_value(matching_position, line_length, position_coords, data_file_handle).rstrip())
@@ -129,7 +142,7 @@ class NumericIndexer(BaseIndexer):
 
         return column_coords_string
 
-    def filter(self, index_file_path, fltr, start_index, end_index):
+    def filter(self, index_file_path, fltr, end_index):
         if end_index == 0:
             return set()
 
@@ -150,32 +163,27 @@ class NumericIndexer(BaseIndexer):
         if largest_value < fltr.value:
             return set()
 
-        previous_query_position = end_index - 1
-        query_position = end_index - 2
-
-        # Work backwards from the end and find the position where all values are greater than the query value.
-        while float(index_parser.parse_data_value(query_position, line_length, value_coords, data_file_handle).rstrip()) > fltr.value:
-            previous_query_position = query_position
-            query_position = query_position // 2
-
-        # Find the value just lower than the query value.
-        while query_position < previous_query_position:
-            this_value = float(index_parser.parse_data_value(query_position, line_length, value_coords, data_file_handle).rstrip())
-            next_value = float(index_parser.parse_data_value(query_position + 1, line_length, value_coords, data_file_handle).rstrip())
-
-            # Start with the position one ahead of what you just found.
-            if this_value < fltr.value and next_value >= fltr.value:
-                query_position += 1
-                break
-
-            query_position += (previous_query_position - query_position) // 2
-
-            if query_position + 1 == previous_query_position:
-                query_position += 1
-                break
+        matching_position = self.search_gt(index_parser, line_length, value_coords, data_file_handle, fltr.value, 0, end_index)
 
         matching_row_indices = set()
-        for i in range(query_position, end_index):
+        for i in range(matching_position + 1, end_index):
             matching_row_indices.add(int(index_parser.parse_data_value(i, line_length, position_coords, data_file_handle).rstrip()))
 
         return matching_row_indices
+
+    def search_gt(self, parser, line_length, value_coords, data_file_handle, value_to_find, l, r):
+        mid = l + (r - l) // 2
+
+        mid_value = float(parser.parse_data_value(mid, line_length, value_coords, data_file_handle).rstrip())
+
+        if mid_value <= value_to_find:
+            next_value = parser.parse_data_value(mid + 1, line_length, value_coords, data_file_handle).rstrip()
+
+            if next_value == b"":
+                return mid
+            elif float(next_value) > value_to_find:
+                return mid
+            else:
+                return self.search_gt(parser, line_length, value_coords, data_file_handle, value_to_find, mid, r)
+        else:
+            return self.search_gt(parser, line_length, value_coords, data_file_handle, value_to_find, l, mid)

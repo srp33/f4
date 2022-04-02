@@ -32,11 +32,11 @@ class BaseFilter:
 
         return passing_row_indices
 
-    def filter_indexed_column_values(self, parser, column_index_dict, column_type_dict, column_coords_dict, start_index, end_index):
+    def filter_indexed_column_values(self, parser, column_index_dict, column_type_dict, column_coords_dict, end_index):
         #index_file_path = f"{parser.data_file_path}.idx_{self.column_name.decode()}"
         index_column_type = column_type_dict[column_index_dict[self.column_name]]
 
-        return f4py.IndexHelper.filter(parser.data_file_path, parser.compression_level, self.column_name, index_column_type, self, start_index, end_index)
+        return f4py.IndexHelper.filter(parser.data_file_path, parser.compression_level, self.column_name, index_column_type, self, end_index)
 
     def passes(self, value):
         raise Exception("This function must be implemented by classes that inherit this class.")
@@ -51,8 +51,8 @@ class NoFilter(BaseFilter):
     def filter_column_values(self, parser, row_indices, column_index_dict, column_type_dict, column_coords_dict):
         return row_indices
 
-    def filter_indexed_column_values(self, parser, column_index_dict, column_type_dict, column_coords_dict, start_index, end_index):
-        return set(range(start_index, end_index))
+    def filter_indexed_column_values(self, parser, column_index_dict, column_type_dict, column_coords_dict, end_index):
+        return set(range(end_index))
 
 class __SimpleBaseFilter(BaseFilter):
     def __init__(self, column_name, value):
@@ -205,14 +205,14 @@ class NumericFilter(__SimpleBaseFilter):
 
         super().__init__(column_name, query_value)
 
-        self.__operator = oper
+        self.operator = oper
 
     def check_types(self, column_index_dict, column_type_dict):
         if column_type_dict[column_index_dict[self.column_name]] == "c":
             raise Exception(f"A numeric filter may only be used with numeric columns, but {self.column_name.decode()} is not numeric (float or integer).")
 
     def passes(self, value):
-        return self.__operator(fastnumbers.fast_float(value), self.value)
+        return self.operator(fastnumbers.fast_float(value), self.value)
 
 class __CompositeBaseFilter(BaseFilter):
     def __init__(self, filter1, filter2):
@@ -246,9 +246,9 @@ class AndFilter(__CompositeBaseFilter):
         row_indices_1 = self.filter1.filter_column_values(parser, row_indices, column_index_dict, column_type_dict, column_coords_dict)
         return self.filter2.filter_column_values(parser, row_indices_1, column_index_dict, column_type_dict, column_coords_dict)
 
-    def filter_indexed_column_values(self, parser, column_index_dict, column_type_dict, column_coords_dict, start_index, end_index):
-        row_indices_1 = self.filter1.filter_indexed_column_values(parser, column_index_dict, column_type_dict, column_coords_dict, start_index, end_index)
-        row_indices_2 = self.filter2.filter_indexed_column_values(parser, column_index_dict, column_type_dict, column_coords_dict, start_index, end_index)
+    def filter_indexed_column_values(self, parser, column_index_dict, column_type_dict, column_coords_dict, end_index):
+        row_indices_1 = self.filter1.filter_indexed_column_values(parser, column_index_dict, column_type_dict, column_coords_dict, end_index)
+        row_indices_2 = self.filter2.filter_indexed_column_values(parser, column_index_dict, column_type_dict, column_coords_dict, end_index)
 
         return row_indices_1 & row_indices_2
 
@@ -270,8 +270,8 @@ class OrFilter(__CompositeBaseFilter):
 
         return row_indices_1 | row_indices_2
 
-    def filter_indexed_column_values(self, parser, column_index_dict, column_type_dict, column_coords_dict, start_index, end_index):
-        row_indices_1 = self.filter1.filter_indexed_column_values(parser, column_index_dict, column_type_dict, column_coords_dict, start_index, end_index)
-        row_indices_2 = self.filter2.filter_indexed_column_values(parser, column_index_dict, column_type_dict, column_coords_dict, start_index, end_index)
+    def filter_indexed_column_values(self, parser, column_index_dict, column_type_dict, column_coords_dict, end_index):
+        row_indices_1 = self.filter1.filter_indexed_column_values(parser, column_index_dict, column_type_dict, column_coords_dict, end_index)
+        row_indices_2 = self.filter2.filter_indexed_column_values(parser, column_index_dict, column_type_dict, column_coords_dict, end_index)
 
         return row_indices_1 | row_indices_2

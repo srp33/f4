@@ -265,7 +265,6 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
     check_results("Indexed filter FloatA > 9.9", read_file_into_lists(out_file_path), [[b"FloatA"]])
     parser.query_and_save(f4py.NumericFilter("FloatA", operator.gt, 100), ["FloatA"], out_file_path)
     check_results("Indexed filter FloatA > 100", read_file_into_lists(out_file_path), [[b"FloatA"]])
-    sys.exit()
 
     parser.query_and_save(f4py.NumericFilter("FloatA", operator.ge, 0), ["FloatA"], out_file_path)
     check_results("Indexed filter FloatA >= 0", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
@@ -279,6 +278,7 @@ def run_all_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines
     check_results("Indexed filter FloatA >= 9.9", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"]])
     parser.query_and_save(f4py.NumericFilter("FloatA", operator.ge, 100), ["FloatA"], out_file_path)
     check_results("Indexed filter FloatA >= 100", read_file_into_lists(out_file_path), [[b"FloatA"]])
+    sys.exit()
 
     parser.query_and_save(f4py.NumericFilter("FloatA", operator.lt, 0), ["FloatA"], out_file_path)
     check_results("Indexed filter FloatA < 0", read_file_into_lists(out_file_path), [[b"FloatA"]])

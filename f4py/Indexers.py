@@ -153,6 +153,13 @@ class NumericIndexer(BaseIndexer):
         value_coords = index_parser._parse_data_coords([0])[0]
         position_coords = index_parser._parse_data_coords([1])[0]
 
+        if fltr.operator == operator.gt:
+            return self.find_positions_gt(index_parser, line_length, value_coords, position_coords, data_file_handle, fltr, end_index)
+        elif fltr.operator == operator.ge:
+            return self.find_positions_ge(index_parser, line_length, value_coords, position_coords, data_file_handle, fltr, end_index)
+        return set()
+
+    def find_positions_gt(self, index_parser, line_length, value_coords, position_coords, data_file_handle, fltr, end_index):
         # if smallest value > query value: all are true
         smallest_value = float(index_parser.parse_data_value(0, line_length, value_coords, data_file_handle).rstrip())
         if smallest_value > fltr.value:
@@ -171,19 +178,55 @@ class NumericIndexer(BaseIndexer):
 
         return matching_row_indices
 
-    def search_gt(self, parser, line_length, value_coords, data_file_handle, value_to_find, l, r):
+    def find_positions_ge(self, index_parser, line_length, value_coords, position_coords, data_file_handle, fltr, end_index):
+        # if smallest value > query value: all are true
+        smallest_value = float(index_parser.parse_data_value(0, line_length, value_coords, data_file_handle).rstrip())
+        if smallest_value >= fltr.value:
+            return set(range(end_index))
+
+        # if largest value < query value: all are false
+        largest_value = float(index_parser.parse_data_value(end_index - 1, line_length, value_coords, data_file_handle).rstrip())
+        if largest_value < fltr.value:
+            return set()
+
+        matching_position = self.search_ge(index_parser, line_length, value_coords, data_file_handle, fltr.value, 0, end_index)
+
+        matching_row_indices = set()
+        for i in range(matching_position + 1, end_index):
+            matching_row_indices.add(int(index_parser.parse_data_value(i, line_length, position_coords, data_file_handle).rstrip()))
+
+        return matching_row_indices
+
+    def search_gt(self, index_parser, line_length, value_coords, data_file_handle, value_to_find, l, r):
         mid = l + (r - l) // 2
 
-        mid_value = float(parser.parse_data_value(mid, line_length, value_coords, data_file_handle).rstrip())
+        mid_value = float(index_parser.parse_data_value(mid, line_length, value_coords, data_file_handle).rstrip())
 
         if mid_value <= value_to_find:
-            next_value = parser.parse_data_value(mid + 1, line_length, value_coords, data_file_handle).rstrip()
+            next_value = index_parser.parse_data_value(mid + 1, line_length, value_coords, data_file_handle).rstrip()
 
             if next_value == b"":
                 return mid
             elif float(next_value) > value_to_find:
                 return mid
             else:
-                return self.search_gt(parser, line_length, value_coords, data_file_handle, value_to_find, mid, r)
+                return self.search_gt(index_parser, line_length, value_coords, data_file_handle, value_to_find, mid, r)
         else:
-            return self.search_gt(parser, line_length, value_coords, data_file_handle, value_to_find, l, mid)
+            return self.search_gt(index_parser, line_length, value_coords, data_file_handle, value_to_find, l, mid)
+
+    def search_ge(self, index_parser, line_length, value_coords, data_file_handle, value_to_find, l, r):
+        mid = l + (r - l) // 2
+
+        mid_value = float(index_parser.parse_data_value(mid, line_length, value_coords, data_file_handle).rstrip())
+
+        if mid_value < value_to_find:
+            next_value = index_parser.parse_data_value(mid + 1, line_length, value_coords, data_file_handle).rstrip()
+
+            if next_value == b"":
+                return mid
+            elif float(next_value) >= value_to_find:
+                return mid
+            else:
+                return self.search_ge(index_parser, line_length, value_coords, data_file_handle, value_to_find, mid, r)
+        else:
+            return self.search_ge(index_parser, line_length, value_coords, data_file_handle, value_to_find, l, mid)

@@ -1,10 +1,8 @@
-Make NumericIndexer work for >=, <, <=, and ==.
-Add some more (simple) tests for indexed columns.
-  Simplify the following test first?
-
 Write code to generate medium-sized files and write tests to make sure the filters work on those.
 
 Change .ct files to use n rather than f to identify numeric columns.
+
+Remove unnecessary comments and address TODO items.
 
 --Only do what's necessary for the first paper--
 Modify TestSmall.py so that it tests the scenario when an index and/or compression are used.
@@ -14,7 +12,7 @@ Modify TestSmall.py so that it tests the scenario when an index and/or compressi
     2) compressed + non-compressed index
     3) compressed + compressed index (when they want to be able to query any column).
 
-Check the build code for optimization. Then build F4 files for CADD.
+Check the build code for optimization and how parallelization is done. Then build F4 files for CADD.
 
 Test parsing CADD files.
   Compare against tabix. We can also compare it in terms of size.

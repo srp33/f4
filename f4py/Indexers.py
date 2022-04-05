@@ -8,17 +8,21 @@ import pynumparser
 #import zstandard
 
 class BaseIndexer():
+    def __init__(self, index_file_path, compression_level):
+        self.index_file_path = index_file_path
+        self.compression_level = compression_level
+
     #TODO: Make private?
     def build(self, values_positions):
         raise Exception("This function must be implemented by classes that inherit this class.")
 
     #TODO: Make private?
-    def filter(self, index_file_path, fltr, end_index):
+    def filter(self, fltr, end_index):
         raise Exception("This function must be implemented by classes that inherit this class.")
 
 class CategoricalIndexer(BaseIndexer):
-    def __init__(self, f4_file_path, compression_level):
-        self.__f4_file_path = f4_file_path
+    def __init__(self, index_file_path, compression_level):
+        super().__init__(index_file_path, compression_level)
 
     def build(self, values_positions):
         value_dict = {}
@@ -33,10 +37,13 @@ class CategoricalIndexer(BaseIndexer):
             row_indices_string = pynumparser.NumberSequence(int).encode(row_indices)
             index_string += (f"{value.decode()}\t{row_indices_string}\n").encode()
 
-        return index_string
+        f4py.write_string_to_file(self.index_file_path, "", index_string)
 
-    def filter(self, index_file_path, fltr, end_index):
-        index_file = f4py.open_read_file(index_file_path, file_extension="")
+        # TODO: Indicate whether the index is compressed.
+        #write_string_to_file(self.__f4_file_path, ".idx.cmp", str(self.__compression_level).encode())
+
+    def filter(self, fltr, end_index):
+        index_file = f4py.open_read_file(self.index_file_path, file_extension="")
         row_indices = set()
 
         while True:
@@ -53,8 +60,8 @@ class CategoricalIndexer(BaseIndexer):
         return row_indices
 
 class IdentifierIndexer(BaseIndexer):
-    def __init__(self, f4_file_path, compression_level):
-        self.__f4_file_path = f4_file_path
+    def __init__(self, index_file_path, compression_level):
+        super().__init__(index_file_path, compression_level)
 
     def build(self, values_positions):
         values_positions.sort(key=itemgetter(0))
@@ -75,15 +82,17 @@ class IdentifierIndexer(BaseIndexer):
 
         column_coords_string, rows_max_length = f4py.build_string_map(rows)
 
-        f4py.Builder().save_meta_files(self.__f4_file_path, [values_max_length, positions_max_length], rows_max_length + 1)
+        f4py.write_string_to_file(self.index_file_path, "", column_coords_string)
+        f4py.Builder().save_meta_files(self.index_file_path, [values_max_length, positions_max_length], rows_max_length + 1)
 
-        return column_coords_string
+        # TODO: Indicate whether the index is compressed.
+        #write_string_to_file(self.__f4_file_path, ".idx.cmp", str(self.__compression_level).encode())
 
-    def filter(self, index_file_path, fltr, end_index):
+    def filter(self, fltr, end_index):
         if end_index == 0:
             return set()
 
-        index_parser = f4py.Parser(index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
+        index_parser = f4py.Parser(self.index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
 
         line_length = index_parser.get_stat(".ll")
         data_file_handle = index_parser.get_file_handle("")
@@ -114,8 +123,8 @@ class IdentifierIndexer(BaseIndexer):
             return self.binary_search(parser, line_length, value_coords, data_file_handle, value_to_find, mid+1, r)
 
 class NumericIndexer(BaseIndexer):
-    def __init__(self, f4_file_path, compression_level):
-        self.__f4_file_path = f4_file_path
+    def __init__(self, index_file_path, compression_level):
+        super().__init__(index_file_path, compression_level)
 
     def build(self, values_positions):
         for i in range(len(values_positions)):
@@ -138,95 +147,95 @@ class NumericIndexer(BaseIndexer):
 
         column_coords_string, rows_max_length = f4py.build_string_map(rows)
 
-        f4py.Builder().save_meta_files(self.__f4_file_path, [values_max_length, positions_max_length], rows_max_length + 1)
+        f4py.write_string_to_file(self.index_file_path, "", column_coords_string)
+        f4py.Builder().save_meta_files(self.index_file_path, [values_max_length, positions_max_length], rows_max_length + 1)
 
-        return column_coords_string
+        # TODO: Indicate whether the index is compressed.
+        #write_string_to_file(self.__f4_file_path, ".idx.cmp", str(self.__compression_level).encode())
 
-    def filter(self, index_file_path, fltr, end_index):
+    def filter(self, fltr, end_index):
         if end_index == 0:
             return set()
 
-        index_parser = f4py.Parser(index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
+        return self.find_matching_row_indices(self.find_positions(fltr, end_index))
 
+    def find_positions(self, fltr, end_index):
+        index_parser = f4py.Parser(self.index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
         line_length = index_parser.get_stat(".ll")
         data_file_handle = index_parser.get_file_handle("")
         value_coords = index_parser._parse_data_coords([0])[0]
-        position_coords = index_parser._parse_data_coords([1])[0]
 
         if fltr.operator == operator.gt:
-            return self.find_positions_gt(index_parser, line_length, value_coords, position_coords, data_file_handle, fltr, end_index)
+            positions = self.find_positions_g(index_parser, line_length, value_coords, data_file_handle, fltr, end_index, fltr.operator, operator.le)
         elif fltr.operator == operator.ge:
-            return self.find_positions_ge(index_parser, line_length, value_coords, position_coords, data_file_handle, fltr, end_index)
-        return set()
+            positions = self.find_positions_g(index_parser, line_length, value_coords, data_file_handle, fltr, end_index, fltr.operator, operator.lt)
+        elif fltr.operator == operator.lt:
+            positions = self.find_positions_l(index_parser, line_length, value_coords, data_file_handle, fltr, end_index, fltr.operator, operator.ge)
+        elif fltr.operator == operator.le:
+            positions = self.find_positions_l(index_parser, line_length, value_coords, data_file_handle, fltr, end_index, fltr.operator, operator.gt)
 
-    def find_positions_gt(self, index_parser, line_length, value_coords, position_coords, data_file_handle, fltr, end_index):
-        # if smallest value > query value: all are true
+        index_parser.close()
+
+        return positions
+
+    def find_positions_g(self, index_parser, line_length, value_coords, data_file_handle, fltr, end_index, all_true_operator, all_false_operator):
         smallest_value = float(index_parser.parse_data_value(0, line_length, value_coords, data_file_handle).rstrip())
-        if smallest_value > fltr.value:
-            return set(range(end_index))
+        if all_true_operator(smallest_value, fltr.value):
+            #return range(end_index)
+            return 0, end_index
 
-        # if largest value < query value: all are false
         largest_value = float(index_parser.parse_data_value(end_index - 1, line_length, value_coords, data_file_handle).rstrip())
-        if largest_value < fltr.value:
-            return set()
+        if not all_true_operator(largest_value, fltr.value):
+            #return []
+            return 0, 0
 
-        matching_position = self.search_gt(index_parser, line_length, value_coords, data_file_handle, fltr.value, 0, end_index)
+        matching_position = self.search(index_parser, line_length, value_coords, data_file_handle, fltr.value, 0, end_index, all_false_operator)
 
-        matching_row_indices = set()
-        for i in range(matching_position + 1, end_index):
-            matching_row_indices.add(int(index_parser.parse_data_value(i, line_length, position_coords, data_file_handle).rstrip()))
+        return matching_position + 1, end_index
 
-        return matching_row_indices
-
-    def find_positions_ge(self, index_parser, line_length, value_coords, position_coords, data_file_handle, fltr, end_index):
-        # if smallest value > query value: all are true
+    def find_positions_l(self, index_parser, line_length, value_coords, data_file_handle, fltr, end_index, all_true_operator, all_false_operator):
         smallest_value = float(index_parser.parse_data_value(0, line_length, value_coords, data_file_handle).rstrip())
-        if smallest_value >= fltr.value:
-            return set(range(end_index))
+        if not all_true_operator(smallest_value, fltr.value):
+            return 0, 0
 
-        # if largest value < query value: all are false
         largest_value = float(index_parser.parse_data_value(end_index - 1, line_length, value_coords, data_file_handle).rstrip())
-        if largest_value < fltr.value:
-            return set()
+        if all_true_operator(largest_value, fltr.value):
+            #return range(end_index)
+            return 0, end_index
 
-        matching_position = self.search_ge(index_parser, line_length, value_coords, data_file_handle, fltr.value, 0, end_index)
+        matching_position = self.search(index_parser, line_length, value_coords, data_file_handle, fltr.value, 0, end_index, all_true_operator)
 
-        matching_row_indices = set()
-        for i in range(matching_position + 1, end_index):
-            matching_row_indices.add(int(index_parser.parse_data_value(i, line_length, position_coords, data_file_handle).rstrip()))
+        return 0, matching_position + 1
 
-        return matching_row_indices
-
-    def search_gt(self, index_parser, line_length, value_coords, data_file_handle, value_to_find, l, r):
+    def search(self, index_parser, line_length, value_coords, data_file_handle, value_to_find, l, r, search_operator):
         mid = l + (r - l) // 2
 
         mid_value = float(index_parser.parse_data_value(mid, line_length, value_coords, data_file_handle).rstrip())
 
-        if mid_value <= value_to_find:
+        if search_operator(mid_value, value_to_find):
             next_value = index_parser.parse_data_value(mid + 1, line_length, value_coords, data_file_handle).rstrip()
 
             if next_value == b"":
                 return mid
-            elif float(next_value) > value_to_find:
+            elif not search_operator(float(next_value), value_to_find):
                 return mid
             else:
-                return self.search_gt(index_parser, line_length, value_coords, data_file_handle, value_to_find, mid, r)
+                return self.search(index_parser, line_length, value_coords, data_file_handle, value_to_find, mid, r, search_operator)
         else:
-            return self.search_gt(index_parser, line_length, value_coords, data_file_handle, value_to_find, l, mid)
+            return self.search(index_parser, line_length, value_coords, data_file_handle, value_to_find, l, mid, search_operator)
 
-    def search_ge(self, index_parser, line_length, value_coords, data_file_handle, value_to_find, l, r):
-        mid = l + (r - l) // 2
+    def find_matching_row_indices(self, positions):
+        index_parser = f4py.Parser(self.index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
 
-        mid_value = float(index_parser.parse_data_value(mid, line_length, value_coords, data_file_handle).rstrip())
+        line_length = index_parser.get_stat(".ll")
+        data_file_handle = index_parser.get_file_handle("")
+        position_coords = index_parser._parse_data_coords([1])[0]
 
-        if mid_value < value_to_find:
-            next_value = index_parser.parse_data_value(mid + 1, line_length, value_coords, data_file_handle).rstrip()
+        matching_row_indices = set()
 
-            if next_value == b"":
-                return mid
-            elif float(next_value) >= value_to_find:
-                return mid
-            else:
-                return self.search_ge(index_parser, line_length, value_coords, data_file_handle, value_to_find, mid, r)
-        else:
-            return self.search_ge(index_parser, line_length, value_coords, data_file_handle, value_to_find, l, mid)
+        for i in range(positions[0], positions[1]):
+            matching_row_indices.add(int(index_parser.parse_data_value(i, line_length, position_coords, data_file_handle).rstrip()))
+
+        index_parser.close()
+
+        return matching_row_indices

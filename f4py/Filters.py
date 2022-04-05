@@ -2,6 +2,7 @@ import f4py
 import fastnumbers
 #from f4py.IndexHelper import *
 #from f4py.Utilities import *
+import operator
 #TODO: Keep this import?
 import os
 import re
@@ -33,10 +34,9 @@ class BaseFilter:
         return passing_row_indices
 
     def filter_indexed_column_values(self, parser, column_index_dict, column_type_dict, column_coords_dict, end_index):
-        #index_file_path = f"{parser.data_file_path}.idx_{self.column_name.decode()}"
         index_column_type = column_type_dict[column_index_dict[self.column_name]]
 
-        return f4py.IndexHelper.filter(parser.data_file_path, parser.compression_level, self.column_name, index_column_type, self, end_index)
+        return f4py.IndexHelper.get_filter_indexer(parser.data_file_path, parser.compression_level, self.column_name, index_column_type, self).filter(self, end_index)
 
     def passes(self, value):
         raise Exception("This function must be implemented by classes that inherit this class.")
@@ -275,3 +275,35 @@ class OrFilter(__CompositeBaseFilter):
         row_indices_2 = self.filter2.filter_indexed_column_values(parser, column_index_dict, column_type_dict, column_coords_dict, end_index)
 
         return row_indices_1 | row_indices_2
+
+class NumericWithinFilter(__CompositeBaseFilter):
+    def __init__(self, column_name, lower_bound_value, upper_bound_value):
+        lower_type = type(lower_bound_value)
+        if not lower_type == float and not lower_type == int:
+            raise Exception("The lower_bound_value must be a float or an integer.")
+        upper_type = type(upper_bound_value)
+        if not upper_type == float and not upper_type == int:
+            raise Exception("The upper_bound_value must be a float or an integer.")
+
+        filter1 = NumericFilter(column_name, operator.ge, lower_bound_value)
+        filter2 = NumericFilter(column_name, operator.le, upper_bound_value)
+
+        super().__init__(filter1, filter2)
+
+    def filter_column_values(self, parser, row_indices, column_index_dict, column_type_dict, column_coords_dict):
+        return AndFilter(self.filter1, self.filter2).filter_column_values(parser, row_indices, column_index_dict, column_type_dict, column_coords_dict)
+
+    def filter_indexed_column_values(self, parser, column_index_dict, column_type_dict, column_coords_dict, end_index):
+        lower_index_column_type = column_type_dict[column_index_dict[self.filter1.column_name]]
+        upper_index_column_type = column_type_dict[column_index_dict[self.filter2.column_name]]
+
+        lower_indexer = f4py.IndexHelper.get_filter_indexer(parser.data_file_path, parser.compression_level, self.filter1.column_name, lower_index_column_type, self.filter1)
+        upper_indexer = f4py.IndexHelper.get_filter_indexer(parser.data_file_path, parser.compression_level, self.filter2.column_name, upper_index_column_type, self.filter2)
+
+        lower_positions = lower_indexer.find_positions(self.filter1, end_index)
+        upper_positions = upper_indexer.find_positions(self.filter2, end_index)
+
+        lower_position = max(lower_positions[0], upper_positions[0])
+        upper_position = min(lower_positions[1], upper_positions[1])
+
+        return(lower_indexer.find_matching_row_indices((lower_position, upper_position)))

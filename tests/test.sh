@@ -19,9 +19,9 @@ cp -r ../f4py .
 
 dockerCommand="docker run -i -t --rm --user $(id -u):$(id -g) -v $(pwd):/sandbox -v $(pwd)/data:/data --workdir=/sandbox srp33/f4_test"
 
-$dockerCommand bash -c "time python3 BuildTsv.py 1 1 100 data/medium.tsv"
+#$dockerCommand bash -c "time python3 BuildTsv.py 1 1 100 data/medium.tsv"
 
-#$dockerCommand python3 TestSmall.py
+$dockerCommand python3 TestSmallAndMedium.py
 
 #######################################################
 # Create large test files and do tests

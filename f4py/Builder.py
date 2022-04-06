@@ -5,7 +5,6 @@ from joblib import Parallel, delayed
 #from f4py.Utilities import *
 import math
 import os
-import sys
 import tempfile
 import zstandard
 
@@ -128,7 +127,7 @@ class Builder:
         column_types_dict = {}
         for i in range(start_index, end_index):
             column_sizes_dict[i] = 0
-            column_types_dict[i] = None
+            column_types_dict[i] = {b"i": 0, b"f": 0, b"s": 0, "unique_s": set()}
 
         # Loop through the file for the specified columns.
         num_rows = 0
@@ -136,11 +135,19 @@ class Builder:
             line_items = line.rstrip(b"\n").split(delimiter)
             for i in range(start_index, end_index):
                 column_sizes_dict[i] = max([column_sizes_dict[i], len(line_items[i])])
-                column_types_dict[i] = _infer_type_from_list([column_types_dict[i], _infer_type(line_items[i])])
+
+                inferred_type = _infer_type(line_items[i])
+                if inferred_type:
+                    if inferred_type == b"s":
+                        column_types_dict[i]["unique_s"].add(line_items[i])
+
+                    column_types_dict[i][inferred_type] += 1
 
             num_rows += 1
 
         in_file.close()
+
+        column_types_dict[i] = _infer_type_for_column(column_types_dict[i], num_rows)
 
         return column_sizes_dict, column_types_dict, num_rows
 
@@ -280,23 +287,21 @@ def _infer_type(value):
         return b"i"
     if fastnumbers.isfloat(value):
         return b"f"
-    return b"c"
+    return b"s"
 
-def _infer_type_from_list(types):
-    # Remove any None or missing values. Convert to set so only contains unique values and is faster.
-    types = [x for x in types if x and not f4py.is_missing_value(x)]
-
-    if len(types) == 0:
+def _infer_type_for_column(types_dict, num_rows):
+    if len(types_dict) == 0:
         return None
-    if len(types) == 1:
-        return types[0]
+    if len(types_dict) == 1:
+        return list(types_dict.keys())[0]
 
-    types = set(types)
+    if types_dict[b"s"] > 0:
+        if len(types_dict["unique_s"]) == num_rows:
+            return b"u"
+        return b"c"
+    elif types_dict[b"f"] > 0:
+        return b"f"
 
-    if b"c" in types:
-        return b"c" # If any value is non-numeric, then we infer categorical.
-    if b"f" in types:
-        return b"f" # If any value if a float in a numeric column, then we infer float.
     return b"i"
 
 def _format_string_as_fixed_width(x, size):

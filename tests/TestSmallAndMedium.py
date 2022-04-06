@@ -76,7 +76,7 @@ def run_small_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lin
     check_result("Parser properties", "Number of rows", parser.get_num_rows(), 5)
     check_result("Parser properties", "Number of columns", parser.get_num_cols(), 9)
 
-    check_result("Column types", "ID column", parser.get_column_type_from_name("ID"), "i")
+    check_result("Column types", "ID column", parser.get_column_type_from_name("ID"), "u")
     check_result("Column types", "FloatA column", parser.get_column_type_from_name("FloatA"), "f")
     check_result("Column types", "FloatB column", parser.get_column_type_from_name("FloatB"), "f")
     check_result("Column types", "OrdinalA column", parser.get_column_type_from_name("OrdinalA"), "c")
@@ -93,7 +93,7 @@ def run_small_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lin
     check_results("No filters, select all columns explicitly", read_file_into_lists(out_file_path), read_file_into_lists(in_file_path))
 
     parser.query_and_save(f4py.NoFilter(), ["ID"], out_file_path)
-    check_results("No filters, select first column", read_file_into_lists(out_file_path), [[b"ID"],[b"9"],[b"1"],[b"2"],[b"3"],[b"4"]])
+    check_results("No filters, select first column", read_file_into_lists(out_file_path), [[b"ID"],[b"E"],[b"A"],[b"B"],[b"C"],[b"D"]])
 
     parser.query_and_save(f4py.NoFilter(), ["CategoricalB"], out_file_path)
     check_results("No filters, select last column", read_file_into_lists(out_file_path), [[b"CategoricalB"],[b"Brown"],[b"Yellow"],[b"Yellow"],[b"Brown"],[b"Orange"]])
@@ -107,13 +107,10 @@ def run_small_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lin
     except:
         pass_test("Invalid column name in select.")
 
-    parser.query_and_save(f4py.NumericFilter("ID", operator.eq, 1), ["FloatA"], out_file_path)
-    check_results("Filter by ID using Numeric filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"]])
-
-    parser.query_and_save(f4py.StringEqualsFilter("ID", "1"), ["FloatA"], out_file_path)
+    parser.query_and_save(f4py.StringEqualsFilter("ID", "A"), ["FloatA"], out_file_path)
     check_results("Filter by ID using equals filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"]])
 
-    parser.query_and_save(f4py.StringNotEqualsFilter("ID", "1"), ["FloatA"], out_file_path)
+    parser.query_and_save(f4py.StringNotEqualsFilter("ID", "A"), ["FloatA"], out_file_path)
     check_results("Filter by ID using not equals filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"],[b"2.2"],[b"2.2"],[b"4.4"],])
 
     parser.query_and_save(f4py.AndFilter(f4py.NumericFilter("FloatA", operator.ne, 1.1), f4py.NumericFilter("IntA", operator.eq, 7)), ["FloatA"], out_file_path)
@@ -253,14 +250,14 @@ def run_small_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lin
 
     parser = f4py.Parser(f4_file_path)
 
-    parser.query_and_save(f4py.StringEqualsFilter("ID", "1"), ["FloatA"], out_file_path)
-    check_results("Indexed filter ID = 1", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"]])
-    parser.query_and_save(f4py.StringEqualsFilter("ID", "2"), ["FloatA"], out_file_path)
-    check_results("Indexed filter ID = 2", read_file_into_lists(out_file_path), [[b"FloatA"], [b"2.2"]])
-    parser.query_and_save(f4py.StringEqualsFilter("ID", "4"), ["FloatA"], out_file_path)
-    check_results("Indexed filter ID = 4", read_file_into_lists(out_file_path), [[b"FloatA"], [b"4.4"]])
-    parser.query_and_save(f4py.StringEqualsFilter("ID", "9"), ["FloatA"], out_file_path)
-    check_results("Indexed filter ID = 9", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"]])
+    parser.query_and_save(f4py.StringEqualsFilter("ID", "A"), ["FloatA"], out_file_path)
+    check_results("Indexed filter ID = A", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"]])
+    parser.query_and_save(f4py.StringEqualsFilter("ID", "B"), ["FloatA"], out_file_path)
+    check_results("Indexed filter ID = B", read_file_into_lists(out_file_path), [[b"FloatA"], [b"2.2"]])
+    parser.query_and_save(f4py.StringEqualsFilter("ID", "D"), ["FloatA"], out_file_path)
+    check_results("Indexed filter ID = D", read_file_into_lists(out_file_path), [[b"FloatA"], [b"4.4"]])
+    parser.query_and_save(f4py.StringEqualsFilter("ID", "E"), ["FloatA"], out_file_path)
+    check_results("Indexed filter ID = E", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"]])
 
     parser.query_and_save(f4py.NumericFilter("FloatA", operator.gt, 0), ["FloatA"], out_file_path)
     check_results("Indexed filter FloatA > 0", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
@@ -328,19 +325,19 @@ def run_small_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lin
     check_results("Indexed filter FloatA within 100 and 1000", read_file_into_lists(out_file_path), [[b"FloatA"]])
 
     parser.query_and_save(f4py.StringEqualsFilter("OrdinalA", "Low"), ["ID"], out_file_path)
-    check_results("Categorical filter OrdinalA = Low", read_file_into_lists(out_file_path), [[b"ID"], [b"9"], [b"1"]])
+    check_results("Categorical filter OrdinalA = Low", read_file_into_lists(out_file_path), [[b"ID"], [b"E"], [b"A"]])
     parser.query_and_save(f4py.StringEqualsFilter("OrdinalA", "Med"), ["ID"], out_file_path)
-    check_results("Categorical filter OrdinalA = Med", read_file_into_lists(out_file_path), [[b"ID"], [b"3"], [b"4"]])
+    check_results("Categorical filter OrdinalA = Med", read_file_into_lists(out_file_path), [[b"ID"], [b"C"], [b"D"]])
     parser.query_and_save(f4py.StringEqualsFilter("OrdinalA", "High"), ["ID"], out_file_path)
-    check_results("Categorical filter OrdinalA = High", read_file_into_lists(out_file_path), [[b"ID"], [b"2"]])
+    check_results("Categorical filter OrdinalA = High", read_file_into_lists(out_file_path), [[b"ID"], [b"B"]])
 
     fltr = f4py.AndFilter(
              f4py.OrFilter(
                f4py.OrFilter(
-                 f4py.StringEqualsFilter("ID", "1"),
-                 f4py.StringEqualsFilter("ID", "2"),
+                 f4py.StringEqualsFilter("ID", "A"),
+                 f4py.StringEqualsFilter("ID", "B"),
                ),
-               f4py.StringEqualsFilter("ID", "3"),
+               f4py.StringEqualsFilter("ID", "C"),
              ),
              f4py.NumericFilter("FloatA", operator.ge, 2)
            )
@@ -356,7 +353,7 @@ def run_small_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lin
 
     #pass_test("Completed all tests succesfully!!")
 
-def run_medium_tests(medium_ID, medium_Discrete1, medium_Numeric1):
+def run_medium_tests():
     in_file_path = "/data/medium.tsv"
     f4_file_path = "/data/medium.f4"
     out_file_path = "/tmp/f4_out.tsv"
@@ -364,6 +361,12 @@ def run_medium_tests(medium_ID, medium_Discrete1, medium_Numeric1):
     print("-------------------------------------------------------")
     print(f"Running all tests for {in_file_path}")
     print("-------------------------------------------------------")
+
+    with open("/data/medium.tsv") as medium_file:
+        medium_lines = medium_file.read().rstrip("\n").split("\n")
+        medium_ID = [[line.split("\t")[0].encode()] for line in medium_lines]
+        medium_Discrete1 = [[line.split("\t")[1].encode()] for line in medium_lines]
+        medium_Numeric1 = [[line.split("\t")[2].encode()] for line in medium_lines]
 
     # Clean up data files if they already exist
     for file_path in glob.glob(f"{f4_file_path}*"):
@@ -423,10 +426,4 @@ run_small_tests("/data/small.tsv", num_processes = 1, num_cols_per_chunk = 1, li
 #run_small_tests("/data/small.tsv", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
 #run_small_tests("/data/small.tsv.gz", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
 
-with open("/data/medium.tsv") as medium_file:
-    medium_lines = medium_file.read().rstrip("\n").split("\n")
-    medium_ID = [[line.split("\t")[0].encode()] for line in medium_lines]
-    medium_Discrete1 = [[line.split("\t")[1].encode()] for line in medium_lines]
-    medium_Numeric1 = [[line.split("\t")[2].encode()] for line in medium_lines]
-
-run_medium_tests(medium_ID, medium_Discrete1, medium_Numeric1)
+run_medium_tests()

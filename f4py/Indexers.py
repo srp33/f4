@@ -101,13 +101,16 @@ class IdentifierIndexer(BaseIndexer):
 
         matching_position = self.binary_search(index_parser, line_length, value_coords, data_file_handle, fltr.value, 0, end_index)
 
-        if matching_position != None:
-            matching_row_index = int(index_parser.parse_data_value(matching_position, line_length, position_coords, data_file_handle).rstrip())
-            return set([matching_row_index])
+        if matching_position == -1:
+            return set()
 
-        return set()
+        matching_row_index = int(index_parser.parse_data_value(matching_position, line_length, position_coords, data_file_handle).rstrip())
+        return set([matching_row_index])
 
     def binary_search(self, parser, line_length, value_coords, data_file_handle, value_to_find, l, r):
+        if r == -1:
+            return -1
+
         mid = l + (r - l) // 2
 
         mid_value = parser.parse_data_value(mid, line_length, value_coords, data_file_handle).rstrip()

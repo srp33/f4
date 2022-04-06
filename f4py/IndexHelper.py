@@ -48,7 +48,7 @@ class IndexHelper:
     def get_filter_indexer(f4_file_path, compression_level, index_column, index_column_type, fltr):
         index_file_path = IndexHelper.get_index_file_path(f4_file_path, index_column.decode())
 
-        if index_column_type == "i":
+        if index_column_type == "u":
             if isinstance(fltr, f4py.StringEqualsFilter):
                 return f4py.IdentifierIndexer(index_file_path, compression_level)
             else:

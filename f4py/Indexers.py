@@ -1,22 +1,16 @@
 import f4py
-#from f4py.IndexHelpers import *
-#from f4py.Parser import *
-#from f4py.Utilities import *
 import operator
 from operator import itemgetter
 import pynumparser
-#import zstandard
 
 class BaseIndexer():
     def __init__(self, index_file_path, compression_level):
         self.index_file_path = index_file_path
         self.compression_level = compression_level
 
-    #TODO: Make private?
     def build(self, values_positions):
         raise Exception("This function must be implemented by classes that inherit this class.")
 
-    #TODO: Make private?
     def filter(self, fltr, end_index):
         raise Exception("This function must be implemented by classes that inherit this class.")
 
@@ -83,7 +77,7 @@ class IdentifierIndexer(BaseIndexer):
         column_coords_string, rows_max_length = f4py.build_string_map(rows)
 
         f4py.write_string_to_file(self.index_file_path, "", column_coords_string)
-        f4py.Builder().save_meta_files(self.index_file_path, [values_max_length, positions_max_length], rows_max_length + 1)
+        f4py.Builder()._save_meta_files(self.index_file_path, [values_max_length, positions_max_length], rows_max_length + 1)
 
         # TODO: Indicate whether the index is compressed.
         #write_string_to_file(self.__f4_file_path, ".idx.cmp", str(self.__compression_level).encode())
@@ -151,7 +145,7 @@ class NumericIndexer(BaseIndexer):
         column_coords_string, rows_max_length = f4py.build_string_map(rows)
 
         f4py.write_string_to_file(self.index_file_path, "", column_coords_string)
-        f4py.Builder().save_meta_files(self.index_file_path, [values_max_length, positions_max_length], rows_max_length + 1)
+        f4py.Builder()._save_meta_files(self.index_file_path, [values_max_length, positions_max_length], rows_max_length + 1)
 
         # TODO: Indicate whether the index is compressed.
         #write_string_to_file(self.__f4_file_path, ".idx.cmp", str(self.__compression_level).encode())
@@ -184,12 +178,10 @@ class NumericIndexer(BaseIndexer):
     def find_positions_g(self, index_parser, line_length, value_coords, data_file_handle, fltr, end_index, all_true_operator, all_false_operator):
         smallest_value = float(index_parser.parse_data_value(0, line_length, value_coords, data_file_handle).rstrip())
         if all_true_operator(smallest_value, fltr.value):
-            #return range(end_index)
             return 0, end_index
 
         largest_value = float(index_parser.parse_data_value(end_index - 1, line_length, value_coords, data_file_handle).rstrip())
         if not all_true_operator(largest_value, fltr.value):
-            #return []
             return 0, 0
 
         matching_position = self.search(index_parser, line_length, value_coords, data_file_handle, fltr.value, 0, end_index, all_false_operator)
@@ -203,7 +195,6 @@ class NumericIndexer(BaseIndexer):
 
         largest_value = float(index_parser.parse_data_value(end_index - 1, line_length, value_coords, data_file_handle).rstrip())
         if all_true_operator(largest_value, fltr.value):
-            #return range(end_index)
             return 0, end_index
 
         matching_position = self.search(index_parser, line_length, value_coords, data_file_handle, fltr.value, 0, end_index, all_true_operator)

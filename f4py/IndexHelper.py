@@ -1,10 +1,7 @@
 import f4py
-#from f4py.Parser import *
-#from f4py.Utilities import *
 
-#TODO: Move to Utilities.py?
 class IndexHelper:
-    def save(f4_file_path, index_column, compression_level=None, verbose=False):
+    def save_index(f4_file_path, index_column, compression_level=None, verbose=False):
         #TODO: Make sure index_column is valid.
 
         f4py.print_message(f"Saving index for {f4_file_path}.", verbose)
@@ -33,7 +30,7 @@ class IndexHelper:
                 value = parser.parse_data_value(row_index, line_length, coords, data_file_handle)
                 values_positions.append([value, row_index])
 
-            index_file_path = IndexHelper.get_index_file_path(parser.data_file_path, index_column)
+            index_file_path = IndexHelper._get_index_file_path(parser.data_file_path, index_column)
 
             if index_column_type == "c":
                 f4py.CategoricalIndexer(index_file_path, compression_level).build(values_positions)
@@ -45,8 +42,8 @@ class IndexHelper:
             if parser:
                 parser.close()
 
-    def get_filter_indexer(f4_file_path, compression_level, index_column, index_column_type, fltr):
-        index_file_path = IndexHelper.get_index_file_path(f4_file_path, index_column.decode())
+    def _get_filter_indexer(f4_file_path, compression_level, index_column, index_column_type, fltr):
+        index_file_path = IndexHelper._get_index_file_path(f4_file_path, index_column.decode())
 
         if index_column_type == "u":
             if isinstance(fltr, f4py.StringEqualsFilter):
@@ -62,6 +59,6 @@ class IndexHelper:
         else:
             raise Exception("TODO: Not yet supported.")
 
-    def get_index_file_path(f4_file_path, index_column):
+    def _get_index_file_path(f4_file_path, index_column):
         index_file_path_extension = f".idx_{index_column}"
         return f"{f4_file_path}{index_file_path_extension}"

@@ -10,8 +10,6 @@ out_file_path = sys.argv[4]
 
 random.seed(0)
 
-#random_numbers = [random.random() for i in range(1000000)]
-#random_numbers = [random.random() for i in range(10000)]
 letters = string.ascii_letters[26:]
 
 with open(out_file_path, 'wb') as out_file:

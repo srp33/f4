@@ -1,7 +1,8 @@
-Change .ct files to use n rather than f to identify numeric columns.
+In TestSmallAndMedium.py, make sure all small tests are working.
 
 Remove unnecessary comments and address TODO items.
-Remove ConvertTsvToFixedWidthFile3.py, TestBuild*.py?, TestParse*.py?
+
+Check the build code for optimization and how parallelization is done.
 
 --Only do what's necessary for the first paper--
 --Move everything else below--
@@ -10,17 +11,18 @@ Modify TestSmall.py so that it tests the scenario when an index and/or compressi
   I think we need three options:
     1) uncompressed + no index
     2) compressed + non-compressed index
+      # See tests in TestSmallAndMedium.py
+      # Update TestBuildLarge.py and TestParseLarge.py
     3) compressed + compressed index (when they want to be able to query any column).
 
-Check the build code for optimization and how parallelization is done. Then build F4 files for CADD.
-
-Try Nuitka. https://nuitka.net (compiles your Python code to C, is supposed to achieve speedups of 3x or greater).
-
 Test parsing CADD files.
+  Rebuild these files.
   Compare against tabix. We can also compare it in terms of size.
     https://www.htslib.org/doc/tabix.html
     tabix sorted.gff.gz chr1:10,000,000-20,000,000
   Move to test.sh and generate formal statistics on it?
+
+Try Nuitka. https://nuitka.net (compiles your Python code to C, is supposed to achieve speedups of 3x or greater).
 
 Do demo/tests on LINCS data (see WishBuilder)?
 
@@ -31,6 +33,13 @@ Do demo/tests on LINCS data (see WishBuilder)?
 Bring back the filters that I commented out in Filters.py.
   Make sure we have tests for them in TestSmall.py.
   Also NumericWithoutFilter, NumericBetweenFilter, NumericEqualsFilter, NumericNotEqualsFilter
+
+The current design supports filtering on all non-indexed columns or all indexed
+  columns but not a combination of both. What to do if the user violates this?
+  Maybe if there is not an index for all filter columns, we revert to the slow
+  version and just give them a warning.
+  Maybe also optimize this code by having a flag file that indicates whether any
+  column is indexed.
 
 Implement on-disk binary search for finding column indices based on names (Parser.py).
   This would be beneficial if we want to support datasets with more than 1 million columns.

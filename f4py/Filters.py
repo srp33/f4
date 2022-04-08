@@ -1,10 +1,6 @@
 import f4py
 import fastnumbers
-#from f4py.IndexHelper import *
-#from f4py.Utilities import *
 import operator
-#TODO: Keep this import?
-import os
 import re
 
 """
@@ -16,9 +12,6 @@ class BaseFilter:
 
     def check_types(self, column_index_dict, column_type_dict):
         pass
-
-#    def get_filter_count(self):
-#        return 1
 
     def filter_column_values(self, parser, row_indices, column_index_dict, column_type_dict, column_coords_dict):
         line_length = parser.get_stat(".ll")
@@ -36,7 +29,7 @@ class BaseFilter:
     def filter_indexed_column_values(self, parser, column_index_dict, column_type_dict, column_coords_dict, end_index):
         index_column_type = column_type_dict[column_index_dict[self.column_name]]
 
-        return f4py.IndexHelper.get_filter_indexer(parser.data_file_path, parser.compression_level, self.column_name, index_column_type, self).filter(self, end_index)
+        return f4py.IndexHelper._get_filter_indexer(parser.data_file_path, parser.compression_level, self.column_name, index_column_type, self).filter(self, end_index)
 
     def passes(self, value):
         raise Exception("This function must be implemented by classes that inherit this class.")
@@ -223,9 +216,6 @@ class __CompositeBaseFilter(BaseFilter):
         self.filter1.check_types(column_index_dict, column_type_dict)
         self.filter2.check_types(column_index_dict, column_type_dict)
 
-#    def get_filter_count(self):
-#        return self.filter1.get_filter_count() + self.filter2.get_filter_count()
-
     def get_column_name_set(self):
         return self.filter1.get_column_name_set() | self.filter2.get_column_name_set()
 
@@ -297,8 +287,8 @@ class NumericWithinFilter(__CompositeBaseFilter):
         lower_index_column_type = column_type_dict[column_index_dict[self.filter1.column_name]]
         upper_index_column_type = column_type_dict[column_index_dict[self.filter2.column_name]]
 
-        lower_indexer = f4py.IndexHelper.get_filter_indexer(parser.data_file_path, parser.compression_level, self.filter1.column_name, lower_index_column_type, self.filter1)
-        upper_indexer = f4py.IndexHelper.get_filter_indexer(parser.data_file_path, parser.compression_level, self.filter2.column_name, upper_index_column_type, self.filter2)
+        lower_indexer = f4py.IndexHelper._get_filter_indexer(parser.data_file_path, parser.compression_level, self.filter1.column_name, lower_index_column_type, self.filter1)
+        upper_indexer = f4py.IndexHelper._get_filter_indexer(parser.data_file_path, parser.compression_level, self.filter2.column_name, upper_index_column_type, self.filter2)
 
         lower_positions = lower_indexer.find_positions(self.filter1, end_index)
         upper_positions = upper_indexer.find_positions(self.filter2, end_index)

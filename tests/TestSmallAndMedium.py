@@ -244,9 +244,9 @@ def run_small_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lin
 
     # Test ability to query based on index columns.
     f4py.Builder().convert_delimited_file(in_file_path, f4_file_path, compression_level=None, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk)
-    f4py.IndexHelper.save(f4_file_path, "ID", compression_level=None)
-    f4py.IndexHelper.save(f4_file_path, "FloatA", compression_level=None)
-    f4py.IndexHelper.save(f4_file_path, "OrdinalA", compression_level=None)
+    f4py.IndexHelper.save_index(f4_file_path, "ID", compression_level=None)
+    f4py.IndexHelper.save_index(f4_file_path, "FloatA", compression_level=None)
+    f4py.IndexHelper.save_index(f4_file_path, "OrdinalA", compression_level=None)
 
     parser = f4py.Parser(f4_file_path)
 
@@ -358,10 +358,6 @@ def run_medium_tests():
     f4_file_path = "/data/medium.f4"
     out_file_path = "/tmp/f4_out.tsv"
 
-    print("-------------------------------------------------------")
-    print(f"Running all tests for {in_file_path}")
-    print("-------------------------------------------------------")
-
     with open("/data/medium.tsv") as medium_file:
         medium_lines = medium_file.read().rstrip("\n").split("\n")
         medium_ID = [[line.split("\t")[0].encode()] for line in medium_lines]
@@ -373,10 +369,24 @@ def run_medium_tests():
         os.unlink(file_path)
 
     f4py.Builder().convert_delimited_file(in_file_path, f4_file_path, compression_level=None, num_processes=1, num_cols_per_chunk=1)
-    f4py.IndexHelper.save(f4_file_path, "ID", compression_level=None)
-    f4py.IndexHelper.save(f4_file_path, "Discrete1", compression_level=None)
-    f4py.IndexHelper.save(f4_file_path, "Numeric1", compression_level=None)
 
+    print("-------------------------------------------------------")
+    print(f"Running all tests for {in_file_path} - no indexing")
+    print("-------------------------------------------------------")
+
+    run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, medium_Numeric1)
+
+    print("-------------------------------------------------------")
+    print(f"Running all tests for {in_file_path} - with indexing")
+    print("-------------------------------------------------------")
+
+    f4py.IndexHelper.save_index(f4_file_path, "ID", compression_level=None)
+    f4py.IndexHelper.save_index(f4_file_path, "Discrete1", compression_level=None)
+    f4py.IndexHelper.save_index(f4_file_path, "Numeric1", compression_level=None)
+
+    run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, medium_Numeric1)
+
+def run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, medium_Numeric1):
     parser = f4py.Parser(f4_file_path)
 
     parser.query_and_save(f4py.StringEqualsFilter("ID", "Row1"), ["Discrete1"], out_file_path)

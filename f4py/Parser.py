@@ -1,7 +1,5 @@
 import atexit
 import f4py
-#from f4py.Filters import *
-#from f4py.Utilities import *
 import glob
 from itertools import chain
 from joblib import Parallel, delayed
@@ -19,17 +17,11 @@ class Parser:
         data_file_path (str): The path to an existing F4 file.
     """
 
-    #def __init__(self, data_file_path, is_index=False):
     def __init__(self, data_file_path, fixed_file_extensions=["", ".cc", ".cn", ".ct"], stats_file_extensions=[".ll", ".mccl", ".mcnl", ".nrow", ".ncol"]):
         self.data_file_path = data_file_path
-        #self.is_index = is_index
 
         self.compression_level = f4py.read_str_from_file(data_file_path, ".cmp")
-        #if is_index:
-        #    cmp_file_path = f"{data_file_path}.idx.cmp"
-        #else:
-        #    cmp_file_path = f"{data_file_path}.cmp"
-        self.__decompressor = None
+        #self.__decompressor = None
         #if read_str_from_file(cmp_file_path) != b"None":
         #    self.__decompressor = zstandard.ZstdDecompressor()
 
@@ -39,15 +31,11 @@ class Parser:
         # Cache file handles in a dictionary.
         for ext in fixed_file_extensions:
             ext2 = ext
-            #if is_index:
-            #    ext2 = f".idx{ext}"
             self.__file_handles[ext] = f4py.open_read_file(data_file_path, ext2)
 
         # Cache statistics in a dictionary.
         for ext in stats_file_extensions:
             ext2 = ext
-            #if is_index:
-            #    ext2 = f".idx{ext}"
             self.__stats[ext] = f4py.read_int_from_file(data_file_path, ext2)
 
         atexit.register(self.close)
@@ -86,31 +74,24 @@ class Parser:
 
         fltr.check_types(column_index_dict, column_type_dict)
 
-        # self.__decompressor is not None
-
-        #TODO: The current design supports filtering on all non-indexed columns or all indexed
-        #      columns but not a combination of both. What to do if the user violates this?
-        #        Maybe if there is not an index for all filter columns, we revert to the slow
-        #        version and just give them a warning.
-        #      Maybe also optimize this code by having a flag file that indicates whether any
-        #      column is indexed.
         has_index = len(glob.glob(self.data_file_path + ".idx_*")) > 0
 
         if has_index:
-            #if num_processes == 1:
+            if num_processes == 1:
                 keep_row_indices = sorted(fltr.filter_indexed_column_values(self, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows()))
-            #else:
-            #    TODO
+            else:
+                # TODO: Parallelize based on columns
+                keep_row_indices = sorted(fltr.filter_indexed_column_values(self, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows()))
         else:
             if num_processes == 1:
-                # This is a non-parallelized version of the code.
                 row_indices = set(range(self.get_num_rows()))
-                keep_row_indices = _process_rows(self, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict)
-                #TODO
+                #keep_row_indices = _process_rows(self, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict)
+                keep_row_indices = sorted(fltr.filter_column_values(self, row_indices, column_index_dict, column_type_dict, column_coords_dict))
                 #keep_row_indices = self._process_rows(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict)
             else:
                 # Loop through the rows in parallel and find matching row indices.
                 #keep_row_indices = chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(self._process_rows)(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict) for row_indices in self._generate_row_chunks(num_processes)))
+                # TODO: Convert to using fltr.filter_column_values()
                 keep_row_indices = chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(_process_rows)(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict) for row_indices in self._generate_row_chunks(num_processes)))
 
         # Get the coords for each column to select
@@ -185,8 +166,6 @@ class Parser:
 
     def _get_column_meta(self, fltr, select_columns):
         cn_file_handle = self.__file_handles[".cn"]
-        #mcnl = self.__stats[".mcnl"]
-        #col_coords = [[0, mcnl]]
         all_column_names = [x.rstrip(b" ") for x in cn_file_handle[:].rstrip(b"\n").split(b"\n")]
 
         if len(select_columns) == 0:
@@ -291,71 +270,10 @@ class Parser:
     def _parse_row_values(self, row_index, column_coords):
         return list(self._parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
 
-#    def _process_rows2(self, fltr, row_indices, column_index_dict, column_coords_dict, is_compressed):
-#        line_length = self.get_stat(".ll")
-#        coords = column_coords_dict[column_index_dict[fltr.column_name]]
-#        data_file_handle = self.get_file_handle("")
-
-#        return NonCompressedIndexRetriever().filter(fltr, row_indices, column_index_dict, column_coords_dict):
-#        return row_indices
-
-#        passing_row_indices = set()
-#        for i in row_indices:
-#            if fltr.passes(self.parse_data_value(i, line_length, coords, data_file_handle).rstrip()):
-#                passing_row_indices.add(i)
-#
-#        return passing_row_indices
-
-
-        #is_index = os.path.exists(f"{self.data_file_path}.idx_{fltr.column_name}")
-
-#        return row_indices
-
-        #parser = Parser(data_file_path, is_index=is_index)
-        #passing_row_indices = sorted(parser.filter_column_values(fltr, row_indices, column_index_dict, column_coords_dict))
-        #parser.close()
-
-        #return passing_row_indices
-
-#    def _filter_column_values(self, fltr, row_indices, column_index_dict, column_coords_dict):
-#        line_length = self.get_stat(".ll")
-#        coords = column_coords_dict[column_index_dict[fltr.column_name]]
-#        data_file_handle = self.get_file_handle("")
-#
-#        passing_row_indices = set()
-#        for i in row_indices:
-#            if fltr.passes(self.parse_data_value(i, line_length, coords, data_file_handle).rstrip()):
-#                passing_row_indices.add(i)
-#
-#        return passing_row_indices
-
+#def _process_rows(parser, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict):
+#    return sorted(fltr.filter_column_values(parser, row_indices, column_index_dict, column_type_dict, #column_coords_dict))
 
 #####################################################
 # Class functions
 #####################################################
 
-def _process_rows(parser, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict):
-#    is_index = os.path.exists(f"{data_file_path}.idx")
-
-    #parser = Parser(data_file_path, is_index=is_index)
-    passing_row_indices = sorted(fltr.filter_column_values(parser, row_indices, column_index_dict, column_type_dict, column_coords_dict))
-    #parser.close()
-
-    return passing_row_indices
-
-class NonCompressedIndexRetriever:
-#    def __init__(self):
-#        self.column_index_dict = column_index_dict
-#        self.column_coords_dict = column_coords_dict
-
-    def filter(self, fltr, row_indices, column_index_dict, column_coords_dict):
-#        line_length = self.get_stat(".ll")
-#        coords = column_coords_dict[column_index_dict[fltr.column_name]]
-#        data_file_handle = self.get_file_handle("")
-
-        passing_row_indices = set()
-        for i in row_indices:
-            if fltr.passes(self.parse_data_value(i, line_length, coords, data_file_handle).rstrip()):
-                passing_row_indices.add(i)
-
-        return passing_row_indices

@@ -2,15 +2,12 @@ import f4py
 import fastnumbers
 import gzip
 from joblib import Parallel, delayed
-#from f4py.Utilities import *
 import math
 import os
 import tempfile
 import zstandard
 
 class Builder:
-    # TODO:
-    #   documentation: Specify None for compression_level if you do not want compression.
     def __init__(self, tmp_dir_path=None, verbose=False):
         # Figure out where temp files will be stored.
         if tmp_dir_path:
@@ -67,13 +64,15 @@ class Builder:
 
         line_length = self._convert_delimited_file_in_chunks(delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, num_rows, num_processes, num_rows_per_save)
 
-        self.save_meta_files(f4_file_path, column_sizes, line_length, column_names, column_types, compression_level, num_rows)
+        self._save_meta_files(f4_file_path, column_sizes, line_length, column_names, column_types, compression_level, num_rows)
 
         self._print_message(f"Done converting {delimited_file_path} to {f4_file_path}")
 
-    # TODO: Move this down to private functions?
-    # TODO: Put underscore before this function name?
-    def save_meta_files(self, f4_file_path, column_sizes, line_length, column_names=None, column_types=None, compression_level=None, num_rows=None):
+    #####################################################
+    # Non-public functions
+    #####################################################
+
+    def _save_meta_files(self, f4_file_path, column_sizes, line_length, column_names=None, column_types=None, compression_level=None, num_rows=None):
         # Calculate and save the column coordinates and max length of these coordinates.
         column_start_coords = f4py.get_column_start_coords(column_sizes)
         column_coords_string, max_column_coord_length = f4py.build_string_map(column_start_coords)
@@ -111,10 +110,6 @@ class Builder:
             except:
                 # Don't throw an exception if we can't delete the directory.
                 pass
-
-    #####################################################
-    # Non-public functions
-    #####################################################
 
     def _parse_columns_chunk(self, delimited_file_path, delimiter, start_index, end_index):
         in_file = _get_delimited_file_handle(delimited_file_path)
@@ -260,7 +255,7 @@ class Builder:
         f4py.print_message(message, self.__verbose)
 
 #####################################################
-# Class functions
+# Class functions (non-public)
 #####################################################
 
 def _get_delimited_file_handle(file_path):

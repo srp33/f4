@@ -17,10 +17,11 @@ class Parser:
         data_file_path (str): The path to an existing F4 file.
     """
 
-    def __init__(self, data_file_path, fixed_file_extensions=["", ".cc", ".cn", ".ct"], stats_file_extensions=[".ll", ".mccl", ".mcnl", ".nrow", ".ncol"]):
+    def __init__(self, data_file_path, fixed_file_extensions=["", ".cc", ".ct"], stats_file_extensions=[".ll", ".mccl", ".nrow", ".ncol"]):
         self.data_file_path = data_file_path
 
-        self.compression_level = f4py.read_str_from_file(data_file_path, ".cmp")
+        self.compression_level = None
+        #self.compression_level = f4py.read_str_from_file(data_file_path, ".cmp")
         #self.__decompressor = None
         #if read_str_from_file(cmp_file_path) != b"None":
         #    self.__decompressor = zstandard.ZstdDecompressor()
@@ -30,8 +31,9 @@ class Parser:
 
         # Cache file handles in a dictionary.
         for ext in fixed_file_extensions:
-            ext2 = ext
-            self.__file_handles[ext] = f4py.open_read_file(data_file_path, ext2)
+            #ext2 = ext
+            #self.__file_handles[ext] = f4py.open_read_file(data_file_path, ext2)
+            self.__file_handles[ext] = self.set_file_handle(ext)
 
         # Cache statistics in a dictionary.
         for ext in stats_file_extensions:
@@ -77,22 +79,16 @@ class Parser:
         has_index = len(glob.glob(self.data_file_path + ".idx_*")) > 0
 
         if has_index:
-            if num_processes == 1:
-                keep_row_indices = sorted(fltr.filter_indexed_column_values(self, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows()))
-            else:
-                # TODO: Parallelize based on columns
-                keep_row_indices = sorted(fltr.filter_indexed_column_values(self, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows()))
+            keep_row_indices = sorted(fltr.filter_indexed_column_values(self, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes))
         else:
-            if num_processes == 1:
-                row_indices = set(range(self.get_num_rows()))
-                #keep_row_indices = _process_rows(self, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict)
-                keep_row_indices = sorted(fltr.filter_column_values(self, row_indices, column_index_dict, column_type_dict, column_coords_dict))
-                #keep_row_indices = self._process_rows(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict)
-            else:
+#            if num_processes == 1:
+            row_indices = set(range(self.get_num_rows()))
+            keep_row_indices = sorted(fltr.filter_column_values(self, row_indices, column_index_dict, column_type_dict, column_coords_dict))
+#            else:
                 # Loop through the rows in parallel and find matching row indices.
                 #keep_row_indices = chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(self._process_rows)(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict) for row_indices in self._generate_row_chunks(num_processes)))
                 # TODO: Convert to using fltr.filter_column_values()
-                keep_row_indices = chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(_process_rows)(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict) for row_indices in self._generate_row_chunks(num_processes)))
+#                keep_row_indices = chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(_process_rows)(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict) for row_indices in self._generate_row_chunks(num_processes)))
 
         # Get the coords for each column to select
         select_column_coords = self._parse_data_coords([column_index_dict[x] for x in select_columns])
@@ -136,17 +132,27 @@ class Parser:
                 * i (integer)
         """
 
-        # TODO: Rework this when you implement binary search on disk in get_column_meta
-        cn_file_handle = self.__file_handles[".cn"]
-        all_column_names = [x.rstrip(b" ") for x in cn_file_handle[:].rstrip(b"\n").split(b"\n")]
-
         try:
-            return self.get_column_type(all_column_names.index(column_name.encode()))
+            return self.get_column_type(self.get_column_index_from_name(column_name))
         except:
             raise Exception(f"A column with the name {column_name} does not exist.")
 
+    def get_column_index_from_name(self, column_name):
+        position = list(f4py.IdentifierIndexer(f"{self.data_file_path}.cn", None).filter(f4py.StringEqualsFilter("NotNeeded", column_name), self.get_num_cols()))
+
+        if len(position) == 0:
+            raise Exception(f"Could not retrieve index because column named {column_name} was found.")
+
+        return position[0]
+
     def get_file_handle(self, ext):
         return self.__file_handles[ext]
+
+    def set_file_handle(self, ext):
+        if ext not in self.__file_handles:
+            self.__file_handles[ext] = f4py.open_read_file(self.data_file_path, ext)
+
+        return self.get_file_handle(ext)
 
     def get_stat(self, ext):
         return self.__stats[ext]
@@ -165,15 +171,28 @@ class Parser:
     ##############################################
 
     def _get_column_meta(self, fltr, select_columns):
-        cn_file_handle = self.__file_handles[".cn"]
-        all_column_names = [x.rstrip(b" ") for x in cn_file_handle[:].rstrip(b"\n").split(b"\n")]
-
         if len(select_columns) == 0:
-            select_columns = all_column_names
-            column_index_dict = {name: index for index, name in enumerate(all_column_names)}
+            cn_parser = f4py.Parser(self.data_file_path + ".cn", fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
+            line_length = cn_parser.get_stat(".ll")
+            coords = cn_parser._parse_data_coords([0, 1])
+
+            # They are not in sorted order in the file, so we must put them in a dict and sort it.
+            column_index_dict = {}
+            for row_index in range(self.get_num_cols()):
+                values = cn_parser._parse_row_values(row_index, coords)
+                column_name = values[0].rstrip(b" ")
+                column_index = int(values[1])
+
+                column_index_dict[column_index] = column_name
+
+            select_columns = []
+            for index, name in sorted(column_index_dict.items()):
+                select_columns.append(name)
+
+            column_index_dict = {name: index for index, name in enumerate(select_columns)}
         else:
             select_columns = [x.encode() for x in select_columns]
-            column_index_dict = {name: all_column_names.index(name) for name in fltr.get_column_name_set() | set(select_columns)}
+            column_index_dict = {name: self.get_column_index_from_name(name.decode()) for name in fltr.get_column_name_set() | set(select_columns)}
 
         type_columns = fltr.get_column_name_set() | set(select_columns)
         filter_column_type_dict = {}
@@ -188,33 +207,6 @@ class Parser:
             column_coords_dict[column_indices[i]] = column_coords[i]
 
         return select_columns, column_index_dict, filter_column_type_dict, column_coords_dict
-
-#    def _get_column_meta(self, fltr, select_columns):
-#        cn_file_handle = self.__file_handles[".cn"]
-#        # TODO: Rework this code to do a binary search on disk
-#        #mcnl = self.__stats[".mcnl"]
-#        #col_coords = [[0, mcnl]]
-#        all_column_names = [x.rstrip(b" ") for x in cn_file_handle[:].rstrip(b"\n").split(b"\n")]
-#
-#        if len(select_columns) == 0:
-#            select_columns = all_column_names
-#            column_index_dict = {name: index for index, name in enumerate(all_column_names)}
-#        else:
-#            select_columns = [x.encode() for x in select_columns]
-#            column_index_dict = {name: all_column_names.index(name) for name in fltr.get_column_name_set() | set(select_columns)}
-#
-#        filter_column_type_dict = {}
-#        for column_name in fltr.get_column_name_set():
-#            column_index = column_index_dict[column_name]
-#            filter_column_type_dict[column_index] = self.get_column_type(column_index)
-#
-#        column_indices = list(column_index_dict.values())
-#        column_coords = self._parse_data_coords(column_indices)
-#        column_coords_dict = {}
-#        for i in range(len(column_indices)):
-#            column_coords_dict[column_indices[i]] = column_coords[i]
-#
-#        return select_columns, column_index_dict, filter_column_type_dict, column_coords_dict
 
     def _generate_row_chunks(self, num_processes):
         rows_per_chunk = math.ceil(self.get_num_rows() / num_processes)
@@ -269,11 +261,3 @@ class Parser:
 
     def _parse_row_values(self, row_index, column_coords):
         return list(self._parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
-
-#def _process_rows(parser, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict):
-#    return sorted(fltr.filter_column_values(parser, row_indices, column_index_dict, column_type_dict, #column_coords_dict))
-
-#####################################################
-# Class functions
-#####################################################
-

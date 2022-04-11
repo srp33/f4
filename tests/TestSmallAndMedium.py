@@ -76,6 +76,12 @@ def run_small_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lin
     check_result("Parser properties", "Number of rows", parser.get_num_rows(), 5)
     check_result("Parser properties", "Number of columns", parser.get_num_cols(), 9)
 
+    check_result("Column index", "ID column", parser.get_column_index_from_name("ID"), 0)
+    check_result("Column index", "CategoricalA column", parser.get_column_index_from_name("CategoricalA"), 7)
+    check_result("Column index", "CategoricalB column", parser.get_column_index_from_name("CategoricalB"), 8)
+    check_result("Column index", "OrdinalA column", parser.get_column_index_from_name("OrdinalA"), 3)
+    check_result("Column index", "OrdinalB column", parser.get_column_index_from_name("OrdinalB"), 4)
+
     check_result("Column types", "ID column", parser.get_column_type_from_name("ID"), "u")
     check_result("Column types", "FloatA column", parser.get_column_type_from_name("FloatA"), "f")
     check_result("Column types", "FloatB column", parser.get_column_type_from_name("FloatB"), "f")
@@ -345,6 +351,7 @@ def run_small_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lin
     check_results("Filter using two index columns", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])
 
     # Test ability to query when the data are compressed.
+    #TODO:
     #Builder().convert_delimited_file(in_file_path, f4_file_path, compression_level=22, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk)
     #Indexer(f4_file_path, ["ID", "FloatA", "OrdinalA"], compression_level=22).save(num_processes)
     #parser = Parser(f4_file_path)
@@ -431,9 +438,8 @@ def run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, 
     check_results("Filter Discrete1 = row 100", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[100]])
 
 run_small_tests("/data/small.tsv", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
-#TODO:
-#run_small_tests("/data/small.tsv.gz", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
-#run_small_tests("/data/small.tsv", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
-#run_small_tests("/data/small.tsv.gz", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
+run_small_tests("/data/small.tsv.gz", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
+run_small_tests("/data/small.tsv", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
+run_small_tests("/data/small.tsv.gz", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
 
 run_medium_tests()

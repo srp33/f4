@@ -8,21 +8,10 @@ import tempfile
 import zstandard
 
 class Builder:
-    def __init__(self, tmp_dir_path=None, verbose=False):
-        # Figure out where temp files will be stored.
-        if tmp_dir_path:
-            self.tmp_dir_path = tmp_dir_path
-            if not os.path.exists(tmp_dir_path):
-                os.makedirs(tmp_dir_path)
-        else:
-            self.tmp_dir_path = tempfile.mkdtemp()
-
-        if not self.tmp_dir_path.endswith("/"):
-            self.tmp_dir_path += "/"
-
+    def __init__(self, verbose=False):
         self.__verbose = verbose
 
-    def convert_delimited_file(self, delimited_file_path, f4_file_path, delimiter="\t", compression_level=22, num_processes=1, num_cols_per_chunk=None, num_rows_per_save=10):
+    def convert_delimited_file(self, delimited_file_path, f4_file_path, delimiter="\t", compression_level=22, num_processes=1, num_cols_per_chunk=None, num_rows_per_save=10, tmp_dir_path=None):
         if type(delimiter) != str:
             raise Exception("The delimiter value must be a string.")
 
@@ -30,6 +19,8 @@ class Builder:
             raise Exception("Invalid delimiter. Must be \t.")
 
         delimiter = delimiter.encode()
+
+        tmp_dir_path = self._prepare_tmp_dir(tmp_dir_path)
 
         self._print_message(f"Converting from {delimited_file_path}")
 
@@ -44,8 +35,8 @@ class Builder:
 
         column_chunk_indices = _generate_chunk_ranges(num_cols, num_cols_per_chunk)
 
-        # Iterate through the lines to find the max width of each column.
-        self._print_message(f"Finding max width of each column in {delimited_file_path}")
+        # Iterate through the lines to summarize each column.
+        self._print_message(f"Summarizing each column in {delimited_file_path}")
         chunk_results = Parallel(n_jobs=num_processes)(delayed(self._parse_columns_chunk)(delimited_file_path, delimiter, column_chunk[0], column_chunk[1]) for column_chunk in column_chunk_indices)
 
         # Summarize the column sizes and types across the chunks.
@@ -62,11 +53,13 @@ class Builder:
         if num_rows == 0:
             raise Exception(f"A header row but no data rows were detected in {delimited_file_path}")
 
-        line_length = self._convert_delimited_file_in_chunks(delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, num_rows, num_processes, num_rows_per_save)
+        line_length = self._convert_delimited_file_in_chunks(delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, num_rows, num_processes, num_rows_per_save, tmp_dir_path)
 
         self._save_meta_files(f4_file_path, column_sizes, line_length, column_names, column_types, compression_level, num_rows)
 
         self._print_message(f"Done converting {delimited_file_path} to {f4_file_path}")
+
+        self._remove_tmp_dir(tmp_dir_path)
 
     #####################################################
     # Non-public functions
@@ -83,16 +76,18 @@ class Builder:
         f4py.write_string_to_file(f4_file_path, ".ll", str(line_length).encode())
 
         if column_names:
-            # Build a map of the column names and save this to a file.
-            column_names_string, max_col_name_length = f4py.build_string_map(column_names)
-            f4py.write_string_to_file(f4_file_path, ".cn", column_names_string)
-            f4py.write_string_to_file(f4_file_path, ".mcnl", str(max_col_name_length).encode())
+            # Build an index of the column names and save this to a file.
+            sorted_column_names = sorted(column_names)
+            values_positions = [[x, column_names.index(x)] for x in sorted_column_names]
+            f4py.IdentifierIndexer(f"{f4_file_path}.cn", None).build(values_positions)
 
-        if column_types:
-            # Build a map of the column types and save this to a file.
-            column_types_string, max_col_type_length = f4py.build_string_map(column_types)
-            f4py.write_string_to_file(f4_file_path, ".ct", column_types_string)
-            #f4py.write_string_to_file(f4_file_path, ".mctl", str(max_col_type_length).encode())
+            if column_types:
+                print(column_names)
+                print(column_types)
+                # Build a map of the column types and save this to a file.
+                column_types_string, max_col_type_length = f4py.build_string_map(column_types)
+                f4py.write_string_to_file(f4_file_path, ".ct", column_types_string)
+                #f4py.write_string_to_file(f4_file_path, ".mctl", str(max_col_type_length).encode())
 
         # Indicate compression level.
         f4py.write_string_to_file(f4_file_path, ".cmp", str(compression_level).encode())
@@ -102,11 +97,24 @@ class Builder:
             f4py.write_string_to_file(f4_file_path, ".nrow", str(num_rows).encode())
             f4py.write_string_to_file(f4_file_path, ".ncol", str(len(column_names)).encode())
 
-    def __del__(self):
+    def _prepare_tmp_dir(self, tmp_dir_path):
+        # Figure out where temp files will be stored and create directory, if needed.
+        if tmp_dir_path:
+            if not os.path.exists(tmp_dir_path):
+                os.makedirs(tmp_dir_path)
+        else:
+            tmp_dir_path = tempfile.mkdtemp()
+
+        if not tmp_dir_path.endswith("/"):
+            tmp_dir_path += "/"
+
+        return tmp_dir_path
+
+    def _remove_tmp_dir(self, tmp_dir_path):
         # Remove the temp directory if it was generated by the code (not the user).
-        if self.tmp_dir_path:
+        if tmp_dir_path:
             try:
-                os.rmdir(self.tmp_dir_path)
+                os.rmdir(tmp_dir_path)
             except:
                 # Don't throw an exception if we can't delete the directory.
                 pass
@@ -142,25 +150,26 @@ class Builder:
 
         in_file.close()
 
-        column_types_dict[i] = _infer_type_for_column(column_types_dict[i], num_rows)
+        for i in range(start_index, end_index):
+            column_types_dict[i] = _infer_type_for_column(column_types_dict[i], num_rows)
 
         return column_sizes_dict, column_types_dict, num_rows
 
-    def _convert_delimited_file_in_chunks(self, delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, num_rows, num_processes, num_rows_per_save):
+    def _convert_delimited_file_in_chunks(self, delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, num_rows, num_processes, num_rows_per_save, tmp_dir_path):
         self._print_message(f"Parsing chunks of {delimited_file_path} and saving to temp files")
         row_chunk_indices = _generate_chunk_ranges(num_rows, math.ceil(num_rows / num_processes) + 1)
-        max_line_sizes = Parallel(n_jobs=num_processes)(delayed(self._save_rows_chunk)(delimited_file_path, delimiter, compression_level, column_sizes, i, row_chunk[0], row_chunk[1], num_rows_per_save) for i, row_chunk in enumerate(row_chunk_indices))
+        max_line_sizes = Parallel(n_jobs=num_processes)(delayed(self._save_rows_chunk)(delimited_file_path, delimiter, compression_level, column_sizes, i, row_chunk[0], row_chunk[1], num_rows_per_save, tmp_dir_path) for i, row_chunk in enumerate(row_chunk_indices))
 
         # Find and save the line length.
         line_length = max(max_line_sizes)
 
         # Merge the file chunks. This dictionary enables us to sort them properly.
         self._print_message(f"Merging the file chunks for {delimited_file_path}")
-        self._merge_chunk_files(f4_file_path, num_processes, line_length, num_rows_per_save)
+        self._merge_chunk_files(f4_file_path, num_processes, line_length, num_rows_per_save, tmp_dir_path)
 
         return line_length
 
-    def _save_rows_chunk(self, delimited_file_path, delimiter, compression_level, column_sizes, chunk_number, start_index, end_index, num_rows_per_save):
+    def _save_rows_chunk(self, delimited_file_path, delimiter, compression_level, column_sizes, chunk_number, start_index, end_index, num_rows_per_save, tmp_dir_path):
         max_line_size = 0
 
         compressor = None
@@ -171,8 +180,8 @@ class Builder:
         in_file = _get_delimited_file_handle(delimited_file_path)
         in_file.readline()
 
-        with open(f"{self.tmp_dir_path}{chunk_number}", 'wb') as chunk_file:
-            with open(f"{self.tmp_dir_path}{chunk_number}_linesizes", 'wb') as size_file:
+        with open(f"{tmp_dir_path}{chunk_number}", 'wb') as chunk_file:
+            with open(f"{tmp_dir_path}{chunk_number}_linesizes", 'wb') as size_file:
                 out_lines = []
                 out_line_sizes = []
 
@@ -219,17 +228,17 @@ class Builder:
 
         return max_line_size
 
-    def _merge_chunk_files(self, f4_file_path, num_processes, line_length, num_rows_per_save=10):
+    def _merge_chunk_files(self, f4_file_path, num_processes, line_length, num_rows_per_save, tmp_dir_path):
         with open(f4_file_path, "wb") as f4_file:
             out_lines = []
 
             for i in range(num_processes):
-                chunk_file_path = f"{self.tmp_dir_path}{i}"
+                chunk_file_path = f"{tmp_dir_path}{i}"
                 if not os.path.exists(chunk_file_path):
                     continue
                 chunk_file = f4py.open_read_file(chunk_file_path)
 
-                size_file_path = f"{self.tmp_dir_path}{i}_linesizes"
+                size_file_path = f"{tmp_dir_path}{i}_linesizes"
 
                 with open(size_file_path, 'rb') as size_file:
                     position = 0

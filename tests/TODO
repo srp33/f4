@@ -1,8 +1,6 @@
+Implement function in ../f4py/Parser.py to find the index of a column via binary search.
+
 In TestSmallAndMedium.py, make sure all small tests are working.
-
-Remove unnecessary comments and address TODO items.
-
-Check the build code for optimization and how parallelization is done.
 
 --Only do what's necessary for the first paper--
 --Move everything else below--
@@ -22,9 +20,13 @@ Test parsing CADD files.
     tabix sorted.gff.gz chr1:10,000,000-20,000,000
   Move to test.sh and generate formal statistics on it?
 
-Try Nuitka. https://nuitka.net (compiles your Python code to C, is supposed to achieve speedups of 3x or greater).
+If we need to go faster to beat tabix:
+    Implement parallelization in Parser.py.
+    Try Nuitka. https://nuitka.net (compiles your Python code to C, is supposed to achieve speedups of 3x or greater).
 
 Do demo/tests on LINCS data (see WishBuilder)?
+
+Remove unnecessary comments and address TODO items in ../f4py/*.
 
 #####################################################
 # After benchmark paper (for software packages)

@@ -106,7 +106,6 @@ class IdentifierIndexer(BaseIndexer):
             return -1
 
         mid = l + (r - l) // 2
-
         mid_value = parser.parse_data_value(mid, line_length, value_coords, data_file_handle).rstrip()
 
         if mid_value == value_to_find:

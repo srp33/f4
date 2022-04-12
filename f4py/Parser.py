@@ -99,7 +99,7 @@ class Parser:
             out_lines = []
             for row_index in keep_row_indices:
                 #TODO: Support compression here
-                out_lines.append(b"\t".join([x.rstrip() for x in self._parse_row_values(row_index, select_column_coords)]))
+                out_lines.append(b"\t".join([x.rstrip() for x in self.__parse_row_values(row_index, select_column_coords)]))
 
                 if len(out_lines) % lines_per_chunk == 0:
                     out_file.write(b"\n".join(out_lines) + b"\n")
@@ -115,7 +115,7 @@ class Parser:
         return self.__stats[".ncol"]
 
     def get_column_type(self, column_index):
-        return next(self._parse_data_values(column_index, 2, [[0, 1]], self.__file_handles[".ct"])).decode()
+        return next(self.__parse_data_values(column_index, 2, [[0, 1]], self.__file_handles[".ct"])).decode()
 
     def get_column_type_from_name(self, column_name):
         """
@@ -173,7 +173,7 @@ class Parser:
             # They are not in sorted order in the file, so we must put them in a dict and sort it.
             column_index_dict = {}
             for row_index in range(self.get_num_cols()):
-                values = cn_parser._parse_row_values(row_index, coords)
+                values = cn_parser.__parse_row_values(row_index, coords)
                 column_name = values[0].rstrip(b" ")
                 column_index = int(values[1])
 
@@ -247,12 +247,12 @@ class Parser:
 
         return data_coords
 
-    def parse_data_value(self, start_element, segment_length, coords, str_like_object):
+    def __parse_data_value(self, start_element, segment_length, coords, str_like_object):
         start_pos = start_element * segment_length
 
         return str_like_object[(start_pos + coords[0]):(start_pos + coords[1])]
 
-    def _parse_data_values(self, start_element, segment_length, data_coords, str_like_object):
+    def __parse_data_values(self, start_element, segment_length, data_coords, str_like_object):
         start_pos = start_element * segment_length
 
         for coords in data_coords:
@@ -261,19 +261,19 @@ class Parser:
     def _parse_row_value(self, row_index, column_coords):
         if self.__decompressor:
             line_length = self.__stats[".ll"]
-            line = self.parse_data_value(row_index, line_length, [0, line_length], self.__file_handles[""])
+            line = self.__parse_data_value(row_index, line_length, [0, line_length], self.__file_handles[""])
             line = self.__decompressor.decompress(line)
 
-            return self.parse_data_value(0, 0, column_coords, line)
+            return self.__parse_data_value(0, 0, column_coords, line)
 
-        return self.parse_data_value(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""])
+        return self.__parse_data_value(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""])
 
-    def _parse_row_values(self, row_index, column_coords):
+    def __parse_row_values(self, row_index, column_coords):
         if self.__decompressor:
             line_length = self.__stats[".ll"]
-            line = self.parse_data_value(row_index, line_length, [0, line_length], self.__file_handles[""])
+            line = self.__parse_data_value(row_index, line_length, [0, line_length], self.__file_handles[""])
             line = self.__decompressor.decompress(line)
 
-            return list(self._parse_data_values(0, 0, column_coords, line))
+            return list(self.__parse_data_values(0, 0, column_coords, line))
 
-        return list(self._parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
+        return list(self.__parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))

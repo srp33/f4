@@ -151,6 +151,9 @@ class Builder:
 
             num_rows += 1
 
+            if num_rows % 100000 == 0:
+                self._print_message(f"Processed line of {delimited_file_path} for columns {start_index} - {end_index - 1}")
+
         in_file.close()
 
         for i in range(start_index, end_index):

@@ -53,13 +53,14 @@ class Builder:
         if num_rows == 0:
             raise Exception(f"A header row but no data rows were detected in {delimited_file_path}")
 
+        self._print_message(f"Converting {delimited_file_path} to {f4_file_path}")
         line_length = self._convert_delimited_file_in_chunks(delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, num_rows, num_processes, num_rows_per_save, tmp_dir_path)
 
+        self._print_message(f"Saving meta files for {f4_file_path}")
         self._save_meta_files(f4_file_path, column_sizes, line_length, column_names, column_types, compression_level, num_rows)
 
-        self._print_message(f"Done converting {delimited_file_path} to {f4_file_path}")
-
         self._remove_tmp_dir(tmp_dir_path)
+        self._print_message(f"Done converting {delimited_file_path} to {f4_file_path}")
 
     #####################################################
     # Non-public functions
@@ -76,14 +77,16 @@ class Builder:
         f4py.write_string_to_file(f4_file_path, ".ll", str(line_length).encode())
 
         if column_names:
+            column_name_index_dict = {}
+            for i, column_name in enumerate(column_names):
+                column_name_index_dict[column_name] = i
+
             # Build an index of the column names and save this to a file.
             sorted_column_names = sorted(column_names)
-            values_positions = [[x, column_names.index(x)] for x in sorted_column_names]
+            values_positions = [[x, column_name_index_dict[x]] for x in sorted_column_names]
             f4py.IdentifierIndexer(f"{f4_file_path}.cn", None).build(values_positions)
 
             if column_types:
-                print(column_names)
-                print(column_types)
                 # Build a map of the column types and save this to a file.
                 column_types_string, max_col_type_length = f4py.build_string_map(column_types)
                 f4py.write_string_to_file(f4_file_path, ".ct", column_types_string)

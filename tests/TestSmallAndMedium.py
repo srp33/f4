@@ -51,7 +51,7 @@ def fail_test(message):
     print(f"FAIL: {message}")
     sys.exit(1)
 
-def run_small_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1):
+def run_small_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1, compression_level=None):
     print("-------------------------------------------------------")
     print(f"Running all tests for {in_file_path}, {num_processes}, {num_cols_per_chunk}, {lines_per_chunk}")
     print("-------------------------------------------------------")
@@ -63,7 +63,7 @@ def run_small_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lin
     for file_path in glob.glob(f"{f4_file_path}*"):
         os.unlink(file_path)
 
-    f4py.Builder().convert_delimited_file(in_file_path, f4_file_path, compression_level=None, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk)
+    f4py.Builder().convert_delimited_file(in_file_path, f4_file_path, compression_level=compression_level, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk)
 
     try:
         parser = Parser("bogus_file_path")
@@ -249,10 +249,10 @@ def run_small_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lin
         pass_test("Non-filter is passed as a filter.")
 
     # Test ability to query based on index columns.
-    f4py.Builder().convert_delimited_file(in_file_path, f4_file_path, compression_level=None, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk)
-    f4py.IndexHelper.save_index(f4_file_path, "ID", compression_level=None)
-    f4py.IndexHelper.save_index(f4_file_path, "FloatA", compression_level=None)
-    f4py.IndexHelper.save_index(f4_file_path, "OrdinalA", compression_level=None)
+    f4py.Builder().convert_delimited_file(in_file_path, f4_file_path, compression_level=compression_level, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk)
+    f4py.IndexHelper.save_index(f4_file_path, "ID", compression_level=compression_level)
+    f4py.IndexHelper.save_index(f4_file_path, "FloatA", compression_level=compression_level)
+    f4py.IndexHelper.save_index(f4_file_path, "OrdinalA", compression_level=compression_level)
 
     parser = f4py.Parser(f4_file_path)
 
@@ -350,16 +350,6 @@ def run_small_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lin
     parser.query_and_save(fltr, ["FloatA"], out_file_path)
     check_results("Filter using two index columns", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])
 
-    # Test ability to query when the data are compressed.
-    #TODO:
-    #Builder().convert_delimited_file(in_file_path, f4_file_path, compression_level=22, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk)
-    #Indexer(f4_file_path, ["ID", "FloatA", "OrdinalA"], compression_level=22).save(num_processes)
-    #parser = Parser(f4_file_path)
-    #parser.query_and_save(AndFilter(InFilter("ID", ["1", "2", "3"]), NumericFilter("FloatA", operator.ge, 2)), ["FloatA"], out_file_path)
-    #check_results("Filter using two index columns (compressed)", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])
-
-    #pass_test("Completed all tests succesfully!!")
-
 def run_medium_tests():
     in_file_path = "/data/medium.tsv"
     f4_file_path = "/data/medium.f4"
@@ -442,4 +432,9 @@ run_small_tests("/data/small.tsv.gz", num_processes = 1, num_cols_per_chunk = 1,
 run_small_tests("/data/small.tsv", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
 run_small_tests("/data/small.tsv.gz", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
 
+run_small_tests("/data/small.tsv", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1, compression_level = 22)
+run_small_tests("/data/small.tsv", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2, compression_level = 22)
+
 run_medium_tests()
+
+print("All tests passed!!")

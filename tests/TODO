@@ -1,17 +1,17 @@
-Implement function in ../f4py/Parser.py to find the index of a column via binary search.
+Update Test*Large.py and rerun tests.
 
-In TestSmallAndMedium.py, make sure all small tests are working.
+Run tests for the following scenarios:
+  1) uncompressed data + no index
+  2) non-compressed data + non-compressed index
+  3) compressed data + non-compressed index
 
---Only do what's necessary for the first paper--
---Move everything else below--
-Modify TestSmall.py so that it tests the scenario when an index and/or compression are used.
-  Using inheritance, create different versions of Parser.py (and Indexer.py?).
-  I think we need three options:
-    1) uncompressed + no index
-    2) compressed + non-compressed index
-      # See tests in TestSmallAndMedium.py
-      # Update TestBuildLarge.py and TestParseLarge.py
-    3) compressed + compressed index (when they want to be able to query any column).
+Rename (and make public/private) in Parser.py.
+  parse_data_value
+  parse_data_values
+  parse_row_value
+  parse_row_values
+
+Implement parallelization in Parser.py.
 
 Test parsing CADD files.
   Rebuild these files.
@@ -21,7 +21,6 @@ Test parsing CADD files.
   Move to test.sh and generate formal statistics on it?
 
 If we need to go faster to beat tabix:
-    Implement parallelization in Parser.py.
     Try Nuitka. https://nuitka.net (compiles your Python code to C, is supposed to achieve speedups of 3x or greater).
 
 Do demo/tests on LINCS data (see WishBuilder)?
@@ -31,6 +30,14 @@ Remove unnecessary comments and address TODO items in ../f4py/*.
 #####################################################
 # After benchmark paper (for software packages)
 #####################################################
+
+Support the following scenarios (make sure the tests reflect them):
+  1) uncompressed data + no index
+  2) non-compressed data + non-compressed index
+  3) compressed data + non-compressed index
+    # See tests in TestSmallAndMedium.py
+    # Update TestBuildLarge.py and TestParseLarge.py
+  4) compressed data + compressed index (when they want to be able to query any column).
 
 Bring back the filters that I commented out in Filters.py.
   Make sure we have tests for them in TestSmall.py.

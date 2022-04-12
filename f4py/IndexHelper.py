@@ -7,17 +7,17 @@ class IndexHelper:
         f4py.print_message(f"Saving index for {f4_file_path}.", verbose)
 
         num_rows = f4py.read_int_from_file(f4_file_path, ".nrow")
-
         parser = None
 
         try:
             parser = f4py.Parser(f4_file_path)
 
-#            compressor = None
-#            if self.__compression_level:
-#                compressor = zstandard.ZstdCompressor(level=self.__compression_level)
+            #compressor = None
+            #if compression_level:
+            #    compressor = zstandard.ZstdCompressor(level=self.__compression_level)
 
             # Get information about index columns.
+            f4py.print_message(f"Getting column meta information for {index_column} index for {f4_file_path}.", verbose)
             ignore, column_index_dict, column_type_dict, column_coords_dict = parser._get_column_meta(f4py.NoFilter(), [index_column])
             data_file_handle = parser.get_file_handle("")
             line_length = parser.get_stat(".ll")
@@ -26,12 +26,15 @@ class IndexHelper:
             coords = column_coords_dict[column_index_dict[index_column.encode()]]
 
             values_positions = []
+            f4py.print_message(f"Parsing values and positions for {index_column} index for {f4_file_path}.", verbose)
             for row_index in range(parser.get_num_rows()):
-                value = parser.parse_data_value(row_index, line_length, coords, data_file_handle)
+                #value = parser._parse_row_value(row_index, line_length, coords, data_file_handle)
+                value = parser._parse_row_value(row_index, coords)
                 values_positions.append([value, row_index])
 
             index_file_path = IndexHelper._get_index_file_path(parser.data_file_path, index_column)
 
+            f4py.print_message(f"Building and saving index file for {index_column} index for {f4_file_path}.", verbose)
             if index_column_type == "c":
                 f4py.CategoricalIndexer(index_file_path, compression_level).build(values_positions)
             elif index_column_type == "f":
@@ -41,6 +44,8 @@ class IndexHelper:
         finally:
             if parser:
                 parser.close()
+
+        f4py.print_message(f"Done creating index file for {index_column} index for {f4_file_path}.", verbose)
 
     def _get_filter_indexer(f4_file_path, compression_level, index_column, index_column_type, fltr):
         index_file_path = IndexHelper._get_index_file_path(f4_file_path, index_column.decode())

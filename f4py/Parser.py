@@ -20,25 +20,21 @@ class Parser:
     def __init__(self, data_file_path, fixed_file_extensions=["", ".cc", ".ct"], stats_file_extensions=[".ll", ".mccl", ".nrow", ".ncol"]):
         self.data_file_path = data_file_path
 
-        self.compression_level = None
-        #self.compression_level = f4py.read_str_from_file(data_file_path, ".cmp")
-        #self.__decompressor = None
-        #if read_str_from_file(cmp_file_path) != b"None":
-        #    self.__decompressor = zstandard.ZstdDecompressor()
+        self.compression_level = f4py.read_str_from_file(data_file_path, ".cmp")
+        self.__decompressor = None
+        if self.compression_level != b"None":
+            self.__decompressor = zstandard.ZstdDecompressor()
 
         self.__file_handles = {}
         self.__stats = {}
 
         # Cache file handles in a dictionary.
         for ext in fixed_file_extensions:
-            #ext2 = ext
-            #self.__file_handles[ext] = f4py.open_read_file(data_file_path, ext2)
             self.__file_handles[ext] = self.set_file_handle(ext)
 
         # Cache statistics in a dictionary.
         for ext in stats_file_extensions:
-            ext2 = ext
-            self.__stats[ext] = f4py.read_int_from_file(data_file_path, ext2)
+            self.__stats[ext] = f4py.read_int_from_file(data_file_path, ext)
 
         atexit.register(self.close)
 
@@ -79,15 +75,17 @@ class Parser:
         has_index = len(glob.glob(self.data_file_path + ".idx_*")) > 0
 
         if has_index:
+            #TODO: Support compression here?
             keep_row_indices = sorted(fltr.filter_indexed_column_values(self, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes))
         else:
 #            if num_processes == 1:
             row_indices = set(range(self.get_num_rows()))
+            # TODO: Convert to using fltr.filter_column_values()
             keep_row_indices = sorted(fltr.filter_column_values(self, row_indices, column_index_dict, column_type_dict, column_coords_dict))
+            #keep_row_indices = sorted(chain.from_iterable(Parallel(n_jobs = num_processes)(delayed(fltr.filter_column_values)(self, row_indices, column_index_dict, column_type_dict, column_coords_dict))))
 #            else:
                 # Loop through the rows in parallel and find matching row indices.
-                #keep_row_indices = chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(self._process_rows)(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict) for row_indices in self._generate_row_chunks(num_processes)))
-                # TODO: Convert to using fltr.filter_column_values()
+#                keep_row_indices = chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(self._process_rows)(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict) for row_indices in self._generate_row_chunks(num_processes)))
 #                keep_row_indices = chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(_process_rows)(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict) for row_indices in self._generate_row_chunks(num_processes)))
 
         # Get the coords for each column to select
@@ -100,6 +98,7 @@ class Parser:
 
             out_lines = []
             for row_index in keep_row_indices:
+                #TODO: Support compression here
                 out_lines.append(b"\t".join([x.rstrip() for x in self._parse_row_values(row_index, select_column_coords)]))
 
                 if len(out_lines) % lines_per_chunk == 0:
@@ -156,11 +155,6 @@ class Parser:
 
     def get_stat(self, ext):
         return self.__stats[ext]
-
-    def parse_data_value(self, start_element, segment_length, coords, str_like_object):
-        start_pos = start_element * segment_length
-
-        return str_like_object[(start_pos + coords[0]):(start_pos + coords[1])]
 
     def close(self):
         for handle in self.__file_handles.values():
@@ -253,11 +247,33 @@ class Parser:
 
         return data_coords
 
+    def parse_data_value(self, start_element, segment_length, coords, str_like_object):
+        start_pos = start_element * segment_length
+
+        return str_like_object[(start_pos + coords[0]):(start_pos + coords[1])]
+
     def _parse_data_values(self, start_element, segment_length, data_coords, str_like_object):
         start_pos = start_element * segment_length
 
         for coords in data_coords:
             yield str_like_object[(start_pos + coords[0]):(start_pos + coords[1])]
 
+    def _parse_row_value(self, row_index, column_coords):
+        if self.__decompressor:
+            line_length = self.__stats[".ll"]
+            line = self.parse_data_value(row_index, line_length, [0, line_length], self.__file_handles[""])
+            line = self.__decompressor.decompress(line)
+
+            return self.parse_data_value(0, 0, column_coords, line)
+
+        return self.parse_data_value(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""])
+
     def _parse_row_values(self, row_index, column_coords):
+        if self.__decompressor:
+            line_length = self.__stats[".ll"]
+            line = self.parse_data_value(row_index, line_length, [0, line_length], self.__file_handles[""])
+            line = self.__decompressor.decompress(line)
+
+            return list(self._parse_data_values(0, 0, column_coords, line))
+
         return list(self._parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))

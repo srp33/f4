@@ -98,7 +98,7 @@ class IdentifierIndexer(BaseIndexer):
         if matching_position == -1:
             return set()
 
-        matching_row_index = int(index_parser.parse_data_value(matching_position, line_length, position_coords, data_file_handle).rstrip())
+        matching_row_index = int(index_parser._parse_row_value(matching_position, position_coords).rstrip())
         return set([matching_row_index])
 
     def binary_search(self, parser, line_length, value_coords, data_file_handle, value_to_find, l, r):
@@ -106,7 +106,7 @@ class IdentifierIndexer(BaseIndexer):
             return -1
 
         mid = l + (r - l) // 2
-        mid_value = parser.parse_data_value(mid, line_length, value_coords, data_file_handle).rstrip()
+        mid_value = parser._parse_row_value(mid, value_coords).rstrip()
 
         if mid_value == value_to_find:
             # If element is present at the middle itself
@@ -175,11 +175,11 @@ class NumericIndexer(BaseIndexer):
         return positions
 
     def find_positions_g(self, index_parser, line_length, value_coords, data_file_handle, fltr, end_index, all_true_operator, all_false_operator):
-        smallest_value = float(index_parser.parse_data_value(0, line_length, value_coords, data_file_handle).rstrip())
+        smallest_value = float(index_parser._parse_row_value(0, value_coords).rstrip())
         if all_true_operator(smallest_value, fltr.value):
             return 0, end_index
 
-        largest_value = float(index_parser.parse_data_value(end_index - 1, line_length, value_coords, data_file_handle).rstrip())
+        largest_value = float(index_parser._parse_row_value(end_index - 1, value_coords).rstrip())
         if not all_true_operator(largest_value, fltr.value):
             return 0, 0
 
@@ -188,11 +188,11 @@ class NumericIndexer(BaseIndexer):
         return matching_position + 1, end_index
 
     def find_positions_l(self, index_parser, line_length, value_coords, data_file_handle, fltr, end_index, all_true_operator, all_false_operator):
-        smallest_value = float(index_parser.parse_data_value(0, line_length, value_coords, data_file_handle).rstrip())
+        smallest_value = float(index_parser._parse_row_value(0, value_coords).rstrip())
         if not all_true_operator(smallest_value, fltr.value):
             return 0, 0
 
-        largest_value = float(index_parser.parse_data_value(end_index - 1, line_length, value_coords, data_file_handle).rstrip())
+        largest_value = float(index_parser._parse_row_value(end_index - 1, value_coords).rstrip())
         if all_true_operator(largest_value, fltr.value):
             return 0, end_index
 
@@ -203,10 +203,10 @@ class NumericIndexer(BaseIndexer):
     def search(self, index_parser, line_length, value_coords, data_file_handle, value_to_find, l, r, search_operator):
         mid = l + (r - l) // 2
 
-        mid_value = float(index_parser.parse_data_value(mid, line_length, value_coords, data_file_handle).rstrip())
+        mid_value = float(index_parser._parse_row_value(mid, value_coords).rstrip())
 
         if search_operator(mid_value, value_to_find):
-            next_value = index_parser.parse_data_value(mid + 1, line_length, value_coords, data_file_handle).rstrip()
+            next_value = index_parser._parse_row_value(mid + 1, value_coords).rstrip()
 
             if next_value == b"":
                 return mid
@@ -227,7 +227,7 @@ class NumericIndexer(BaseIndexer):
         matching_row_indices = set()
 
         for i in range(positions[0], positions[1]):
-            matching_row_indices.add(int(index_parser.parse_data_value(i, line_length, position_coords, data_file_handle).rstrip()))
+            matching_row_indices.add(int(index_parser._parse_row_value(i, position_coords).rstrip()))
 
         index_parser.close()
 

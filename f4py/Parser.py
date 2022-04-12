@@ -75,18 +75,14 @@ class Parser:
         has_index = len(glob.glob(self.data_file_path + ".idx_*")) > 0
 
         if has_index:
-            #TODO: Support compression here?
             keep_row_indices = sorted(fltr.filter_indexed_column_values(self, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes))
         else:
-#            if num_processes == 1:
-            row_indices = set(range(self.get_num_rows()))
-            # TODO: Convert to using fltr.filter_column_values()
-            keep_row_indices = sorted(fltr.filter_column_values(self, row_indices, column_index_dict, column_type_dict, column_coords_dict))
-            #keep_row_indices = sorted(chain.from_iterable(Parallel(n_jobs = num_processes)(delayed(fltr.filter_column_values)(self, row_indices, column_index_dict, column_type_dict, column_coords_dict))))
-#            else:
+            if num_processes == 1:
+                row_indices = set(range(self.get_num_rows()))
+                keep_row_indices = sorted(fltr.filter_column_values(self.data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict))
+            else:
                 # Loop through the rows in parallel and find matching row indices.
-#                keep_row_indices = chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(self._process_rows)(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict) for row_indices in self._generate_row_chunks(num_processes)))
-#                keep_row_indices = chain.from_iterable(Parallel(n_jobs=num_processes)(delayed(_process_rows)(self.data_file_path, fltr, row_indices, column_index_dict, column_type_dict, column_coords_dict) for row_indices in self._generate_row_chunks(num_processes)))
+                keep_row_indices = sorted(chain.from_iterable(Parallel(n_jobs = num_processes)(delayed(fltr.filter_column_values)(self.data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict) for row_indices in self._generate_row_chunks(num_processes))))
 
         # Get the coords for each column to select
         select_column_coords = self._parse_data_coords([column_index_dict[x] for x in select_columns])

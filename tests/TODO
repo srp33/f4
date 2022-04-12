@@ -1,7 +1,6 @@
-Update Test*Large.py and rerun tests.
-  1) uncompressed data + no index
-  2) non-compressed data + non-compressed index
-  3) compressed data + non-compressed index
+Implement parallelization in Parser.py.
+
+When we invoke _parse_row_value, pass line_length and file handle from outside the function to improve efficiency?
 
 Test parsing CADD files.
   Rebuild these files.
@@ -9,8 +8,6 @@ Test parsing CADD files.
     https://www.htslib.org/doc/tabix.html
     tabix sorted.gff.gz chr1:10,000,000-20,000,000
   Move to test.sh and generate formal statistics on it?
-
-Implement parallelization in Parser.py.
 
 If we need to go faster to beat tabix:
     Try Nuitka. https://nuitka.net (compiles your Python code to C, is supposed to achieve speedups of 3x or greater).

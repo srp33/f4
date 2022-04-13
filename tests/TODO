@@ -3,8 +3,7 @@ Implement parallelization in Parser.py.
 When we invoke _parse_row_value, pass line_length and file handle from outside the function to improve efficiency?
 
 Rework Filters.filter_indexed_column_values_parallel for NumericWithinFilter so that the sub-filters do not store the indices for the entire ranges but rather just the limits of the range. Probably implement private classes called __NumericRangeLowerFilter and __NumericRangeUpperFilter.
-
-Remove unnecessary comments and address TODO items in ../f4py/*.
+  This could perhaps be a larger-scale change, applied to NumericFilter itself (separating into LessThanFilter, GreaterThanFilter, etc.).
 
 Test parsing CADD files.
   Rebuild these files.

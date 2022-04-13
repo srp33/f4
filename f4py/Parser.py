@@ -78,18 +78,15 @@ class Parser:
             sub_filters = fltr.get_sub_filters()
 
             if num_processes == 1 or len(sub_filters) == 1:
-                keep_row_indices = sorted(fltr.filter_indexed_column_values(self, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes))
+                keep_row_indices = sorted(fltr.filter_indexed_column_values(self, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows()))
             else:
                 fltr_results_dict = {}
                 for f in fltr.get_sub_filters():
-                    fltr_results_dict[str(f)] = fltr.filter_indexed_column_values(self, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes)
+                    fltr_results_dict[str(f)] = f.filter_indexed_column_values(self, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows())
 
-                keep_row_indices = sorted(fltr.filter_indexed_column_values_parallel(fltr_results_dict))
-                #print(fltr_results_dict)
                 #import sys
                 #sys.exit()
-
-                #keep_row_indices = sorted(fltr.filter_indexed_column_values(self, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes))
+                keep_row_indices = sorted(fltr.filter_indexed_column_values_parallel(fltr_results_dict))
         else:
             if num_processes == 1:
                 row_indices = set(range(self.get_num_rows()))
@@ -108,7 +105,6 @@ class Parser:
 
             out_lines = []
             for row_index in keep_row_indices:
-                #TODO: Support compression here
                 out_lines.append(b"\t".join([x.rstrip() for x in self.__parse_row_values(row_index, select_column_coords)]))
 
                 if len(out_lines) % lines_per_chunk == 0:

@@ -21,16 +21,16 @@ def run_test(f4_file_prefix, num_processes, lines_per_chunk):
 #ps.print_stats()
 
 #run_test("tall", 1, 10000) #3.329, 3.8
-#run_test("tall", 4, 10000) #2.156
+#run_test("tall", 4, 10000) #2.156, 2.6
 #run_test("wide", 1, 10) #0.412, 0.197
 #run_test("wide", 4, 10) #0.598, 0.188
 
 #run_test("tall_indexed", 1, 10000) #1.248
-#run_test("tall_indexed", 4, 10000) #
+run_test("tall_indexed", 4, 10000) #
 #run_test("wide_indexed", 1, 10) #0.177
 #run_test("wide_indexed", 4, 10) #0.177
 
 #run_test("tall_indexed_compressed", 1, 10000) #1.283
 #run_test("tall_indexed_compressed", 4, 10000) #
 #run_test("wide_indexed_compressed", 1, 10) #0.175
-run_test("wide_indexed_compressed", 4, 10) #0.181
+#run_test("wide_indexed_compressed", 4, 10) #0.181

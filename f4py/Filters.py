@@ -36,6 +36,9 @@ class BaseFilter:
 
         return f4py.IndexHelper._get_filter_indexer(parser.data_file_path, parser.compression_level, self.column_name, index_column_type, self).filter(self, end_index)
 
+    def get_sub_filters(self):
+        return [self]
+
     def passes(self, value):
         raise Exception("This function must be implemented by classes that inherit this class.")
 
@@ -65,6 +68,9 @@ class __SimpleBaseFilter(BaseFilter):
 
     def get_column_name_set(self):
         return set([self.column_name])
+
+    def __str__(self):
+        return f"{type(self).__name__}____{self.column_name.decode()}____{self.value}"
 
 class StringEqualsFilter(__SimpleBaseFilter):
     def __init__(self, column_name, value):
@@ -224,6 +230,22 @@ class __CompositeBaseFilter(BaseFilter):
     def get_column_name_set(self):
         return self.filter1.get_column_name_set() | self.filter2.get_column_name_set()
 
+    def get_sub_filters(self):
+        return self.filter1.get_sub_filters() + self.filter2.get_sub_filters()
+
+    def get_sub_filter_row_indices(self, fltr_results_dict):
+        if len(self.filter1.get_sub_filters()) == 1:
+            row_indices_1 = fltr_results_dict[str(self.filter1)]
+        else:
+            row_indices_1 = self.filter1.filter_indexed_column_values_parallel(fltr_results_dict)
+
+        if len(self.filter2.get_sub_filters()) == 1:
+            row_indices_2 = fltr_results_dict[str(self.filter2)]
+        else:
+            row_indices_2 = self.filter2.filter_indexed_column_values_parallel(fltr_results_dict)
+
+        return row_indices_1, row_indices_2
+
 class AndFilter(__CompositeBaseFilter):
     """
     This class is used to construct a filter with multiple sub-filters that must all evaluate to True.
@@ -242,6 +264,7 @@ class AndFilter(__CompositeBaseFilter):
         return self.filter2.filter_column_values(data_file_path, row_indices_1, column_index_dict, column_type_dict, column_coords_dict)
 
     def filter_indexed_column_values(self, parser, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes):
+        #TODO: clean this up, also remove num_processes parameter from this function.
         #if num_processes == 1:
         row_indices_1 = self.filter1.filter_indexed_column_values(parser, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes)
         row_indices_2 = self.filter2.filter_indexed_column_values(parser, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes)
@@ -251,6 +274,10 @@ class AndFilter(__CompositeBaseFilter):
         #row_indices_1 = keep_row_indices_sets[0]
         #row_indices_2 = keep_row_indices_sets[1]
 
+        return row_indices_1 & row_indices_2
+
+    def filter_indexed_column_values_parallel(self, fltr_results_dict):
+        row_indices_1, row_indices_2 = self.get_sub_filter_row_indices(fltr_results_dict)
         return row_indices_1 & row_indices_2
 
 class OrFilter(__CompositeBaseFilter):
@@ -275,6 +302,10 @@ class OrFilter(__CompositeBaseFilter):
         row_indices_1 = self.filter1.filter_indexed_column_values(parser, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes)
         row_indices_2 = self.filter2.filter_indexed_column_values(parser, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes)
 
+        return row_indices_1 | row_indices_2
+
+    def filter_indexed_column_values_parallel(self, fltr_results_dict):
+        row_indices_1, row_indices_2 = self.get_sub_filter_row_indices(fltr_results_dict)
         return row_indices_1 | row_indices_2
 
 class NumericWithinFilter(__CompositeBaseFilter):
@@ -308,3 +339,7 @@ class NumericWithinFilter(__CompositeBaseFilter):
         upper_position = min(lower_positions[1], upper_positions[1])
 
         return(lower_indexer.find_matching_row_indices((lower_position, upper_position)))
+
+    def filter_indexed_column_values_parallel(self, fltr_results_dict):
+        row_indices_1, row_indices_2 = self.get_sub_filter_row_indices(fltr_results_dict)
+        return fltr_results_dict[str(self.filter1)] & fltr_results_dict[str(self.filter2)]

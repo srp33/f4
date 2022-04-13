@@ -75,7 +75,21 @@ class Parser:
         has_index = len(glob.glob(self.data_file_path + ".idx_*")) > 0
 
         if has_index:
-            keep_row_indices = sorted(fltr.filter_indexed_column_values(self, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes))
+            sub_filters = fltr.get_sub_filters()
+
+            if num_processes == 1 or len(sub_filters) == 1:
+                keep_row_indices = sorted(fltr.filter_indexed_column_values(self, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes))
+            else:
+                fltr_results_dict = {}
+                for f in fltr.get_sub_filters():
+                    fltr_results_dict[str(f)] = fltr.filter_indexed_column_values(self, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes)
+
+                keep_row_indices = sorted(fltr.filter_indexed_column_values_parallel(fltr_results_dict))
+                #print(fltr_results_dict)
+                #import sys
+                #sys.exit()
+
+                #keep_row_indices = sorted(fltr.filter_indexed_column_values(self, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes))
         else:
             if num_processes == 1:
                 row_indices = set(range(self.get_num_rows()))

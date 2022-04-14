@@ -47,6 +47,10 @@ class IndexHelper:
 
         f4py.print_message(f"Done creating index file for {index_column} index for {f4_file_path}.", verbose)
 
+    def save_indices(f4_file_path, index_columns, compression_level=None, verbose=False):
+        for index_column in index_columns:
+            f4py.IndexHelper.save_index(f4_file_path, index_column, compression_level=compression_level)
+
     def _get_filter_indexer(f4_file_path, compression_level, index_column, index_column_type, fltr):
         index_file_path = IndexHelper._get_index_file_path(f4_file_path, index_column.decode())
 

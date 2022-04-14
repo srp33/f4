@@ -1,9 +1,14 @@
-Implement parallelization in Parser.py.
+Add an option to Builder.py that enables users to specify index_columns when converting a file and update all tests (including CADD) accordingly.
+
+Rework parallelization when index column is used. Parallelize pulling row indices from index file (when there are a lot of them) in addition to (or rather than) for each sub-filter.
 
 When we invoke _parse_row_value, pass line_length and file handle from outside the function to improve efficiency?
 
 Rework Filters.filter_indexed_column_values_parallel for NumericWithinFilter so that the sub-filters do not store the indices for the entire ranges but rather just the limits of the range. Probably implement private classes called __NumericRangeLowerFilter and __NumericRangeUpperFilter.
   This could perhaps be a larger-scale change, applied to NumericFilter itself (separating into LessThanFilter, GreaterThanFilter, etc.).
+
+Print to standard out rather than saving directly to output file.
+
 
 Test parsing CADD files.
   Rebuild these files.
@@ -13,12 +18,17 @@ Test parsing CADD files.
   Move to test.sh and generate formal statistics on it?
 
 If we need to go faster to beat tabix:
+    Implement composite ("covering", "cascading"?) index that supports multiple columns.
     Try Nuitka. https://nuitka.net (compiles your Python code to C, is supposed to achieve speedups of 3x or greater).
 
 Do demo/tests on LINCS data (see WishBuilder)?
 
 Remove unnecessary comments and address TODO items in ../f4py/*.
   Do this in VS Studio Code or PyCharm.
+
+Compare against other libraries/formats.
+  Update to the latest version of R (in the Dockerfile).
+  Update to the latest version of Python (in the Dockerfile)?
 
 #####################################################
 # After benchmark paper (for software packages)

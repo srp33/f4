@@ -11,7 +11,7 @@ class Builder:
     def __init__(self, verbose=False):
         self.__verbose = verbose
 
-    def convert_delimited_file(self, delimited_file_path, f4_file_path, delimiter="\t", compression_level=22, num_processes=1, num_cols_per_chunk=None, num_rows_per_save=10, tmp_dir_path=None):
+    def convert_delimited_file(self, delimited_file_path, f4_file_path, index_columns=[], delimiter="\t", compression_level=22, num_processes=1, num_cols_per_chunk=None, num_rows_per_save=10, tmp_dir_path=None):
         if type(delimiter) != str:
             raise Exception("The delimiter value must be a string.")
 
@@ -61,6 +61,10 @@ class Builder:
 
         self._remove_tmp_dir(tmp_dir_path)
         self._print_message(f"Done converting {delimited_file_path} to {f4_file_path}")
+
+        if index_columns:
+            self._print_message(f"Saving index files for {f4_file_path}")
+            f4py.IndexHelper.save_indices(f4_file_path, index_columns, compression_level=compression_level)
 
     #####################################################
     # Non-public functions
@@ -152,7 +156,7 @@ class Builder:
             num_rows += 1
 
             if num_rows % 100000 == 0:
-                self._print_message(f"Processed line of {delimited_file_path} for columns {start_index} - {end_index - 1}")
+                self._print_message(f"Processed line {num_rows} of {delimited_file_path} for columns {start_index} - {end_index - 1}")
 
         in_file.close()
 

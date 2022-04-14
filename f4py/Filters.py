@@ -31,9 +31,9 @@ class BaseFilter:
 
         return passing_row_indices
 
-    def filter_indexed_column_values(self, parser, column_index_dict, column_type_dict, column_coords_dict, end_index):
+    def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index):
         index_column_type = column_type_dict[column_index_dict[self.column_name]]
-        return f4py.IndexHelper._get_filter_indexer(parser.data_file_path, parser.compression_level, self.column_name, index_column_type, self).filter(self, end_index)
+        return f4py.IndexHelper._get_filter_indexer(data_file_path, compression_level, self.column_name, index_column_type, self).filter(self, end_index)
 
     def get_sub_filters(self):
         return [self]
@@ -51,7 +51,7 @@ class NoFilter(BaseFilter):
     def filter_column_values(self, data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict):
         return row_indices
 
-    def filter_indexed_column_values(self, parser, column_index_dict, column_type_dict, column_coords_dict, end_index):
+    def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index):
         return set(range(end_index))
 
 class __SimpleBaseFilter(BaseFilter):
@@ -265,9 +265,9 @@ class AndFilter(__CompositeBaseFilter):
         row_indices_1 = self.filter1.filter_column_values(data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict)
         return self.filter2.filter_column_values(data_file_path, row_indices_1, column_index_dict, column_type_dict, column_coords_dict)
 
-    def filter_indexed_column_values(self, parser, column_index_dict, column_type_dict, column_coords_dict, end_index):
-        row_indices_1 = self.filter1.filter_indexed_column_values(parser, column_index_dict, column_type_dict, column_coords_dict, end_index)
-        row_indices_2 = self.filter2.filter_indexed_column_values(parser, column_index_dict, column_type_dict, column_coords_dict, end_index)
+    def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index):
+        row_indices_1 = self.filter1.filter_indexed_column_values(data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index)
+        row_indices_2 = self.filter2.filter_indexed_column_values(data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index)
 
         return row_indices_1 & row_indices_2
 
@@ -293,9 +293,9 @@ class OrFilter(__CompositeBaseFilter):
 
         return row_indices_1 | row_indices_2
 
-    def filter_indexed_column_values(self, parser, column_index_dict, column_type_dict, column_coords_dict, end_index):
-        row_indices_1 = self.filter1.filter_indexed_column_values(parser, column_index_dict, column_type_dict, column_coords_dict, end_index)
-        row_indices_2 = self.filter2.filter_indexed_column_values(parser, column_index_dict, column_type_dict, column_coords_dict, end_index)
+    def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index):
+        row_indices_1 = self.filter1.filter_indexed_column_values(data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index)
+        row_indices_2 = self.filter2.filter_indexed_column_values(data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index)
 
         return row_indices_1 | row_indices_2
 
@@ -320,12 +320,12 @@ class NumericWithinFilter(__CompositeBaseFilter):
     def filter_column_values(self, data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict):
         return AndFilter(self.filter1, self.filter2).filter_column_values(data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict)
 
-    def filter_indexed_column_values(self, parser, column_index_dict, column_type_dict, column_coords_dict, end_index):
+    def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index):
         lower_index_column_type = column_type_dict[column_index_dict[self.filter1.column_name]]
         upper_index_column_type = column_type_dict[column_index_dict[self.filter2.column_name]]
 
-        lower_indexer = f4py.IndexHelper._get_filter_indexer(parser.data_file_path, parser.compression_level, self.filter1.column_name, lower_index_column_type, self.filter1)
-        upper_indexer = f4py.IndexHelper._get_filter_indexer(parser.data_file_path, parser.compression_level, self.filter2.column_name, upper_index_column_type, self.filter2)
+        lower_indexer = f4py.IndexHelper._get_filter_indexer(data_file_path, compression_level, self.filter1.column_name, lower_index_column_type, self.filter1)
+        upper_indexer = f4py.IndexHelper._get_filter_indexer(data_file_path, compression_level, self.filter2.column_name, upper_index_column_type, self.filter2)
 
         lower_positions = lower_indexer.find_positions(self.filter1, end_index)
         upper_positions = upper_indexer.find_positions(self.filter2, end_index)

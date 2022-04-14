@@ -249,10 +249,7 @@ def run_small_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lin
         pass_test("Non-filter is passed as a filter.")
 
     # Test ability to query based on index columns.
-    f4py.Builder().convert_delimited_file(in_file_path, f4_file_path, compression_level=compression_level, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk)
-    f4py.IndexHelper.save_index(f4_file_path, "ID", compression_level=compression_level)
-    f4py.IndexHelper.save_index(f4_file_path, "FloatA", compression_level=compression_level)
-    f4py.IndexHelper.save_index(f4_file_path, "OrdinalA", compression_level=compression_level)
+    f4py.Builder().convert_delimited_file(in_file_path, f4_file_path, index_columns=["ID", "FloatA", "OrdinalA"], compression_level=compression_level, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk)
 
     parser = f4py.Parser(f4_file_path)
 
@@ -377,9 +374,7 @@ def run_medium_tests(num_processes):
     print(f"Running all tests for {in_file_path} - with indexing")
     print("-------------------------------------------------------")
 
-    f4py.IndexHelper.save_index(f4_file_path, "ID", compression_level=None)
-    f4py.IndexHelper.save_index(f4_file_path, "Discrete1", compression_level=None)
-    f4py.IndexHelper.save_index(f4_file_path, "Numeric1", compression_level=None)
+    f4py.IndexHelper.save_indices(f4_file_path, ["ID", "Discrete1", "Numeric1"], compression_level=None)
 
     run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, medium_Numeric1, num_processes)
 

@@ -19,12 +19,12 @@ class BaseFilter:
 
         line_length = parser.get_stat(".ll")
         coords = column_coords_dict[column_index_dict[self.column_name]]
-        #data_file_handle = parser.get_file_handle("")
+        data_file_handle = parser.get_file_handle("")
 
         passing_row_indices = set()
 
         for i in row_indices:
-            if self.passes(parser._parse_row_value(i, coords).rstrip()):
+            if self.passes(parser._parse_row_value(i, coords, line_length, data_file_handle).rstrip()):
                 passing_row_indices.add(i)
 
         parser.close()

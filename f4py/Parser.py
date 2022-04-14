@@ -268,15 +268,14 @@ class Parser:
         for coords in data_coords:
             yield str_like_object[(start_pos + coords[0]):(start_pos + coords[1])]
 
-    def _parse_row_value(self, row_index, column_coords):
+    def _parse_row_value(self, row_index, column_coords, line_length, file_handle):
         if self.__decompressor:
-            line_length = self.__stats[".ll"]
-            line = self.__parse_data_value(row_index, line_length, [0, line_length], self.__file_handles[""])
+            line = self.__parse_data_value(row_index, line_length, [0, line_length], file_handle)
             line = self.__decompressor.decompress(line)
 
             return self.__parse_data_value(0, 0, column_coords, line)
 
-        return self.__parse_data_value(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""])
+        return self.__parse_data_value(row_index, line_length, column_coords, file_handle)
 
     def __parse_row_values(self, row_index, column_coords):
         if self.__decompressor:

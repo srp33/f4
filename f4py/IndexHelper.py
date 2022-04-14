@@ -28,8 +28,7 @@ class IndexHelper:
             values_positions = []
             f4py.print_message(f"Parsing values and positions for {index_column} index for {f4_file_path}.", verbose)
             for row_index in range(parser.get_num_rows()):
-                #value = parser._parse_row_value(row_index, line_length, coords, data_file_handle)
-                value = parser._parse_row_value(row_index, coords)
+                value = parser._parse_row_value(row_index, coords, line_length, data_file_handle)
                 values_positions.append([value, row_index])
 
             index_file_path = IndexHelper._get_index_file_path(parser.data_file_path, index_column)

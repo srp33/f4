@@ -16,8 +16,8 @@ def write_string_to_file(file_path, file_extension, the_string):
     with open(file_path + file_extension, 'wb') as the_file:
         the_file.write(the_string)
 
-def is_missing_value(value):
-    return value == b"" or value == b"NA"
+#def is_missing_value(value):
+#    return value == b"" or value == b"NA"
 
 def get_column_start_coords(column_sizes):
     # Calculate the position where each column starts.

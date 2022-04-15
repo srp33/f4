@@ -295,8 +295,8 @@ def _generate_chunk_ranges(num_cols, num_cols_per_chunk):
         yield [0, num_cols]
 
 def _infer_type(value):
-    if not value or f4py.is_missing_value(value):
-        return None
+    #if not value or f4py.is_missing_value(value):
+    #    return None
     if fastnumbers.isint(value):
         return b"i"
     if fastnumbers.isfloat(value):

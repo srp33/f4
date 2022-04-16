@@ -1,13 +1,16 @@
 When we invoke _parse_row_value, pass line_length and file handle from outside the function to improve efficiency?
-  Rerun TestParseLarge.py when other stuff not being executed on the server.
+  Test - Rerun TestParseLarge.py.
 
-Print to standard out rather than saving directly to output file.
+Test - Print to standard out rather than saving directly to output file.
 
 Rework parallelization when index column is used.
-  Parallelize pulling row indices from index file (when there are a lot of them).
-  Remove parallelization across sub-filters? Run some tests to see.
+  Test - Parallelize pulling row indices from index file (when there are a lot of them).
+  Test - Remove parallelization across sub-filters? Run some tests to see.
 
 Rework Filters.filter_indexed_column_values_parallel for NumericWithinFilter so that the sub-filters do not store the indices for the entire ranges but rather just the limits of the range.
+  Think about whether we really need to do this, after testing the new parallelization scheme.
+  It would complicate the code quite a bit.
+  This need may also be met with composite indices, but not sure if it's the same thing.
 
 
 

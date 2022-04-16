@@ -102,7 +102,16 @@ class Parser:
         # Get the coords for each column to select
         select_column_coords = self._parse_data_coords([column_index_dict[x] for x in select_columns])
 
-        # Write output file (in chunks)
+        # Write output (in chunks)
+        # Header line
+        # TODO: Remove lines_per_chunk and let buffering take care of that
+        # TODO: Remove out_file_path parameter.
+#        import sys
+#        sys.stdout.buffer.write(b"\t".join(select_columns) + b"\n")
+
+#        for row_index in keep_row_indices:
+#            sys.stdout.buffer.write(b"\t".join([x.rstrip() for x in self.__parse_row_values(row_index, select_column_coords)]))
+
         with open(out_file_path, 'wb') as out_file:
             # Header line
             out_file.write(b"\t".join(select_columns) + b"\n")

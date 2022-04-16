@@ -1,6 +1,7 @@
 import f4py
 from itertools import chain
 from joblib import Parallel, delayed
+import math #TODO: keep?
 import operator
 from operator import itemgetter
 import pynumparser
@@ -157,11 +158,17 @@ class NumericIndexer(BaseIndexer):
 
         positions = self.find_positions(fltr, end_index)
 
-        #TODO: find chunks
-        #        Or something simpler.
-        #        partition() function in https://docs.python.org/3/library/itertools.html#itertools.chain.from_iterable
-        #TODO: Only do parallel if more than 10 times as many positions as the number of processes.
-        return set(chain.from_iterable(Parallel(n_jobs = num_processes)(delayed(self.find_matching_row_indices)((i, i+1)) for i in range(positions[0], positions[1]))))
+        # This is a rough threshold for determine whether it is worth the overhead to parallelize.
+        num_indices = positions[1] - positions[0]
+        if num_processes == 1 or num_indices < 1000:
+            return self.find_matching_row_indices(positions)
+        else:
+            chunk_size = math.ceil(num_indices / num_processes)
+            position_chunks = []
+            for i in range(positions[0], positions[1], chunk_size):
+                position_chunks.append((i, min(positions[1], i + chunk_size)))
+
+            return set(chain.from_iterable(Parallel(n_jobs = num_processes)(delayed(self.find_matching_row_indices)(position_chunk) for position_chunk in position_chunks)))
 
     def find_positions(self, fltr, end_index):
         index_parser = f4py.Parser(self.index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])

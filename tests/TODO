@@ -3,11 +3,12 @@ When we invoke _parse_row_value, pass line_length and file handle from outside t
 
 Print to standard out rather than saving directly to output file.
 
-Rework parallelization when index column is used. Parallelize pulling row indices from index file (when there are a lot of them) in addition to (or rather than) for each sub-filter.
-
-Go through the code and find where list() or set() are used and see whether we can use itertools. https://docs.python.org/3/library/itertools.html#itertools.chain.from_iterable
+Rework parallelization when index column is used.
+  Parallelize pulling row indices from index file (when there are a lot of them).
+  Remove parallelization across sub-filters? Run some tests to see.
 
 Rework Filters.filter_indexed_column_values_parallel for NumericWithinFilter so that the sub-filters do not store the indices for the entire ranges but rather just the limits of the range.
+
 
 
 

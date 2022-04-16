@@ -78,12 +78,12 @@ class Parser:
             sub_filters = fltr.get_sub_filters()
 
             if num_processes == 1 or len(sub_filters) == 1:
-                keep_row_indices = sorted(fltr.filter_indexed_column_values(self.data_file_path, self.compression_level, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows()))
+                keep_row_indices = sorted(fltr.filter_indexed_column_values(self.data_file_path, self.compression_level, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes))
             else:
                 #for f in sub_filters:
-                #    f.filter_indexed_column_values(self.data_file_path, self.compression_level, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows())
+                #    f.filter_indexed_column_values(self.data_file_path, self.compression_level, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes)
 
-                fltr_results = Parallel(n_jobs = num_processes)(delayed(f.filter_indexed_column_values)(self.data_file_path, self.compression_level, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows()) for f in sub_filters)
+                fltr_results = Parallel(n_jobs = num_processes)(delayed(f.filter_indexed_column_values)(self.data_file_path, self.compression_level, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes) for f in sub_filters)
                 fltr_results_dict = {}
                 for i in range(len(sub_filters)):
                     fltr_results_dict[str(sub_filters[i])] = fltr_results[i]
@@ -276,6 +276,22 @@ class Parser:
             return self.__parse_data_value(0, 0, column_coords, line)
 
         return self.__parse_data_value(row_index, line_length, column_coords, file_handle)
+
+#TODO
+#    def _parse_row_value2(self, row_index, column_coords, line_length, data_file_path):
+#    def _parse_row_value2(self):
+#        parser = f4py.Parser(self.data_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
+
+#        if self.__decompressor:
+#            line = self.__parse_data_value(row_index, line_length, [0, line_length], parser.get_file_handle(""))
+#            line = self.__decompressor.decompress(line)
+#
+#            return self.__parse_data_value(0, 0, column_coords, line)
+#
+#        value = self.__parse_data_value(row_index, line_length, column_coords, parser.get_file_handle(""))
+#        parser.close()
+#        return value
+#        return b"3"
 
     def __parse_row_values(self, row_index, column_coords):
         if self.__decompressor:

@@ -1,4 +1,6 @@
 import f4py
+from itertools import chain
+from joblib import Parallel, delayed
 import operator
 from operator import itemgetter
 import pynumparser
@@ -11,7 +13,7 @@ class BaseIndexer():
     def build(self, values_positions):
         raise Exception("This function must be implemented by classes that inherit this class.")
 
-    def filter(self, fltr, end_index):
+    def filter(self, fltr, end_index, num_processes=1):
         raise Exception("This function must be implemented by classes that inherit this class.")
 
 class CategoricalIndexer(BaseIndexer):
@@ -36,7 +38,7 @@ class CategoricalIndexer(BaseIndexer):
         # TODO: Indicate whether the index is compressed.
         #write_string_to_file(self.__f4_file_path, ".idx.cmp", str(self.__compression_level).encode())
 
-    def filter(self, fltr, end_index):
+    def filter(self, fltr, end_index, num_processes=1):
         index_file = f4py.open_read_file(self.index_file_path, file_extension="")
         row_indices = set()
 
@@ -82,7 +84,7 @@ class IdentifierIndexer(BaseIndexer):
         # TODO: Indicate whether the index is compressed.
         #write_string_to_file(self.__f4_file_path, ".idx.cmp", str(self.__compression_level).encode())
 
-    def filter(self, fltr, end_index):
+    def filter(self, fltr, end_index, num_processes=1):
         if end_index == 0:
             return set()
 
@@ -149,11 +151,17 @@ class NumericIndexer(BaseIndexer):
         # TODO: Indicate whether the index is compressed.
         #write_string_to_file(self.__f4_file_path, ".idx.cmp", str(self.__compression_level).encode())
 
-    def filter(self, fltr, end_index):
+    def filter(self, fltr, end_index, num_processes=1):
         if end_index == 0:
             return set()
 
-        return self.find_matching_row_indices(self.find_positions(fltr, end_index))
+        positions = self.find_positions(fltr, end_index)
+
+        #TODO: find chunks
+        #        Or something simpler.
+        #        partition() function in https://docs.python.org/3/library/itertools.html#itertools.chain.from_iterable
+        #TODO: Only do parallel if more than 10 times as many positions as the number of processes.
+        return set(chain.from_iterable(Parallel(n_jobs = num_processes)(delayed(self.find_matching_row_indices)((i, i+1)) for i in range(positions[0], positions[1]))))
 
     def find_positions(self, fltr, end_index):
         index_parser = f4py.Parser(self.index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
@@ -225,9 +233,12 @@ class NumericIndexer(BaseIndexer):
         position_coords = index_parser._parse_data_coords([1])[0]
 
         matching_row_indices = set()
-
         for i in range(positions[0], positions[1]):
             matching_row_indices.add(int(index_parser._parse_row_value(i, position_coords, line_length, data_file_handle).rstrip()))
+
+        #matching_row_indices2 = Parallel(n_jobs = num_processes)(delayed(index_parser._parse_row_value2)(i, position_coords, line_length, self.index_file_path) for i in range(positions[0], positions[1]))
+        #matching_row_indices2 = Parallel(n_jobs = num_processes)(delayed(index_parser._parse_row_value2)() for i in range(positions[0], positions[1]))
+        #print(matching_row_indices2)
 
         index_parser.close()
 

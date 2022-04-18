@@ -53,7 +53,6 @@ class Builder:
         if num_rows == 0:
             raise Exception(f"A header row but no data rows were detected in {delimited_file_path}")
 
-        self._print_message(f"Converting {delimited_file_path} to {f4_file_path}")
         line_length = self._convert_delimited_file_in_chunks(delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, num_rows, num_processes, num_rows_per_save, tmp_dir_path)
 
         self._print_message(f"Saving meta files for {f4_file_path}")
@@ -166,7 +165,7 @@ class Builder:
         return column_sizes_dict, column_types_dict, num_rows
 
     def _convert_delimited_file_in_chunks(self, delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, num_rows, num_processes, num_rows_per_save, tmp_dir_path):
-        self._print_message(f"Parsing chunks of {delimited_file_path} and saving to temp files")
+        self._print_message(f"Parsing chunks of {delimited_file_path} and saving to temp directory ({tmp_dir_path})")
         row_chunk_indices = _generate_chunk_ranges(num_rows, math.ceil(num_rows / num_processes) + 1)
         max_line_sizes = Parallel(n_jobs=num_processes)(delayed(self._save_rows_chunk)(delimited_file_path, delimiter, compression_level, column_sizes, i, row_chunk[0], row_chunk[1], num_rows_per_save, tmp_dir_path) for i, row_chunk in enumerate(row_chunk_indices))
 
@@ -225,6 +224,7 @@ class Builder:
                     out_line_sizes.append((f"{line_size}\n").encode())
 
                     if len(out_lines) % num_rows_per_save == 0:
+                        self._print_message(f"Processed chunk of {delimited_file_path} at line {line_index}")
                         chunk_file.write(b"".join(out_lines))
                         size_file.write(b"".join(out_line_sizes))
                         out_lines = []

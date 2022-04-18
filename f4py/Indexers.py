@@ -49,8 +49,8 @@ class CategoricalIndexer(BaseIndexer):
             if len(line_items) < 2:
                 break
 
-            if line_items[0].rstrip() == fltr.value:
-                row_indices = set(pynumparser.NumberSequence(int).parse(line_items[1].decode()))
+            if fltr.passes(line_items[0].rstrip()):
+                row_indices = row_indices | set(pynumparser.NumberSequence(int).parse(line_items[1].decode()))
 
         index_file.close()
 

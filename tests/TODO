@@ -1,5 +1,4 @@
-When we invoke _parse_row_value, pass line_length and file handle from outside the function to improve efficiency?
-  Test - Rerun TestParseLarge.py.
+Add code to TestParseLarge.py that checks # rows and columns.
 
 Test - Print to standard out rather than saving directly to output file.
 
@@ -12,8 +11,10 @@ Rework Filters.filter_indexed_column_values_parallel for NumericWithinFilter so 
   It would complicate the code quite a bit.
   This need may also be met with composite indices, but not sure if it's the same thing.
 
+Run pstats.Stats one more time in TestParseLarge.py for tall_indexed_compressed and wide_indexed_compressed.
 
-
+Parallelize the process of generating the output file (save to temp file)?
+  This *might* help when doing a lot of decompression.
 
 CADD files:
   Rebuild these files.
@@ -28,7 +29,9 @@ CADD files:
     Try Nuitka. https://nuitka.net (compiles your Python code to C, is supposed to achieve speedups of 3x or greater).
 
 
-Do demo/tests on GNOMAD? LINCS data (see WishBuilder)?
+Remove GNOMAD code/tests.
+
+Test LINCS data (see WishBuilder).
 
 Remove unnecessary comments and address TODO items in ../f4py/*.
   Do this in VS Studio Code or PyCharm?
@@ -38,6 +41,8 @@ Compare against other libraries/formats.
   Update to the latest version of Python (in the Dockerfile)?
 
 Implement basic http server functionality as a demo.
+
+Modify name? Put Parallel(ize) in it?
 
 #####################################################
 # After benchmark paper (for software packages)

@@ -51,13 +51,10 @@ def fail_test(message):
     print(f"FAIL: {message}")
     sys.exit(1)
 
-def run_small_tests(in_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1, compression_level=None):
+def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1, compression_level=None):
     print("-------------------------------------------------------")
     print(f"Running all tests for {in_file_path}, {num_processes}, {num_cols_per_chunk}, {lines_per_chunk}")
     print("-------------------------------------------------------")
-
-    f4_file_path = "/data/small.f4"
-    out_file_path = "/tmp/f4_out.tsv"
 
     # Clean up data files if they already exist
     for file_path in glob.glob(f"{f4_file_path}*"):
@@ -422,13 +419,19 @@ def run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, 
     parser.query_and_save(f4py.StringEqualsFilter("Discrete1", medium_Discrete1[100][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
     check_results("Filter Discrete1 = row 100", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[100]])
 
-run_small_tests("/data/small.tsv", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
-run_small_tests("/data/small.tsv.gz", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
-run_small_tests("/data/small.tsv", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
-run_small_tests("/data/small.tsv.gz", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
+f4_file_path = "/data/small.f4"
+out_file_path = "/tmp/small_out.tsv"
 
-run_small_tests("/data/small.tsv", num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1, compression_level = 22)
-run_small_tests("/data/small.tsv", num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2, compression_level = 22)
+run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
+run_small_tests("/data/small.tsv.gz", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
+run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
+run_small_tests("/data/small.tsv.gz", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
+
+f4_file_path = "/data/small_compressed.f4"
+out_file_path = "/tmp/small_compressed_out.tsv"
+
+run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1, compression_level = 22)
+run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2, compression_level = 22)
 
 run_medium_tests(num_processes=1)
 run_medium_tests(num_processes=2)

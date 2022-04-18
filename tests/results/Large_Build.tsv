@@ -1,0 +1,83 @@
+Shape	Indexed	Compressed	Num_Processes	Elapsed_Seconds
+Converting from data/tall.tsv - 18/04/2022 15:53:12.002430
+Summarizing each column in data/tall.tsv - 18/04/2022 15:53:12.002635
+Processed line 100000 of data/tall.tsv for columns 153 - 203 - 18/04/2022 15:53:21.727762
+Processed line 100000 of data/tall.tsv for columns 102 - 152 - 18/04/2022 15:53:21.733198
+Processed line 100000 of data/tall.tsv for columns 408 - 458 - 18/04/2022 15:53:21.912799
+Processed line 100000 of data/tall.tsv for columns 510 - 560 - 18/04/2022 15:53:21.912985
+Processed line 100000 of data/tall.tsv for columns 306 - 356 - 18/04/2022 15:53:22.017919
+Processed line 100000 of data/tall.tsv for columns 612 - 662 - 18/04/2022 15:53:22.042577
+Processed line 100000 of data/tall.tsv for columns 765 - 815 - 18/04/2022 15:53:22.109646
+Processed line 100000 of data/tall.tsv for columns 357 - 407 - 18/04/2022 15:53:22.109632
+Processed line 100000 of data/tall.tsv for columns 663 - 713 - 18/04/2022 15:53:22.109642
+Processed line 100000 of data/tall.tsv for columns 459 - 509 - 18/04/2022 15:53:22.109640
+Processed line 100000 of data/tall.tsv for columns 561 - 611 - 18/04/2022 15:53:22.109670
+Processed line 100000 of data/tall.tsv for columns 255 - 305 - 18/04/2022 15:53:22.112437
+Processed line 100000 of data/tall.tsv for columns 204 - 254 - 18/04/2022 15:53:22.347377
+Processed line 100000 of data/tall.tsv for columns 714 - 764 - 18/04/2022 15:53:22.418516
+Processed line 100000 of data/tall.tsv for columns 51 - 101 - 18/04/2022 15:53:22.841298
+Processed line 100000 of data/tall.tsv for columns 0 - 50 - 18/04/2022 15:53:22.948182
+Processed line 200000 of data/tall.tsv for columns 153 - 203 - 18/04/2022 15:53:31.303937
+Processed line 200000 of data/tall.tsv for columns 102 - 152 - 18/04/2022 15:53:31.316904
+Processed line 200000 of data/tall.tsv for columns 408 - 458 - 18/04/2022 15:53:31.689047
+Processed line 200000 of data/tall.tsv for columns 510 - 560 - 18/04/2022 15:53:31.689648
+Processed line 200000 of data/tall.tsv for columns 612 - 662 - 18/04/2022 15:53:31.835327
+Processed line 200000 of data/tall.tsv for columns 306 - 356 - 18/04/2022 15:53:31.856357
+Processed line 200000 of data/tall.tsv for columns 663 - 713 - 18/04/2022 15:53:32.083819
+Processed line 200000 of data/tall.tsv for columns 561 - 611 - 18/04/2022 15:53:32.083819
+Processed line 200000 of data/tall.tsv for columns 765 - 815 - 18/04/2022 15:53:32.083820
+Processed line 200000 of data/tall.tsv for columns 459 - 509 - 18/04/2022 15:53:32.083820
+Processed line 200000 of data/tall.tsv for columns 357 - 407 - 18/04/2022 15:53:32.083820
+Processed line 200000 of data/tall.tsv for columns 255 - 305 - 18/04/2022 15:53:32.083820
+Processed line 200000 of data/tall.tsv for columns 204 - 254 - 18/04/2022 15:53:32.243184
+Processed line 200000 of data/tall.tsv for columns 714 - 764 - 18/04/2022 15:53:32.614751
+Processed line 200000 of data/tall.tsv for columns 51 - 101 - 18/04/2022 15:53:33.535382
+Processed line 200000 of data/tall.tsv for columns 0 - 50 - 18/04/2022 15:53:33.762943
+Processed line 300000 of data/tall.tsv for columns 153 - 203 - 18/04/2022 15:53:40.863320
+Processed line 300000 of data/tall.tsv for columns 102 - 152 - 18/04/2022 15:53:40.931092
+Processed line 300000 of data/tall.tsv for columns 408 - 458 - 18/04/2022 15:53:41.436609
+Processed line 300000 of data/tall.tsv for columns 510 - 560 - 18/04/2022 15:53:41.444411
+Processed line 300000 of data/tall.tsv for columns 612 - 662 - 18/04/2022 15:53:41.657574
+Processed line 300000 of data/tall.tsv for columns 306 - 356 - 18/04/2022 15:53:41.729507
+Processed line 300000 of data/tall.tsv for columns 765 - 815 - 18/04/2022 15:53:42.052704
+Processed line 300000 of data/tall.tsv for columns 561 - 611 - 18/04/2022 15:53:42.052704
+Processed line 300000 of data/tall.tsv for columns 255 - 305 - 18/04/2022 15:53:42.052704
+Processed line 300000 of data/tall.tsv for columns 663 - 713 - 18/04/2022 15:53:42.052704
+Processed line 300000 of data/tall.tsv for columns 459 - 509 - 18/04/2022 15:53:42.052704
+Processed line 300000 of data/tall.tsv for columns 357 - 407 - 18/04/2022 15:53:42.052704
+Processed line 300000 of data/tall.tsv for columns 204 - 254 - 18/04/2022 15:53:42.105329
+Processed line 300000 of data/tall.tsv for columns 714 - 764 - 18/04/2022 15:53:42.804790
+Processed line 300000 of data/tall.tsv for columns 51 - 101 - 18/04/2022 15:53:44.248196
+Processed line 300000 of data/tall.tsv for columns 0 - 50 - 18/04/2022 15:53:44.581018
+Processed line 400000 of data/tall.tsv for columns 153 - 203 - 18/04/2022 15:53:50.407491
+Processed line 400000 of data/tall.tsv for columns 102 - 152 - 18/04/2022 15:53:50.574504
+Processed line 400000 of data/tall.tsv for columns 408 - 458 - 18/04/2022 15:53:51.172532
+Processed line 400000 of data/tall.tsv for columns 510 - 560 - 18/04/2022 15:53:51.238048
+Processed line 400000 of data/tall.tsv for columns 612 - 662 - 18/04/2022 15:53:51.454434
+Processed line 400000 of data/tall.tsv for columns 306 - 356 - 18/04/2022 15:53:51.611070
+Processed line 400000 of data/tall.tsv for columns 204 - 254 - 18/04/2022 15:53:51.962404
+Processed line 400000 of data/tall.tsv for columns 765 - 815 - 18/04/2022 15:53:51.976229
+Processed line 400000 of data/tall.tsv for columns 357 - 407 - 18/04/2022 15:53:51.976236
+Processed line 400000 of data/tall.tsv for columns 663 - 713 - 18/04/2022 15:53:51.976271
+Processed line 400000 of data/tall.tsv for columns 561 - 611 - 18/04/2022 15:53:51.983264
+Processed line 400000 of data/tall.tsv for columns 459 - 509 - 18/04/2022 15:53:51.985056
+Processed line 400000 of data/tall.tsv for columns 255 - 305 - 18/04/2022 15:53:51.994494
+Processed line 400000 of data/tall.tsv for columns 714 - 764 - 18/04/2022 15:53:52.989950
+^CTraceback (most recent call last):
+  File "/sandbox/TestBuildLarge.py", line 52, in <module>
+    build("data/tall.tsv", "tall", num_processes, 51, index_columns=None, compression_level=None)
+  File "/sandbox/TestBuildLarge.py", line 30, in build
+    f4py.Builder(verbose=True).convert_delimited_file(in_file_path, f4_file_path, index_columns, delimiter="\t", compression_level=compression_level, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk)
+  File "/sandbox/f4py/Builder.py", line 40, in convert_delimited_file
+    chunk_results = Parallel(n_jobs=num_processes)(delayed(self._parse_columns_chunk)(delimited_file_path, delimiter, column_chunk[0], column_chunk[1]) for column_chunk in column_chunk_indices)
+  File "/usr/local/lib/python3.10/site-packages/joblib/parallel.py", line 1056, in __call__
+    self.retrieve()
+  File "/usr/local/lib/python3.10/site-packages/joblib/parallel.py", line 935, in retrieve
+    self._output.extend(job.get(timeout=self.timeout))
+  File "/usr/local/lib/python3.10/site-packages/joblib/_parallel_backends.py", line 542, in wrap_future_result
+    return future.result(timeout=timeout)
+  File "/usr/local/lib/python3.10/concurrent/futures/_base.py", line 441, in result
+    self._condition.wait(timeout)
+  File "/usr/local/lib/python3.10/threading.py", line 320, in wait
+    waiter.acquire()
+KeyboardInterrupt

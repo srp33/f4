@@ -4,6 +4,7 @@ import glob
 from itertools import chain
 from joblib import Parallel, delayed
 import math
+import sys
 import zstandard
 
 class Parser:
@@ -38,7 +39,7 @@ class Parser:
 
         atexit.register(self.close)
 
-    def query_and_save(self, fltr, select_columns, out_file_path, out_file_type="tsv", num_processes=1, lines_per_chunk=10):
+    def query_and_save(self, fltr, select_columns, out_file_path=None, out_file_type="tsv", num_processes=1, lines_per_chunk=10):
         """
         Query the data file using zero or more filters.
 
@@ -48,7 +49,7 @@ class Parser:
         Args:
             fltr (BaseFilter): A filter.
             select_columns (list): A list of strings that indicate the names of columns that should be selected. If this is an empty list, all columns will be selected.
-            out_file_path(str): A path to a file that will store the output data.
+            out_file_path(str): A path to a file that will store the output data. If None is specified, the data will be directed to standard output.
             out_file_type (str): The output file type. Currently, the only supported value is tsv.
         """
         if not fltr:
@@ -89,8 +90,6 @@ class Parser:
                     fltr_results_dict[str(sub_filters[i])] = fltr_results[i]
 
                 keep_row_indices = sorted(fltr.filter_indexed_column_values_parallel(fltr_results_dict))
-                #import sys
-                #sys.exit()
         else:
             if num_processes == 1:
                 row_indices = set(range(self.get_num_rows()))
@@ -102,30 +101,27 @@ class Parser:
         # Get the coords for each column to select
         select_column_coords = self._parse_data_coords([column_index_dict[x] for x in select_columns])
 
-        # Write output (in chunks)
-        # Header line
-        # TODO: Remove lines_per_chunk and let buffering take care of that
-        # TODO: Remove out_file_path parameter.
-#        import sys
-#        sys.stdout.buffer.write(b"\t".join(select_columns) + b"\n")
+        if out_file_path:
+            # Write output (in chunks)
+            with open(out_file_path, 'wb') as out_file:
+                # Header line
+                out_file.write(b"\t".join(select_columns) + b"\n")
 
-#        for row_index in keep_row_indices:
-#            sys.stdout.buffer.write(b"\t".join([x.rstrip() for x in self.__parse_row_values(row_index, select_column_coords)]))
+                out_lines = []
+                for row_index in keep_row_indices:
+                    out_lines.append(b"\t".join([x.rstrip() for x in self.__parse_row_values(row_index, select_column_coords)]))
 
-        with open(out_file_path, 'wb') as out_file:
-            # Header line
-            out_file.write(b"\t".join(select_columns) + b"\n")
+                    if len(out_lines) % lines_per_chunk == 0:
+                        out_file.write(b"\n".join(out_lines) + b"\n")
+                        out_lines = []
 
-            out_lines = []
-            for row_index in keep_row_indices:
-                out_lines.append(b"\t".join([x.rstrip() for x in self.__parse_row_values(row_index, select_column_coords)]))
-
-                if len(out_lines) % lines_per_chunk == 0:
+                if len(out_lines) > 0:
                     out_file.write(b"\n".join(out_lines) + b"\n")
-                    out_lines = []
+        else:
+            sys.stdout.buffer.write(b"\t".join(select_columns) + b"\n")
 
-            if len(out_lines) > 0:
-                out_file.write(b"\n".join(out_lines) + b"\n")
+            for row_index in keep_row_indices:
+                sys.stdout.buffer.write(b"\t".join([x.rstrip() for x in self.__parse_row_values(row_index, select_column_coords)]))
 
     def get_num_rows(self):
         return self.__stats[".nrow"]
@@ -285,22 +281,6 @@ class Parser:
             return self.__parse_data_value(0, 0, column_coords, line)
 
         return self.__parse_data_value(row_index, line_length, column_coords, file_handle)
-
-#TODO
-#    def _parse_row_value2(self, row_index, column_coords, line_length, data_file_path):
-#    def _parse_row_value2(self):
-#        parser = f4py.Parser(self.data_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
-
-#        if self.__decompressor:
-#            line = self.__parse_data_value(row_index, line_length, [0, line_length], parser.get_file_handle(""))
-#            line = self.__decompressor.decompress(line)
-#
-#            return self.__parse_data_value(0, 0, column_coords, line)
-#
-#        value = self.__parse_data_value(row_index, line_length, column_coords, parser.get_file_handle(""))
-#        parser.close()
-#        return value
-#        return b"3"
 
     def __parse_row_values(self, row_index, column_coords):
         if self.__decompressor:

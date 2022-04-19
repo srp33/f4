@@ -6,7 +6,7 @@ import pstats
 from pstats import SortKey
 import time
 
-def build(in_file_path, tall_or_wide, num_processes, num_cols_per_chunk, index_columns, compression_level):
+def build(in_file_path, tall_or_wide, num_processes, num_cols_per_chunk, num_rows_per_save, index_columns, compression_level):
     out_file_prefix = tall_or_wide + "_"
 
     if index_columns:
@@ -26,8 +26,7 @@ def build(in_file_path, tall_or_wide, num_processes, num_cols_per_chunk, index_c
         os.unlink(file_path)
 
     start = time.time()
-    #f4py.Builder(verbose=False).convert_delimited_file(in_file_path, f4_file_path, index_columns, delimiter="\t", compression_level=compression_level, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk)
-    f4py.Builder(verbose=True).convert_delimited_file(in_file_path, f4_file_path, index_columns, delimiter="\t", compression_level=compression_level, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk)
+    f4py.Builder(verbose=False).convert_delimited_file(in_file_path, f4_file_path, index_columns, delimiter="\t", compression_level=compression_level, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk, num_rows_per_save=num_rows_per_save)
     end = time.time()
     elapsed = f"{round(end - start, 3)}"
 
@@ -48,12 +47,12 @@ def build(in_file_path, tall_or_wide, num_processes, num_cols_per_chunk, index_c
 print(f"Shape\tIndexed\tCompressed\tNum_Processes\tElapsed_Seconds")
 
 #for num_processes in [1, 4, 8, 16, 32]:
-for num_processes in [16]:
-    build("data/tall.tsv", "tall", num_processes, 51, index_columns=None, compression_level=None)
-#    build("data/wide.tsv", "wide", num_processes, 50001, index_columns=None, compression_level=None)
+for num_processes in [4]:
+#    build("data/tall.tsv", "tall", num_processes, 51, 10001, index_columns=None, compression_level=None)
+    build("data/wide.tsv", "wide", num_processes, 50001, 51, index_columns=None, compression_level=None)
 
-#    build("data/tall.tsv", "tall", num_processes, 51, index_columns=["Discrete100", "Numeric900"], compression_level=None)
-#    build("data/wide.tsv", "wide", num_processes, 50001, index_columns=["Discrete100", "Numeric900"], compression_level=None)
+#    build("data/tall.tsv", "tall", num_processes, 51, 10001, index_columns=["Discrete100", "Numeric900"], compression_level=None)
+    build("data/wide.tsv", "wide", num_processes, 50001, 51, index_columns=["Discrete100000", "Numeric900000"], compression_level=None)
 
-#    build("data/tall.tsv", "tall", num_processes, 51, index_columns=["Discrete100", "Numeric900"], compression_level=22)
-#    build("data/wide.tsv", "wide", num_processes, 50001, index_columns=["Discrete100", "Numeric900"], compression_level=22)
+#    build("data/tall.tsv", "tall", num_processes, 51, 10001, index_columns=["Discrete100", "Numeric900"], compression_level=22)
+    build("data/wide.tsv", "wide", num_processes, 50001, 51, index_columns=["Discrete100000", "Numeric900000"], compression_level=22)

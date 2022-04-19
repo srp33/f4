@@ -1,4 +1,3 @@
-import atexit
 import f4py
 import glob
 from itertools import chain
@@ -26,18 +25,22 @@ class Parser:
         if self.compression_level != b"None":
             self.__decompressor = zstandard.ZstdDecompressor()
 
-        self.__file_handles = {}
-        self.__stats = {}
-
         # Cache file handles in a dictionary.
+        self.__file_handles = {}
         for ext in fixed_file_extensions:
             self.__file_handles[ext] = self.set_file_handle(ext)
 
         # Cache statistics in a dictionary.
+        self.__stats = {}
         for ext in stats_file_extensions:
             self.__stats[ext] = f4py.read_int_from_file(data_file_path, ext)
 
-        atexit.register(self.close)
+    def __enter__(self):
+        return self
+
+    def __exit__(self, the_type, value, traceback):
+        for handle in self.__file_handles.values():
+            handle.close()
 
     def query_and_save(self, fltr, select_columns, out_file_path=None, out_file_type="tsv", num_processes=1, lines_per_chunk=10):
         """
@@ -171,34 +174,30 @@ class Parser:
     def get_stat(self, ext):
         return self.__stats[ext]
 
-    def close(self):
-        for handle in self.__file_handles.values():
-            handle.close()
-
     ##############################################
     # Non-public functions
     ##############################################
 
     def _get_column_meta(self, fltr, select_columns):
         if len(select_columns) == 0:
-            cn_parser = f4py.Parser(self.data_file_path + ".cn", fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
-            line_length = cn_parser.get_stat(".ll")
-            coords = cn_parser._parse_data_coords([0, 1])
+            with f4py.Parser(self.data_file_path + ".cn", fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"]) as cn_parser:
+                line_length = cn_parser.get_stat(".ll")
+                coords = cn_parser._parse_data_coords([0, 1])
 
-            # They are not in sorted order in the file, so we must put them in a dict and sort it.
-            column_index_dict = {}
-            for row_index in range(self.get_num_cols()):
-                values = cn_parser.__parse_row_values(row_index, coords)
-                column_name = values[0].rstrip(b" ")
-                column_index = int(values[1])
+                # They are not in sorted order in the file, so we must put them in a dict and sort it.
+                column_index_dict = {}
+                for row_index in range(self.get_num_cols()):
+                    values = cn_parser.__parse_row_values(row_index, coords)
+                    column_name = values[0].rstrip(b" ")
+                    column_index = int(values[1])
 
-                column_index_dict[column_index] = column_name
+                    column_index_dict[column_index] = column_name
 
-            select_columns = []
-            for index, name in sorted(column_index_dict.items()):
-                select_columns.append(name)
+                select_columns = []
+                for index, name in sorted(column_index_dict.items()):
+                    select_columns.append(name)
 
-            column_index_dict = {name: index for index, name in enumerate(select_columns)}
+                column_index_dict = {name: index for index, name in enumerate(select_columns)}
         else:
             select_columns = [x.encode() for x in select_columns]
             column_index_dict = {name: self.get_column_index_from_name(name.decode()) for name in fltr.get_column_name_set() | set(select_columns)}

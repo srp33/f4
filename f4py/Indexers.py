@@ -89,20 +89,20 @@ class IdentifierIndexer(BaseIndexer):
         if end_index == 0:
             return set()
 
-        index_parser = f4py.Parser(self.index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
+        with f4py.Parser(self.index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"]) as index_parser:
+            line_length = index_parser.get_stat(".ll")
+            data_file_handle = index_parser.get_file_handle("")
+            value_coords = index_parser._parse_data_coords([0])[0]
+            position_coords = index_parser._parse_data_coords([1])[0]
 
-        line_length = index_parser.get_stat(".ll")
-        data_file_handle = index_parser.get_file_handle("")
-        value_coords = index_parser._parse_data_coords([0])[0]
-        position_coords = index_parser._parse_data_coords([1])[0]
+            matching_position = self.binary_search(index_parser, line_length, value_coords, data_file_handle, fltr.value, 0, end_index)
 
-        matching_position = self.binary_search(index_parser, line_length, value_coords, data_file_handle, fltr.value, 0, end_index)
+            if matching_position == -1:
+                return set()
 
-        if matching_position == -1:
-            return set()
+            matching_row_index = int(index_parser._parse_row_value(matching_position, position_coords, line_length, data_file_handle).rstrip())
 
-        matching_row_index = int(index_parser._parse_row_value(matching_position, position_coords, line_length, data_file_handle).rstrip())
-        return set([matching_row_index])
+            return set([matching_row_index])
 
     def binary_search(self, parser, line_length, value_coords, data_file_handle, value_to_find, l, r):
         if r == -1:
@@ -171,23 +171,21 @@ class NumericIndexer(BaseIndexer):
 #            return set(chain.from_iterable(Parallel(n_jobs = num_processes)(delayed(self.find_matching_row_indices)(position_chunk) for position_chunk in position_chunks)))
 
     def find_positions(self, fltr, end_index):
-        index_parser = f4py.Parser(self.index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
-        line_length = index_parser.get_stat(".ll")
-        data_file_handle = index_parser.get_file_handle("")
-        value_coords = index_parser._parse_data_coords([0])[0]
+        with f4py.Parser(self.index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"]) as index_parser:
+            line_length = index_parser.get_stat(".ll")
+            data_file_handle = index_parser.get_file_handle("")
+            value_coords = index_parser._parse_data_coords([0])[0]
 
-        if fltr.operator == operator.gt:
-            positions = self.find_positions_g(index_parser, line_length, value_coords, data_file_handle, fltr, end_index, fltr.operator, operator.le)
-        elif fltr.operator == operator.ge:
-            positions = self.find_positions_g(index_parser, line_length, value_coords, data_file_handle, fltr, end_index, fltr.operator, operator.lt)
-        elif fltr.operator == operator.lt:
-            positions = self.find_positions_l(index_parser, line_length, value_coords, data_file_handle, fltr, end_index, fltr.operator, operator.ge)
-        elif fltr.operator == operator.le:
-            positions = self.find_positions_l(index_parser, line_length, value_coords, data_file_handle, fltr, end_index, fltr.operator, operator.gt)
+            if fltr.operator == operator.gt:
+                positions = self.find_positions_g(index_parser, line_length, value_coords, data_file_handle, fltr, end_index, fltr.operator, operator.le)
+            elif fltr.operator == operator.ge:
+                positions = self.find_positions_g(index_parser, line_length, value_coords, data_file_handle, fltr, end_index, fltr.operator, operator.lt)
+            elif fltr.operator == operator.lt:
+                positions = self.find_positions_l(index_parser, line_length, value_coords, data_file_handle, fltr, end_index, fltr.operator, operator.ge)
+            elif fltr.operator == operator.le:
+                positions = self.find_positions_l(index_parser, line_length, value_coords, data_file_handle, fltr, end_index, fltr.operator, operator.gt)
 
-        index_parser.close()
-
-        return positions
+            return positions
 
     def find_positions_g(self, index_parser, line_length, value_coords, data_file_handle, fltr, end_index, all_true_operator, all_false_operator):
         smallest_value = float(index_parser._parse_row_value(0, value_coords, line_length, data_file_handle).rstrip())
@@ -233,20 +231,17 @@ class NumericIndexer(BaseIndexer):
             return self.search(index_parser, line_length, value_coords, data_file_handle, value_to_find, l, mid, search_operator)
 
     def find_matching_row_indices(self, positions):
-        index_parser = f4py.Parser(self.index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
+        with f4py.Parser(self.index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"]) as index_parser:
+            line_length = index_parser.get_stat(".ll")
+            data_file_handle = index_parser.get_file_handle("")
+            position_coords = index_parser._parse_data_coords([1])[0]
 
-        line_length = index_parser.get_stat(".ll")
-        data_file_handle = index_parser.get_file_handle("")
-        position_coords = index_parser._parse_data_coords([1])[0]
+            matching_row_indices = set()
+            for i in range(positions[0], positions[1]):
+                matching_row_indices.add(int(index_parser._parse_row_value(i, position_coords, line_length, data_file_handle).rstrip()))
 
-        matching_row_indices = set()
-        for i in range(positions[0], positions[1]):
-            matching_row_indices.add(int(index_parser._parse_row_value(i, position_coords, line_length, data_file_handle).rstrip()))
+            #matching_row_indices2 = Parallel(n_jobs = num_processes)(delayed(index_parser._parse_row_value2)(i, position_coords, line_length, self.index_file_path) for i in range(positions[0], positions[1]))
+            #matching_row_indices2 = Parallel(n_jobs = num_processes)(delayed(index_parser._parse_row_value2)() for i in range(positions[0], positions[1]))
+            #print(matching_row_indices2)
 
-        #matching_row_indices2 = Parallel(n_jobs = num_processes)(delayed(index_parser._parse_row_value2)(i, position_coords, line_length, self.index_file_path) for i in range(positions[0], positions[1]))
-        #matching_row_indices2 = Parallel(n_jobs = num_processes)(delayed(index_parser._parse_row_value2)() for i in range(positions[0], positions[1]))
-        #print(matching_row_indices2)
-
-        index_parser.close()
-
-        return matching_row_indices
+            return matching_row_indices

@@ -7,11 +7,8 @@ class IndexHelper:
         f4py.print_message(f"Saving index for {f4_file_path}.", verbose)
 
         num_rows = f4py.read_int_from_file(f4_file_path, ".nrow")
-        parser = None
 
-        try:
-            parser = f4py.Parser(f4_file_path)
-
+        with f4py.Parser(f4_file_path) as parser:
             #compressor = None
             #if compression_level:
             #    compressor = zstandard.ZstdCompressor(level=self.__compression_level)
@@ -40,9 +37,6 @@ class IndexHelper:
                 f4py.NumericIndexer(index_file_path, compression_level).build(values_positions)
             else: # i
                 f4py.IdentifierIndexer(index_file_path, compression_level).build(values_positions)
-        finally:
-            if parser:
-                parser.close()
 
         f4py.print_message(f"Done creating index file for {index_column} index for {f4_file_path}.", verbose)
 

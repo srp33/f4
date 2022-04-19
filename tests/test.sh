@@ -17,7 +17,7 @@ mkdir -p data
 rm -rf f4py
 cp -r ../f4py .
 
-dockerCommand="docker run -i -t --rm --user $(id -u):$(id -g) -v $(pwd):/sandbox -v $(pwd)/data:/data --workdir=/sandbox srp33/f4_test"
+dockerCommand="docker run -i -t --rm --user $(id -u):$(id -g) -v $(pwd):/sandbox -v $(pwd)/data:/data -v /tmp:/tmp --workdir=/sandbox srp33/f4_test"
 
 #$dockerCommand bash -c "time python3 BuildTsv.py 1 1 100 data/medium.tsv"
 
@@ -32,7 +32,7 @@ dockerCommand="docker run -i -t --rm --user $(id -u):$(id -g) -v $(pwd):/sandbox
 #$dockerCommand bash -c "time gzip -k data/tall.tsv"
 #$dockerCommand bash -c "time gzip -k data/wide.tsv"
 
-$dockerCommand bash -c "python3 TestBuildLarge.py" | tee results/Large_Build.tsv
-#$dockerCommand bash -c "python3 TestParseLarge.py" | tee results/Large_Parse.tsv
+#$dockerCommand bash -c "python3 TestBuildLarge.py" | tee results/Large_Build.tsv
+$dockerCommand bash -c "python3 TestParseLarge.py" | tee results/Large_Parse.tsv
 
 rm -rf f4py

@@ -5,3 +5,4 @@ tests/data/tall*
 tests/data/wide*
 nohup*
 tests/nohup*
+tests/results

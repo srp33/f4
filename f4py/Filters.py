@@ -15,21 +15,18 @@ class BaseFilter:
         pass
 
     def filter_column_values(self, data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict):
-        parser = f4py.Parser(data_file_path, fixed_file_extensions=[""], stats_file_extensions=[".ll"])
+        with f4py.Parser(data_file_path, fixed_file_extensions=[""], stats_file_extensions=[".ll"]) as parser:
+            line_length = parser.get_stat(".ll")
+            coords = column_coords_dict[column_index_dict[self.column_name]]
+            data_file_handle = parser.get_file_handle("")
 
-        line_length = parser.get_stat(".ll")
-        coords = column_coords_dict[column_index_dict[self.column_name]]
-        data_file_handle = parser.get_file_handle("")
+            passing_row_indices = set()
 
-        passing_row_indices = set()
+            for i in row_indices:
+                if self.passes(parser._parse_row_value(i, coords, line_length, data_file_handle).rstrip()):
+                    passing_row_indices.add(i)
 
-        for i in row_indices:
-            if self.passes(parser._parse_row_value(i, coords, line_length, data_file_handle).rstrip()):
-                passing_row_indices.add(i)
-
-        parser.close()
-
-        return passing_row_indices
+            return passing_row_indices
 
     def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes):
         index_column_type = column_type_dict[column_index_dict[self.column_name]]

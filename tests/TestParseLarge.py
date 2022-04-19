@@ -5,9 +5,10 @@ import operator
 import os
 import pstats
 from pstats import SortKey
+import sys
 import time
 
-def run_test(tall_or_wide, indexed, compressed, num_processes, lines_per_chunk):
+def run_test(tall_or_wide, select_columns, discrete_filter_column, numeric_filter_column, indexed, compressed, num_processes, lines_per_chunk):
     f4_file_path = f"data/{tall_or_wide}_"
     if indexed:
         f4_file_path += "indexed_"
@@ -22,13 +23,21 @@ def run_test(tall_or_wide, indexed, compressed, num_processes, lines_per_chunk):
 
     start = time.time()
 
-    parser = f4py.Parser(f4_file_path)
+    #fltr = f4py.OrFilter(f4py.NumericFilter(numeric_filter_column, operator.ge, 0.1), f4py.NoFilter())
+    #fltr = f4py.OrFilter(f4py.StartsWithFilter(discrete_filter_column, "A"), f4py.EndsWithFilter(discrete_filter_column, "Z"))
+    fltr = f4py.AndFilter(f4py.OrFilter(f4py.StartsWithFilter(discrete_filter_column, "A"), f4py.EndsWithFilter(discrete_filter_column, "Z")), f4py.NumericFilter(numeric_filter_column, operator.ge, 0.1))
 
-    #fltr = f4py.OrFilter(f4py.NumericFilter("Numeric900", operator.ge, 0.1), f4py.NoFilter())
-    #fltr = f4py.OrFilter(f4py.StartsWithFilter("Discrete100", "A"), f4py.EndsWithFilter("Discrete100", "Z"))
-    fltr = f4py.AndFilter(f4py.OrFilter(f4py.StartsWithFilter("Discrete100", "A"), f4py.EndsWithFilter("Discrete100", "Z")), f4py.NumericFilter("Numeric900", operator.ge, 0.1))
+    with f4py.Parser(f4_file_path) as parser:
+        parser.query_and_save(fltr, select_columns, out_file_path, out_file_type="tsv", num_processes=num_processes, lines_per_chunk=lines_per_chunk)
 
-    parser.query_and_save(fltr, ["Discrete100", "Numeric100", "Numeric200", "Numeric300", "Numeric400", "Numeric500", "Numeric600", "Numeric700", "Numeric800", "Numeric900"], out_file_path, out_file_type="tsv", num_processes=num_processes, lines_per_chunk=lines_per_chunk)
+    file_size = os.path.getsize(out_file_path)
+    if tall_or_wide == "tall":
+        expected_size = 7613257
+    else:
+        expected_size = 7177264
+    if file_size != expected_size:
+        print("Error: output file size was invalid!")
+        sys.exit()
 
     end = time.time()
     elapsed = f"{round(end - start, 3)}"
@@ -55,25 +64,18 @@ def run_test(tall_or_wide, indexed, compressed, num_processes, lines_per_chunk):
 #ps = pstats.Stats(profile)
 #ps.print_stats()
 
+tall_select_columns = ["ID", "Discrete100", "Numeric100", "Numeric200", "Numeric300", "Numeric400", "Numeric500", "Numeric600", "Numeric700", "Numeric800", "Numeric900"]
+wide_select_columns = ["ID"] + [f"Discrete{i}" for i in range(100, 100001, 100)] + [f"Numeric{i}" for i in range(100, 900001, 100)]
+
 print(f"Shape\tIndexed\tCompressed\tNum_Processes\tElapsed_Seconds")
 
-run_test("tall", False, False, 1, 10000)
-run_test("tall", False, False, 4, 10000)
-run_test("tall", False, False, 16, 10000)
-run_test("wide", False, False, 1, 10)
-run_test("wide", False, False, 4, 10)
-run_test("wide", False, False, 16, 10)
+#for num_processes in [1, 4, 8, 16, 32]:
+for num_processes in [8]:
+    run_test("tall", tall_select_columns, "Discrete100", "Numeric900", False, False, num_processes, 10000)
+    run_test("wide", wide_select_columns, "Discrete100000", "Numeric900000", False, False, num_processes, 10)
 
-run_test("tall", True, False, 1, 10000)
-run_test("tall", True, False, 4, 10000)
-run_test("tall", True, False, 16, 10000)
-run_test("wide", True, False, 1, 10)
-run_test("wide", True, False, 4, 10)
-run_test("wide", True, False, 16, 10)
+    run_test("tall", tall_select_columns, "Discrete100", "Numeric900", True, False, num_processes, 10000)
+    run_test("wide", wide_select_columns, "Discrete100000", "Numeric900000", True, False, num_processes, 10)
 
-run_test("tall", True, True, 1, 10000)
-run_test("tall", True, True, 4, 10000)
-run_test("tall", True, True, 16, 10000)
-run_test("wide", True, True, 1, 10)
-run_test("wide", True, True, 4, 10)
-run_test("wide", True, True, 16, 10)
+    run_test("tall", tall_select_columns, "Discrete100", "Numeric900", True, True, num_processes, 10000)
+    run_test("wide", wide_select_columns, "Discrete100000", "Numeric900000", True, True, num_processes, 10)

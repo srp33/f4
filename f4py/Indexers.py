@@ -160,15 +160,15 @@ class NumericIndexer(BaseIndexer):
 
         # This is a rough threshold for determine whether it is worth the overhead to parallelize.
         num_indices = positions[1] - positions[0]
-        #if num_processes == 1 or num_indices < 1000:
-        return self.find_matching_row_indices(positions)
-        #else:
-        #    chunk_size = math.ceil(num_indices / num_processes)
-        #    position_chunks = []
-        #    for i in range(positions[0], positions[1], chunk_size):
-        #        position_chunks.append((i, min(positions[1], i + chunk_size)))
-#
-#            return set(chain.from_iterable(Parallel(n_jobs = num_processes)(delayed(self.find_matching_row_indices)(position_chunk) for position_chunk in position_chunks)))
+        if num_processes == 1 or num_indices < 1000:
+            return self.find_matching_row_indices(positions)
+        else:
+            chunk_size = math.ceil(num_indices / num_processes)
+            position_chunks = []
+            for i in range(positions[0], positions[1], chunk_size):
+                position_chunks.append((i, min(positions[1], i + chunk_size)))
+
+            return set(chain.from_iterable(Parallel(n_jobs = num_processes)(delayed(self.find_matching_row_indices)(position_chunk) for position_chunk in position_chunks)))
 
     def find_positions(self, fltr, end_index):
         with f4py.Parser(self.index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"]) as index_parser:

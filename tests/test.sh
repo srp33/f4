@@ -21,7 +21,7 @@ dockerCommand="docker run -i -t --rm --user $(id -u):$(id -g) -v $(pwd):/sandbox
 
 #$dockerCommand bash -c "time python3 BuildTsv.py 1 1 100 data/medium.tsv"
 
-#$dockerCommand python3 TestSmallAndMedium.py
+$dockerCommand python3 TestSmallAndMedium.py
 
 #######################################################
 # Create large test files and do tests
@@ -31,6 +31,8 @@ dockerCommand="docker run -i -t --rm --user $(id -u):$(id -g) -v $(pwd):/sandbox
 #$dockerCommand bash -c "time python3 BuildTsv.py 100000 900000 1000 data/wide.tsv"
 #$dockerCommand bash -c "time gzip -k data/tall.tsv"
 #$dockerCommand bash -c "time gzip -k data/wide.tsv"
+
+mkdir -p results
 
 #$dockerCommand bash -c "python3 TestBuildLarge.py" | tee results/Large_Build.tsv
 $dockerCommand bash -c "python3 TestParseLarge.py" | tee results/Large_Parse.tsv

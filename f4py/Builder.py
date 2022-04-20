@@ -224,7 +224,7 @@ class Builder:
                     out_line_sizes.append((f"{line_size}\n").encode())
 
                     if len(out_lines) % num_rows_per_save == 0:
-                        self._print_message(f"Processed chunk of {delimited_file_path} at line {line_index}")
+                        self._print_message(f"Processed chunk of {delimited_file_path} at line {line_index} (start_index = {start_index}, end_index = {end_index})")
                         chunk_file.write(b"".join(out_lines))
                         size_file.write(b"".join(out_line_sizes))
                         out_lines = []

@@ -32,8 +32,8 @@ class BaseFilter:
         index_column_type = column_type_dict[column_index_dict[self.column_name]]
         return f4py.IndexHelper._get_filter_indexer(data_file_path, compression_level, self.column_name, index_column_type, self).filter(self, end_index, num_processes)
 
-    def get_sub_filters(self):
-        return [self]
+#    def get_sub_filters(self):
+#        return [self]
 
     def passes(self, value):
         raise Exception("This function must be implemented by classes that inherit this class.")
@@ -229,21 +229,21 @@ class __CompositeBaseFilter(BaseFilter):
     def get_column_name_set(self):
         return self.filter1.get_column_name_set() | self.filter2.get_column_name_set()
 
-    def get_sub_filters(self):
-        return self.filter1.get_sub_filters() + self.filter2.get_sub_filters()
+#    def get_sub_filters(self):
+#        return self.filter1.get_sub_filters() + self.filter2.get_sub_filters()
 
-    def get_sub_filter_row_indices(self, fltr_results_dict):
-        if len(self.filter1.get_sub_filters()) == 1:
-            row_indices_1 = fltr_results_dict[str(self.filter1)]
-        else:
-            row_indices_1 = self.filter1.filter_indexed_column_values_parallel(fltr_results_dict)
-
-        if len(self.filter2.get_sub_filters()) == 1:
-            row_indices_2 = fltr_results_dict[str(self.filter2)]
-        else:
-            row_indices_2 = self.filter2.filter_indexed_column_values_parallel(fltr_results_dict)
-
-        return row_indices_1, row_indices_2
+#    def get_sub_filter_row_indices(self, fltr_results_dict):
+#        if len(self.filter1.get_sub_filters()) == 1:
+#            row_indices_1 = fltr_results_dict[str(self.filter1)]
+#        else:
+#            row_indices_1 = self.filter1.filter_indexed_column_values_parallel(fltr_results_dict)
+#
+#        if len(self.filter2.get_sub_filters()) == 1:
+#            row_indices_2 = fltr_results_dict[str(self.filter2)]
+#        else:
+#            row_indices_2 = self.filter2.filter_indexed_column_values_parallel(fltr_results_dict)
+#
+#        return row_indices_1, row_indices_2
 
 class AndFilter(__CompositeBaseFilter):
     """
@@ -268,9 +268,9 @@ class AndFilter(__CompositeBaseFilter):
 
         return row_indices_1 & row_indices_2
 
-    def filter_indexed_column_values_parallel(self, fltr_results_dict):
-        row_indices_1, row_indices_2 = self.get_sub_filter_row_indices(fltr_results_dict)
-        return row_indices_1 & row_indices_2
+#    def filter_indexed_column_values_parallel(self, fltr_results_dict):
+#        row_indices_1, row_indices_2 = self.get_sub_filter_row_indices(fltr_results_dict)
+#        return row_indices_1 & row_indices_2
 
 class OrFilter(__CompositeBaseFilter):
     """
@@ -296,9 +296,9 @@ class OrFilter(__CompositeBaseFilter):
 
         return row_indices_1 | row_indices_2
 
-    def filter_indexed_column_values_parallel(self, fltr_results_dict):
-        row_indices_1, row_indices_2 = self.get_sub_filter_row_indices(fltr_results_dict)
-        return row_indices_1 | row_indices_2
+#    def filter_indexed_column_values_parallel(self, fltr_results_dict):
+#        row_indices_1, row_indices_2 = self.get_sub_filter_row_indices(fltr_results_dict)
+#        return row_indices_1 | row_indices_2
 
 class NumericWithinFilter(__CompositeBaseFilter):
     def __init__(self, column_name, lower_bound_value, upper_bound_value):
@@ -332,6 +332,6 @@ class NumericWithinFilter(__CompositeBaseFilter):
 
         return(lower_indexer.find_matching_row_indices((lower_position, upper_position)))
 
-    def filter_indexed_column_values_parallel(self, fltr_results_dict):
-        row_indices_1, row_indices_2 = self.get_sub_filter_row_indices(fltr_results_dict)
-        return fltr_results_dict[str(self.filter1)] & fltr_results_dict[str(self.filter2)]
+#    def filter_indexed_column_values_parallel(self, fltr_results_dict):
+#        row_indices_1, row_indices_2 = self.get_sub_filter_row_indices(fltr_results_dict)
+#        return fltr_results_dict[str(self.filter1)] & fltr_results_dict[str(self.filter2)]

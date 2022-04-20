@@ -79,20 +79,23 @@ class Parser:
         has_index = len(glob.glob(self.data_file_path + ".idx_*")) > 0
 
         if has_index:
-            sub_filters = fltr.get_sub_filters()
+#            sub_filters = fltr.get_sub_filters()
 
-            if num_processes == 1 or len(sub_filters) == 1:
-                keep_row_indices = sorted(fltr.filter_indexed_column_values(self.data_file_path, self.compression_level, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes))
-            else:
-                #for f in sub_filters:
-                #    f.filter_indexed_column_values(self.data_file_path, self.compression_level, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes)
+#            if num_processes == 1 or len(sub_filters) == 1:
+            keep_row_indices = sorted(fltr.filter_indexed_column_values(self.data_file_path, self.compression_level, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes))
+#            else:
+#                fltr_results_dict = {}
 
-                fltr_results = Parallel(n_jobs = num_processes)(delayed(f.filter_indexed_column_values)(self.data_file_path, self.compression_level, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes) for f in sub_filters)
-                fltr_results_dict = {}
-                for i in range(len(sub_filters)):
-                    fltr_results_dict[str(sub_filters[i])] = fltr_results[i]
+##                for f in sub_filters:
+##                    fltr_results_dict[str(f)] = f.filter_indexed_column_values(self.data_file_path, self.compression_level, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes)
 
-                keep_row_indices = sorted(fltr.filter_indexed_column_values_parallel(fltr_results_dict))
+                # This is a parallelization of the above code.
+                # At least in some cases, it slows things down more than it speeds things up.
+#                fltr_results = Parallel(n_jobs = num_processes)(delayed(f.filter_indexed_column_values)(self.data_file_path, self.compression_level, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes) for f in sub_filters)
+#                for i in range(len(sub_filters)):
+#                    fltr_results_dict[str(sub_filters[i])] = fltr_results[i]
+#
+#                keep_row_indices = sorted(fltr.filter_indexed_column_values_parallel(fltr_results_dict))
         else:
             if num_processes == 1:
                 row_indices = set(range(self.get_num_rows()))

@@ -1,300 +1,300 @@
 Shape	Indexed	Compressed	Num_Processes	Elapsed_Seconds
-Converting from data/tall.tsv - 21/04/2022 03:04:00.790864
-Summarizing each column in data/tall.tsv - 21/04/2022 03:04:00.791326
-Processed line 100000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:04:12.204259
-Processed line 100000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:04:15.488577
-Processed line 100000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:04:15.490284
-Processed line 100000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:04:15.567449
-Processed line 100000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:04:15.567449
-Processed line 100000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:04:15.567449
-Processed line 100000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:04:15.567449
-Processed line 100000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:04:15.567614
-Processed line 100000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:04:15.605110
-Processed line 100000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:04:15.611425
-Processed line 100000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:04:15.666337
-Processed line 100000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:04:15.666337
-Processed line 100000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:04:15.666388
-Processed line 100000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:04:15.670819
-Processed line 100000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:04:15.670956
-Processed line 100000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:04:16.132177
-Processed line 100000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:04:16.132177
-Processed line 100000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:04:16.133978
-Processed line 100000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:04:17.575304
-Processed line 100000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:04:17.649391
-Processed line 200000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:04:23.269076
-Processed line 200000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:04:29.939483
-Processed line 200000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:04:29.939496
-Processed line 200000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:04:30.043807
-Processed line 200000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:04:30.043808
-Processed line 200000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:04:30.043856
-Processed line 200000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:04:30.044207
-Processed line 200000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:04:30.048563
-Processed line 200000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:04:30.074065
-Processed line 200000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:04:30.137927
-Processed line 200000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:04:30.297584
-Processed line 200000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:04:30.297584
-Processed line 200000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:04:30.314102
-Processed line 200000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:04:30.314104
-Processed line 200000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:04:30.314111
-Processed line 200000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:04:31.159041
-Processed line 200000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:04:31.159048
-Processed line 200000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:04:31.255737
-Processed line 200000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:04:34.116666
-Processed line 200000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:04:34.360139
-Processed line 300000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:04:34.370273
-Processed line 300000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:04:44.383764
-Processed line 300000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:04:44.383760
-Processed line 300000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:04:44.487930
-Processed line 300000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:04:44.491474
-Processed line 300000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:04:44.493830
-Processed line 300000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:04:44.543209
-Processed line 300000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:04:44.559359
-Processed line 300000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:04:44.663278
-Processed line 300000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:04:44.678106
-Processed line 300000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:04:44.878972
-Processed line 300000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:04:44.882671
-Processed line 300000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:04:44.882810
-Processed line 300000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:04:44.956472
-Processed line 300000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:04:44.956890
-Processed line 400000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:04:45.491850
-Processed line 300000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:04:46.260692
-Processed line 300000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:04:46.302640
-Processed line 300000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:04:46.370676
-Processed line 300000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:04:50.796426
-Processed line 300000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:04:51.072940
-Processed line 500000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:04:56.613990
-Processed line 400000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:04:58.798661
-Processed line 400000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:04:58.798661
-Processed line 400000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:04:58.937442
-Processed line 400000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:04:58.937427
-Processed line 400000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:04:58.937812
-Processed line 400000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:04:58.970467
-Processed line 400000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:04:59.156347
-Processed line 400000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:04:59.209189
-Processed line 400000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:04:59.305316
-Processed line 400000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:04:59.494535
-Processed line 400000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:04:59.557185
-Processed line 400000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:04:59.557183
-Processed line 400000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:04:59.608773
-Processed line 400000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:04:59.678065
-Processed line 400000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:05:01.416868
-Processed line 400000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:05:01.417200
-Processed line 400000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:05:01.443625
-Processed line 400000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:05:07.362185
-Processed line 400000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:05:07.738607
-Processed line 600000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:05:07.739854
-Processed line 500000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:05:13.220054
-Processed line 500000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:05:13.220054
-Processed line 500000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:05:13.373936
-Processed line 500000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:05:13.373947
-Processed line 500000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:05:13.381254
-Processed line 500000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:05:13.382086
-Processed line 500000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:05:13.769848
-Processed line 500000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:05:13.785225
-Processed line 500000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:05:13.952878
-Processed line 500000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:05:14.098499
-Processed line 500000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:05:14.218979
-Processed line 500000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:05:14.226868
-Processed line 500000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:05:14.226868
-Processed line 500000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:05:14.389309
-Processed line 500000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:05:16.528922
-Processed line 500000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:05:16.530888
-Processed line 500000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:05:16.530904
-Processed line 700000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:05:18.860492
-Processed line 500000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:05:23.894954
-Processed line 500000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:05:24.403227
-Processed line 600000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:05:27.648994
-Processed line 600000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:05:27.648994
-Processed line 600000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:05:27.806540
-Processed line 600000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:05:27.806529
-Processed line 600000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:05:27.806562
-Processed line 600000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:05:27.829111
-Processed line 600000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:05:28.325441
-Processed line 600000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:05:28.410666
-Processed line 600000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:05:28.547477
-Processed line 600000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:05:28.704359
-Processed line 600000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:05:28.839895
-Processed line 600000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:05:28.899916
-Processed line 600000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:05:28.899916
-Processed line 600000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:05:29.110888
-Processed line 800000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:05:29.977656
-Processed line 600000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:05:31.608727
-Processed line 600000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:05:31.638108
-Processed line 600000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:05:31.638108
-Processed line 600000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:05:40.498028
-Processed line 600000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:05:41.063436
-Processed line 900000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:05:41.078646
-Processed line 700000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:05:42.108020
-Processed line 700000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:05:42.108020
-Processed line 700000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:05:42.243700
-Processed line 700000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:05:42.243700
-Processed line 700000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:05:42.243700
-Processed line 700000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:05:42.319157
-Processed line 700000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:05:42.880817
-Processed line 700000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:05:43.040321
-Processed line 700000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:05:43.141069
-Processed line 700000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:05:43.370521
-Processed line 700000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:05:43.456727
-Processed line 700000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:05:43.591585
-Processed line 700000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:05:43.591585
-Processed line 700000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:05:43.808251
-Processed line 700000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:05:46.700998
-Processed line 700000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:05:46.750731
-Processed line 700000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:05:46.750731
-Processed line 1000000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:05:52.199280
-Processed line 800000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:05:56.546676
-Processed line 800000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:05:56.546676
-Processed line 800000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:05:56.669192
-Processed line 800000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:05:56.669192
-Processed line 800000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:05:56.669202
-Processed line 800000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:05:56.841420
-Processed line 700000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:05:57.136428
-Processed line 800000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:05:57.408863
-Processed line 800000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:05:57.686336
-Processed line 800000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:05:57.723607
-Processed line 700000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:05:57.739633
-Processed line 800000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:05:58.018539
-Processed line 800000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:05:58.088932
-Processed line 800000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:05:58.254167
-Processed line 800000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:05:58.254167
-Processed line 800000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:05:58.493020
-Processed line 800000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:06:01.778648
-Processed line 800000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:06:01.847039
-Processed line 800000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:06:01.847037
-Processed line 900000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:06:10.985911
-Processed line 900000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:06:10.985911
-Processed line 900000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:06:11.107617
-Processed line 900000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:06:11.107617
-Processed line 900000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:06:11.107627
-Processed line 900000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:06:11.396944
-Processed line 900000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:06:11.973107
-Processed line 900000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:06:12.295119
-Processed line 900000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:06:12.295119
-Processed line 900000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:06:12.651672
-Processed line 900000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:06:12.651672
-Processed line 900000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:06:12.900454
-Processed line 900000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:06:12.900454
-Processed line 900000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:06:13.170061
-Processed line 800000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:06:13.732118
-Processed line 800000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:06:14.413318
-Processed line 900000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:06:16.865821
-Processed line 900000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:06:16.938870
-Processed line 900000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:06:16.938870
-Processed line 1000000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:06:25.400510
-Processed line 1000000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:06:25.405192
-Processed line 1000000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:06:25.543894
-Processed line 1000000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:06:25.543884
-Processed line 1000000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:06:25.543884
-Processed line 1000000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:06:25.927595
-Processed line 1000000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:06:26.445181
-Processed line 1000000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:06:26.758585
-Processed line 1000000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:06:26.758574
-Processed line 1000000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:06:27.063667
-Processed line 1000000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:06:27.099355
-Processed line 1000000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:06:27.385145
-Processed line 1000000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:06:27.385145
-Processed line 1000000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:06:27.667029
-Processed line 900000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:06:29.587060
-Processed line 900000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:06:30.249321
-Processed line 1000000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:06:30.957393
-Processed line 1000000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:06:30.991064
-Processed line 1000000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:06:31.095342
-Processed line 1000000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:06:42.288478
-Processed line 1000000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:06:42.997540
-Saving cached chunk results to /tmp/test_build_large/chunk_results - 21/04/2022 03:06:43.001866
-Parsing chunks of data/tall.tsv and saving to temp directory (/tmp/test_build_large/) - 21/04/2022 03:06:43.003546
-Processed chunk of data/tall.tsv at line 10000 (start_index = 0, end_index = 33335) - 21/04/2022 03:06:48.578564
-Processed chunk of data/tall.tsv at line 43335 (start_index = 33335, end_index = 66670) - 21/04/2022 03:06:49.046201
-Processed chunk of data/tall.tsv at line 143340 (start_index = 133340, end_index = 166675) - 21/04/2022 03:06:50.152650
-Processed chunk of data/tall.tsv at line 110005 (start_index = 100005, end_index = 133340) - 21/04/2022 03:06:50.967270
-Processed chunk of data/tall.tsv at line 76670 (start_index = 66670, end_index = 100005) - 21/04/2022 03:06:51.343011
-Processed chunk of data/tall.tsv at line 343350 (start_index = 333350, end_index = 366685) - 21/04/2022 03:06:52.851624
-Processed chunk of data/tall.tsv at line 176675 (start_index = 166675, end_index = 200010) - 21/04/2022 03:06:53.172796
-Processed chunk of data/tall.tsv at line 376685 (start_index = 366685, end_index = 400020) - 21/04/2022 03:06:53.282784
-Processed chunk of data/tall.tsv at line 20001 (start_index = 0, end_index = 33335) - 21/04/2022 03:06:54.234378
-Processed chunk of data/tall.tsv at line 53336 (start_index = 33335, end_index = 66670) - 21/04/2022 03:06:54.767593
-Processed chunk of data/tall.tsv at line 210010 (start_index = 200010, end_index = 233345) - 21/04/2022 03:06:54.884136
-Processed chunk of data/tall.tsv at line 243345 (start_index = 233345, end_index = 266680) - 21/04/2022 03:06:55.348894
-Processed chunk of data/tall.tsv at line 153341 (start_index = 133340, end_index = 166675) - 21/04/2022 03:06:55.780469
-Processed chunk of data/tall.tsv at line 576695 (start_index = 566695, end_index = 600030) - 21/04/2022 03:06:55.830651
-Processed chunk of data/tall.tsv at line 276680 (start_index = 266680, end_index = 300015) - 21/04/2022 03:06:55.884682
-Processed chunk of data/tall.tsv at line 610030 (start_index = 600030, end_index = 633365) - 21/04/2022 03:06:56.565590
-Processed chunk of data/tall.tsv at line 120006 (start_index = 100005, end_index = 133340) - 21/04/2022 03:06:56.674294
-Processed chunk of data/tall.tsv at line 310015 (start_index = 300015, end_index = 333350) - 21/04/2022 03:06:56.925581
-Processed chunk of data/tall.tsv at line 353351 (start_index = 333350, end_index = 366685) - 21/04/2022 03:06:58.836512
-Processed chunk of data/tall.tsv at line 510025 (start_index = 500025, end_index = 533360) - 21/04/2022 03:06:58.897087
-Processed chunk of data/tall.tsv at line 186676 (start_index = 166675, end_index = 200010) - 21/04/2022 03:06:58.901850
-Processed chunk of data/tall.tsv at line 386686 (start_index = 366685, end_index = 400020) - 21/04/2022 03:06:58.987080
-Processed chunk of data/tall.tsv at line 643365 (start_index = 633365, end_index = 666700) - 21/04/2022 03:06:59.186853
-Processed chunk of data/tall.tsv at line 410020 (start_index = 400020, end_index = 433355) - 21/04/2022 03:06:59.310692
-Processed chunk of data/tall.tsv at line 86671 (start_index = 66670, end_index = 100005) - 21/04/2022 03:06:59.801715
-Processed chunk of data/tall.tsv at line 30002 (start_index = 0, end_index = 33335) - 21/04/2022 03:06:59.887092
-Processed chunk of data/tall.tsv at line 443355 (start_index = 433355, end_index = 466690) - 21/04/2022 03:07:00.036797
-Processed chunk of data/tall.tsv at line 63337 (start_index = 33335, end_index = 66670) - 21/04/2022 03:07:00.458231
-Processed chunk of data/tall.tsv at line 476690 (start_index = 466690, end_index = 500025) - 21/04/2022 03:07:00.602014
-Processed chunk of data/tall.tsv at line 543360 (start_index = 533360, end_index = 566695) - 21/04/2022 03:07:00.924879
-Processed chunk of data/tall.tsv at line 976715 (start_index = 966715, end_index = 1000000) - 21/04/2022 03:07:01.123619
-Processed chunk of data/tall.tsv at line 163342 (start_index = 133340, end_index = 166675) - 21/04/2022 03:07:01.440344
-Processed chunk of data/tall.tsv at line 586696 (start_index = 566695, end_index = 600030) - 21/04/2022 03:07:01.545609
-Processed chunk of data/tall.tsv at line 620031 (start_index = 600030, end_index = 633365) - 21/04/2022 03:07:02.205565
-Processed chunk of data/tall.tsv at line 130007 (start_index = 100005, end_index = 133340) - 21/04/2022 03:07:02.332886
-Processed chunk of data/tall.tsv at line 320016 (start_index = 300015, end_index = 333350) - 21/04/2022 03:07:03.035925
-Processed chunk of data/tall.tsv at line 253346 (start_index = 233345, end_index = 266680) - 21/04/2022 03:07:03.270674
-Processed chunk of data/tall.tsv at line 676700 (start_index = 666700, end_index = 700035) - 21/04/2022 03:07:03.313898
-Processed chunk of data/tall.tsv at line 710035 (start_index = 700035, end_index = 733370) - 21/04/2022 03:07:03.329648
-Processed chunk of data/tall.tsv at line 220011 (start_index = 200010, end_index = 233345) - 21/04/2022 03:07:03.475341
-Processed chunk of data/tall.tsv at line 876710 (start_index = 866710, end_index = 900045) - 21/04/2022 03:07:04.518344
-Processed chunk of data/tall.tsv at line 286681 (start_index = 266680, end_index = 300015) - 21/04/2022 03:07:04.568146
-Processed chunk of data/tall.tsv at line 196677 (start_index = 166675, end_index = 200010) - 21/04/2022 03:07:04.600135
-Processed chunk of data/tall.tsv at line 396687 (start_index = 366685, end_index = 400020) - 21/04/2022 03:07:04.696149
-Processed chunk of data/tall.tsv at line 743370 (start_index = 733370, end_index = 766705) - 21/04/2022 03:07:05.278691
-Processed chunk of data/tall.tsv at line 520026 (start_index = 500025, end_index = 533360) - 21/04/2022 03:07:05.730355
-Processed chunk of data/tall.tsv at line 776705 (start_index = 766705, end_index = 800040) - 21/04/2022 03:07:05.796484
-Processed chunk of data/tall.tsv at line 653366 (start_index = 633365, end_index = 666700) - 21/04/2022 03:07:05.928071
-Processed chunk of data/tall.tsv at line 363352 (start_index = 333350, end_index = 366685) - 21/04/2022 03:07:05.929832
-Processed chunk of data/tall.tsv at line 810040 (start_index = 800040, end_index = 833375) - 21/04/2022 03:07:06.012416
-Processed chunk of data/tall.tsv at line 843375 (start_index = 833375, end_index = 866710) - 21/04/2022 03:07:06.375343
-Processed chunk of data/tall.tsv at line 596697 (start_index = 566695, end_index = 600030) - 21/04/2022 03:07:07.249786
-Processed chunk of data/tall.tsv at line 910045 (start_index = 900045, end_index = 933380) - 21/04/2022 03:07:07.589235
-Processed chunk of data/tall.tsv at line 420021 (start_index = 400020, end_index = 433355) - 21/04/2022 03:07:07.594806
-Processed chunk of data/tall.tsv at line 630032 (start_index = 600030, end_index = 633365) - 21/04/2022 03:07:07.854938
-Processed chunk of data/tall.tsv at line 943380 (start_index = 933380, end_index = 966715) - 21/04/2022 03:07:08.009635
-Processed chunk of data/tall.tsv at line 96672 (start_index = 66670, end_index = 100005) - 21/04/2022 03:07:08.413070
-Processed chunk of data/tall.tsv at line 330017 (start_index = 300015, end_index = 333350) - 21/04/2022 03:07:08.739927
-Processed chunk of data/tall.tsv at line 453356 (start_index = 433355, end_index = 466690) - 21/04/2022 03:07:08.745949
-Processed chunk of data/tall.tsv at line 263347 (start_index = 233345, end_index = 266680) - 21/04/2022 03:07:08.875289
-Processed chunk of data/tall.tsv at line 720036 (start_index = 700035, end_index = 733370) - 21/04/2022 03:07:08.979407
-Processed chunk of data/tall.tsv at line 686701 (start_index = 666700, end_index = 700035) - 21/04/2022 03:07:09.010228
-Processed chunk of data/tall.tsv at line 486691 (start_index = 466690, end_index = 500025) - 21/04/2022 03:07:09.147059
-Processed chunk of data/tall.tsv at line 986716 (start_index = 966715, end_index = 1000000) - 21/04/2022 03:07:09.319367
-Processed chunk of data/tall.tsv at line 553361 (start_index = 533360, end_index = 566695) - 21/04/2022 03:07:09.674821
-Processed chunk of data/tall.tsv at line 886711 (start_index = 866710, end_index = 900045) - 21/04/2022 03:07:10.148017
-Processed chunk of data/tall.tsv at line 296682 (start_index = 266680, end_index = 300015) - 21/04/2022 03:07:10.990106
-Processed chunk of data/tall.tsv at line 230012 (start_index = 200010, end_index = 233345) - 21/04/2022 03:07:11.258715
-Processed chunk of data/tall.tsv at line 753371 (start_index = 733370, end_index = 766705) - 21/04/2022 03:07:11.330668
-Processed chunk of data/tall.tsv at line 663367 (start_index = 633365, end_index = 666700) - 21/04/2022 03:07:11.482046
-Processed chunk of data/tall.tsv at line 530027 (start_index = 500025, end_index = 533360) - 21/04/2022 03:07:11.509613
-Processed chunk of data/tall.tsv at line 820041 (start_index = 800040, end_index = 833375) - 21/04/2022 03:07:11.674854
-Processed chunk of data/tall.tsv at line 786706 (start_index = 766705, end_index = 800040) - 21/04/2022 03:07:11.712866
-Processed chunk of data/tall.tsv at line 853376 (start_index = 833375, end_index = 866710) - 21/04/2022 03:07:12.194752
-Processed chunk of data/tall.tsv at line 430022 (start_index = 400020, end_index = 433355) - 21/04/2022 03:07:13.332395
-Processed chunk of data/tall.tsv at line 953381 (start_index = 933380, end_index = 966715) - 21/04/2022 03:07:13.589485
-Processed chunk of data/tall.tsv at line 920046 (start_index = 900045, end_index = 933380) - 21/04/2022 03:07:13.847259
-Processed chunk of data/tall.tsv at line 730037 (start_index = 700035, end_index = 733370) - 21/04/2022 03:07:14.595297
-Processed chunk of data/tall.tsv at line 696702 (start_index = 666700, end_index = 700035) - 21/04/2022 03:07:14.625999
-Processed chunk of data/tall.tsv at line 996717 (start_index = 966715, end_index = 1000000) - 21/04/2022 03:07:14.912834
-Processed chunk of data/tall.tsv at line 496692 (start_index = 466690, end_index = 500025) - 21/04/2022 03:07:14.960119
-Processed chunk of data/tall.tsv at line 463357 (start_index = 433355, end_index = 466690) - 21/04/2022 03:07:15.123550
-Processed chunk of data/tall.tsv at line 563362 (start_index = 533360, end_index = 566695) - 21/04/2022 03:07:15.375141
-Processed chunk of data/tall.tsv at line 896712 (start_index = 866710, end_index = 900045) - 21/04/2022 03:07:15.637065
-Processed chunk of data/tall.tsv at line 763372 (start_index = 733370, end_index = 766705) - 21/04/2022 03:07:16.778621
-Processed chunk of data/tall.tsv at line 796707 (start_index = 766705, end_index = 800040) - 21/04/2022 03:07:17.031448
-Processed chunk of data/tall.tsv at line 830042 (start_index = 800040, end_index = 833375) - 21/04/2022 03:07:17.057308
-Processed chunk of data/tall.tsv at line 863377 (start_index = 833375, end_index = 866710) - 21/04/2022 03:07:17.557377
-Processed chunk of data/tall.tsv at line 963382 (start_index = 933380, end_index = 966715) - 21/04/2022 03:07:18.682773
-Processed chunk of data/tall.tsv at line 930047 (start_index = 900045, end_index = 933380) - 21/04/2022 03:07:18.902004
-Merging the file chunks for data/tall.tsv - 21/04/2022 03:07:20.584581
-Saving meta files for data/tall_notindexed_notcompressed.f4 - 21/04/2022 03:07:41.291094
-Removed /tmp/test_build_large/ directory - 21/04/2022 03:07:41.298757
-Done converting data/tall.tsv to data/tall_notindexed_notcompressed.f4 - 21/04/2022 03:07:41.298790
-tall	No	No	30	220.508
+Converting from data/tall.tsv - 21/04/2022 03:19:33.194634
+Summarizing each column in data/tall.tsv - 21/04/2022 03:19:33.195010
+Processed line 100000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:19:41.798265
+Processed line 100000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:19:43.103665
+Processed line 100000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:19:43.124905
+Processed line 100000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:19:43.124905
+Processed line 100000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:19:43.124905
+Processed line 100000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:19:43.135792
+Processed line 100000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:19:43.193512
+Processed line 100000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:19:43.211986
+Processed line 100000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:19:43.283816
+Processed line 100000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:19:43.302199
+Processed line 100000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:19:43.358695
+Processed line 100000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:19:43.368734
+Processed line 100000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:19:43.544771
+Processed line 100000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:19:43.551998
+Processed line 100000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:19:43.629514
+Processed line 100000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:19:43.712299
+Processed line 100000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:19:43.719893
+Processed line 100000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:19:43.999876
+Processed line 100000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:19:44.096352
+Processed line 100000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:19:44.512968
+Processed line 200000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:19:49.817853
+Processed line 200000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:19:52.878345
+Processed line 200000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:19:52.878345
+Processed line 200000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:19:52.878345
+Processed line 200000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:19:52.891417
+Processed line 200000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:19:52.891417
+Processed line 200000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:19:52.984572
+Processed line 200000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:19:52.984571
+Processed line 200000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:19:53.081572
+Processed line 200000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:19:53.082640
+Processed line 200000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:19:53.423206
+Processed line 200000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:19:53.423348
+Processed line 200000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:19:53.509006
+Processed line 200000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:19:53.530089
+Processed line 200000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:19:53.609527
+Processed line 200000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:19:53.703492
+Processed line 200000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:19:54.159400
+Processed line 200000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:19:54.477712
+Processed line 200000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:19:54.741569
+Processed line 200000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:19:55.680521
+Processed line 300000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:19:57.819802
+Processed line 300000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:20:02.620038
+Processed line 300000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:20:02.620037
+Processed line 300000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:20:02.620037
+Processed line 300000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:20:02.668602
+Processed line 300000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:20:02.668602
+Processed line 300000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:20:02.766276
+Processed line 300000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:20:02.766276
+Processed line 300000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:20:02.798822
+Processed line 300000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:20:02.827173
+Processed line 300000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:20:03.332756
+Processed line 300000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:20:03.427074
+Processed line 300000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:20:03.436633
+Processed line 300000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:20:03.483345
+Processed line 300000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:20:03.568430
+Processed line 300000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:20:03.686012
+Processed line 300000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:20:04.296547
+Processed line 300000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:20:05.247613
+Processed line 300000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:20:05.407150
+Processed line 400000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:20:05.812306
+Processed line 300000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:20:06.816856
+Processed line 400000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:20:12.358095
+Processed line 400000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:20:12.358095
+Processed line 400000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:20:12.358096
+Processed line 400000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:20:12.475282
+Processed line 400000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:20:12.475283
+Processed line 400000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:20:12.496781
+Processed line 400000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:20:12.506733
+Processed line 400000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:20:12.507301
+Processed line 400000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:20:12.606027
+Processed line 400000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:20:13.130846
+Processed line 400000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:20:13.352790
+Processed line 400000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:20:13.468445
+Processed line 400000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:20:13.505058
+Processed line 400000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:20:13.567455
+Processed line 400000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:20:13.664022
+Processed line 500000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:20:13.799660
+Processed line 400000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:20:14.422683
+Processed line 400000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:20:16.029471
+Processed line 400000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:20:16.046806
+Processed line 400000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:20:17.934757
+Processed line 600000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:20:21.783105
+Processed line 500000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:20:22.096353
+Processed line 500000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:20:22.096353
+Processed line 500000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:20:22.096354
+Processed line 500000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:20:22.202775
+Processed line 500000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:20:22.229736
+Processed line 500000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:20:22.229736
+Processed line 500000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:20:22.257220
+Processed line 500000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:20:22.257220
+Processed line 500000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:20:22.392230
+Processed line 500000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:20:22.920946
+Processed line 500000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:20:23.271979
+Processed line 500000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:20:23.437843
+Processed line 500000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:20:23.445144
+Processed line 500000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:20:23.625525
+Processed line 500000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:20:23.635163
+Processed line 500000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:20:24.545423
+Processed line 500000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:20:26.655165
+Processed line 500000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:20:26.879795
+Processed line 500000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:20:29.037439
+Processed line 700000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:20:29.784883
+Processed line 600000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:20:31.825010
+Processed line 600000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:20:31.825010
+Processed line 600000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:20:31.825010
+Processed line 600000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:20:31.911486
+Processed line 600000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:20:31.997767
+Processed line 600000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:20:31.997767
+Processed line 600000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:20:32.056923
+Processed line 600000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:20:32.056924
+Processed line 600000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:20:32.178613
+Processed line 600000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:20:32.703760
+Processed line 600000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:20:33.191145
+Processed line 600000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:20:33.377716
+Processed line 600000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:20:33.587486
+Processed line 600000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:20:33.707263
+Processed line 600000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:20:33.968623
+Processed line 600000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:20:34.665637
+Processed line 600000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:20:37.250041
+Processed line 600000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:20:37.696815
+Processed line 800000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:20:37.764542
+Processed line 600000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:20:40.194712
+Processed line 700000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:20:41.558660
+Processed line 700000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:20:41.558660
+Processed line 700000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:20:41.558661
+Processed line 700000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:20:41.625071
+Processed line 700000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:20:41.760381
+Processed line 700000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:20:41.760411
+Processed line 700000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:20:41.862667
+Processed line 700000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:20:41.862667
+Processed line 700000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:20:41.957307
+Processed line 700000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:20:42.489644
+Processed line 700000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:20:43.127278
+Processed line 700000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:20:43.319992
+Processed line 700000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:20:43.549047
+Processed line 700000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:20:43.800701
+Processed line 700000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:20:44.010990
+Processed line 700000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:20:44.780951
+Processed line 900000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:20:45.745162
+Processed line 700000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:20:47.857626
+Processed line 700000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:20:48.518384
+Processed line 800000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:20:51.294940
+Processed line 800000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:20:51.294940
+Processed line 800000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:20:51.294940
+Processed line 800000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:20:51.301600
+Processed line 700000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:20:51.341558
+Processed line 800000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:20:51.520155
+Processed line 800000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:20:51.520155
+Processed line 800000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:20:51.667178
+Processed line 800000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:20:51.667177
+Processed line 800000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:20:51.734429
+Processed line 800000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:20:52.276218
+Processed line 800000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:20:53.049996
+Processed line 800000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:20:53.268841
+Processed line 800000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:20:53.504586
+Processed line 1000000 of data/tall.tsv for columns 969 - 1000 - 21/04/2022 03:20:53.726612
+Processed line 800000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:20:53.898578
+Processed line 800000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:20:54.037493
+Processed line 800000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:20:54.890084
+Processed line 800000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:20:58.444518
+Processed line 800000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:20:58.469386
+Processed line 900000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:21:01.027081
+Processed line 900000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:21:01.027083
+Processed line 900000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:21:01.027082
+Processed line 900000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:21:01.027081
+Processed line 900000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:21:01.280048
+Processed line 900000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:21:01.280048
+Processed line 900000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:21:01.465750
+Processed line 900000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:21:01.465750
+Processed line 900000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:21:01.513711
+Processed line 900000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:21:02.061535
+Processed line 800000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:21:02.466897
+Processed line 900000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:21:02.968229
+Processed line 900000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:21:03.212136
+Processed line 900000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:21:03.461786
+Processed line 900000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:21:03.980201
+Processed line 900000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:21:04.066855
+Processed line 900000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:21:04.994004
+Processed line 900000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:21:08.357876
+Processed line 900000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:21:09.022145
+Processed line 1000000 of data/tall.tsv for columns 255 - 305 - 21/04/2022 03:21:10.758563
+Processed line 1000000 of data/tall.tsv for columns 612 - 662 - 21/04/2022 03:21:10.758564
+Processed line 1000000 of data/tall.tsv for columns 408 - 458 - 21/04/2022 03:21:10.758564
+Processed line 1000000 of data/tall.tsv for columns 306 - 356 - 21/04/2022 03:21:10.758564
+Processed line 1000000 of data/tall.tsv for columns 561 - 611 - 21/04/2022 03:21:11.044438
+Processed line 1000000 of data/tall.tsv for columns 714 - 764 - 21/04/2022 03:21:11.044471
+Processed line 1000000 of data/tall.tsv for columns 102 - 152 - 21/04/2022 03:21:11.262180
+Processed line 1000000 of data/tall.tsv for columns 153 - 203 - 21/04/2022 03:21:11.262179
+Processed line 1000000 of data/tall.tsv for columns 663 - 713 - 21/04/2022 03:21:11.318443
+Processed line 1000000 of data/tall.tsv for columns 918 - 968 - 21/04/2022 03:21:11.846732
+Processed line 1000000 of data/tall.tsv for columns 816 - 866 - 21/04/2022 03:21:12.878415
+Processed line 1000000 of data/tall.tsv for columns 765 - 815 - 21/04/2022 03:21:13.150608
+Processed line 1000000 of data/tall.tsv for columns 459 - 509 - 21/04/2022 03:21:13.420713
+Processed line 900000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:21:13.606172
+Processed line 1000000 of data/tall.tsv for columns 204 - 254 - 21/04/2022 03:21:14.044931
+Processed line 1000000 of data/tall.tsv for columns 357 - 407 - 21/04/2022 03:21:14.085029
+Processed line 1000000 of data/tall.tsv for columns 510 - 560 - 21/04/2022 03:21:15.105549
+Processed line 1000000 of data/tall.tsv for columns 867 - 917 - 21/04/2022 03:21:18.244638
+Processed line 1000000 of data/tall.tsv for columns 51 - 101 - 21/04/2022 03:21:19.510738
+Processed line 1000000 of data/tall.tsv for columns 0 - 50 - 21/04/2022 03:21:24.506547
+Saving cached chunk results to /tmp/test_build_large/chunk_results - 21/04/2022 03:21:24.560177
+Parsing chunks of data/tall.tsv and saving to temp directory (/tmp/test_build_large/) - 21/04/2022 03:21:24.560710
+Processed chunk of data/tall.tsv at line 10000 (start_index = 0, end_index = 33335) - 21/04/2022 03:21:27.904107
+Processed chunk of data/tall.tsv at line 43335 (start_index = 33335, end_index = 66670) - 21/04/2022 03:21:28.362365
+Processed chunk of data/tall.tsv at line 76670 (start_index = 66670, end_index = 100005) - 21/04/2022 03:21:28.468760
+Processed chunk of data/tall.tsv at line 110005 (start_index = 100005, end_index = 133340) - 21/04/2022 03:21:28.968991
+Processed chunk of data/tall.tsv at line 176675 (start_index = 166675, end_index = 200010) - 21/04/2022 03:21:29.159956
+Processed chunk of data/tall.tsv at line 143340 (start_index = 133340, end_index = 166675) - 21/04/2022 03:21:29.488427
+Processed chunk of data/tall.tsv at line 210010 (start_index = 200010, end_index = 233345) - 21/04/2022 03:21:29.660142
+Processed chunk of data/tall.tsv at line 243345 (start_index = 233345, end_index = 266680) - 21/04/2022 03:21:30.051487
+Processed chunk of data/tall.tsv at line 276680 (start_index = 266680, end_index = 300015) - 21/04/2022 03:21:30.228783
+Processed chunk of data/tall.tsv at line 310015 (start_index = 300015, end_index = 333350) - 21/04/2022 03:21:30.333582
+Processed chunk of data/tall.tsv at line 343350 (start_index = 333350, end_index = 366685) - 21/04/2022 03:21:30.553436
+Processed chunk of data/tall.tsv at line 410020 (start_index = 400020, end_index = 433355) - 21/04/2022 03:21:31.003847
+Processed chunk of data/tall.tsv at line 20001 (start_index = 0, end_index = 33335) - 21/04/2022 03:21:31.310129
+Processed chunk of data/tall.tsv at line 476690 (start_index = 466690, end_index = 500025) - 21/04/2022 03:21:31.501367
+Processed chunk of data/tall.tsv at line 443355 (start_index = 433355, end_index = 466690) - 21/04/2022 03:21:31.521980
+Processed chunk of data/tall.tsv at line 376685 (start_index = 366685, end_index = 400020) - 21/04/2022 03:21:31.566220
+Processed chunk of data/tall.tsv at line 53336 (start_index = 33335, end_index = 66670) - 21/04/2022 03:21:31.830683
+Processed chunk of data/tall.tsv at line 510025 (start_index = 500025, end_index = 533360) - 21/04/2022 03:21:31.831976
+Processed chunk of data/tall.tsv at line 86671 (start_index = 66670, end_index = 100005) - 21/04/2022 03:21:31.857480
+Processed chunk of data/tall.tsv at line 576695 (start_index = 566695, end_index = 600030) - 21/04/2022 03:21:32.031513
+Processed chunk of data/tall.tsv at line 120006 (start_index = 100005, end_index = 133340) - 21/04/2022 03:21:32.284081
+Processed chunk of data/tall.tsv at line 186676 (start_index = 166675, end_index = 200010) - 21/04/2022 03:21:32.408045
+Processed chunk of data/tall.tsv at line 610030 (start_index = 600030, end_index = 633365) - 21/04/2022 03:21:32.463765
+Processed chunk of data/tall.tsv at line 543360 (start_index = 533360, end_index = 566695) - 21/04/2022 03:21:32.552259
+Processed chunk of data/tall.tsv at line 676700 (start_index = 666700, end_index = 700035) - 21/04/2022 03:21:32.928290
+Processed chunk of data/tall.tsv at line 220011 (start_index = 200010, end_index = 233345) - 21/04/2022 03:21:33.027825
+Processed chunk of data/tall.tsv at line 710035 (start_index = 700035, end_index = 733370) - 21/04/2022 03:21:33.116766
+Processed chunk of data/tall.tsv at line 153341 (start_index = 133340, end_index = 166675) - 21/04/2022 03:21:33.184146
+Processed chunk of data/tall.tsv at line 253346 (start_index = 233345, end_index = 266680) - 21/04/2022 03:21:33.313040
+Processed chunk of data/tall.tsv at line 776705 (start_index = 766705, end_index = 800040) - 21/04/2022 03:21:33.472331
+Processed chunk of data/tall.tsv at line 643365 (start_index = 633365, end_index = 666700) - 21/04/2022 03:21:33.492537
+Processed chunk of data/tall.tsv at line 743370 (start_index = 733370, end_index = 766705) - 21/04/2022 03:21:33.526037
+Processed chunk of data/tall.tsv at line 286681 (start_index = 266680, end_index = 300015) - 21/04/2022 03:21:33.719135
+Processed chunk of data/tall.tsv at line 353351 (start_index = 333350, end_index = 366685) - 21/04/2022 03:21:33.763390
+Processed chunk of data/tall.tsv at line 810040 (start_index = 800040, end_index = 833375) - 21/04/2022 03:21:33.808549
+Processed chunk of data/tall.tsv at line 320016 (start_index = 300015, end_index = 333350) - 21/04/2022 03:21:33.846717
+Processed chunk of data/tall.tsv at line 843375 (start_index = 833375, end_index = 866710) - 21/04/2022 03:21:33.991573
+Processed chunk of data/tall.tsv at line 876710 (start_index = 866710, end_index = 900045) - 21/04/2022 03:21:34.219795
+Processed chunk of data/tall.tsv at line 910045 (start_index = 900045, end_index = 933380) - 21/04/2022 03:21:34.424720
+Processed chunk of data/tall.tsv at line 420021 (start_index = 400020, end_index = 433355) - 21/04/2022 03:21:34.472552
+Processed chunk of data/tall.tsv at line 30002 (start_index = 0, end_index = 33335) - 21/04/2022 03:21:34.634917
+Processed chunk of data/tall.tsv at line 453356 (start_index = 433355, end_index = 466690) - 21/04/2022 03:21:34.829872
+Processed chunk of data/tall.tsv at line 486691 (start_index = 466690, end_index = 500025) - 21/04/2022 03:21:34.879144
+Processed chunk of data/tall.tsv at line 386686 (start_index = 366685, end_index = 400020) - 21/04/2022 03:21:34.900755
+Processed chunk of data/tall.tsv at line 520026 (start_index = 500025, end_index = 533360) - 21/04/2022 03:21:35.154234
+Processed chunk of data/tall.tsv at line 96672 (start_index = 66670, end_index = 100005) - 21/04/2022 03:21:35.161389
+Processed chunk of data/tall.tsv at line 63337 (start_index = 33335, end_index = 66670) - 21/04/2022 03:21:35.167818
+Processed chunk of data/tall.tsv at line 943380 (start_index = 933380, end_index = 966715) - 21/04/2022 03:21:35.193523
+Processed chunk of data/tall.tsv at line 586696 (start_index = 566695, end_index = 600030) - 21/04/2022 03:21:35.248675
+Processed chunk of data/tall.tsv at line 130007 (start_index = 100005, end_index = 133340) - 21/04/2022 03:21:35.570973
+Processed chunk of data/tall.tsv at line 976715 (start_index = 966715, end_index = 1000000) - 21/04/2022 03:21:35.608785
+Processed chunk of data/tall.tsv at line 196677 (start_index = 166675, end_index = 200010) - 21/04/2022 03:21:35.672274
+Processed chunk of data/tall.tsv at line 620031 (start_index = 600030, end_index = 633365) - 21/04/2022 03:21:35.700889
+Processed chunk of data/tall.tsv at line 553361 (start_index = 533360, end_index = 566695) - 21/04/2022 03:21:35.961363
+Processed chunk of data/tall.tsv at line 686701 (start_index = 666700, end_index = 700035) - 21/04/2022 03:21:36.207518
+Processed chunk of data/tall.tsv at line 230012 (start_index = 200010, end_index = 233345) - 21/04/2022 03:21:36.365940
+Processed chunk of data/tall.tsv at line 720036 (start_index = 700035, end_index = 733370) - 21/04/2022 03:21:36.487276
+Processed chunk of data/tall.tsv at line 263347 (start_index = 233345, end_index = 266680) - 21/04/2022 03:21:36.575846
+Processed chunk of data/tall.tsv at line 163342 (start_index = 133340, end_index = 166675) - 21/04/2022 03:21:36.751955
+Processed chunk of data/tall.tsv at line 786706 (start_index = 766705, end_index = 800040) - 21/04/2022 03:21:36.792405
+Processed chunk of data/tall.tsv at line 753371 (start_index = 733370, end_index = 766705) - 21/04/2022 03:21:36.886458
+Processed chunk of data/tall.tsv at line 653366 (start_index = 633365, end_index = 666700) - 21/04/2022 03:21:36.913456
+Processed chunk of data/tall.tsv at line 363352 (start_index = 333350, end_index = 366685) - 21/04/2022 03:21:36.998296
+Processed chunk of data/tall.tsv at line 296682 (start_index = 266680, end_index = 300015) - 21/04/2022 03:21:37.139250
+Processed chunk of data/tall.tsv at line 820041 (start_index = 800040, end_index = 833375) - 21/04/2022 03:21:37.140739
+Processed chunk of data/tall.tsv at line 330017 (start_index = 300015, end_index = 333350) - 21/04/2022 03:21:37.318964
+Processed chunk of data/tall.tsv at line 853376 (start_index = 833375, end_index = 866710) - 21/04/2022 03:21:37.337384
+Processed chunk of data/tall.tsv at line 886711 (start_index = 866710, end_index = 900045) - 21/04/2022 03:21:37.578589
+Processed chunk of data/tall.tsv at line 920046 (start_index = 900045, end_index = 933380) - 21/04/2022 03:21:37.770504
+Processed chunk of data/tall.tsv at line 430022 (start_index = 400020, end_index = 433355) - 21/04/2022 03:21:37.890222
+Processed chunk of data/tall.tsv at line 463357 (start_index = 433355, end_index = 466690) - 21/04/2022 03:21:38.129629
+Processed chunk of data/tall.tsv at line 396687 (start_index = 366685, end_index = 400020) - 21/04/2022 03:21:38.246620
+Processed chunk of data/tall.tsv at line 496692 (start_index = 466690, end_index = 500025) - 21/04/2022 03:21:38.301387
+Processed chunk of data/tall.tsv at line 530027 (start_index = 500025, end_index = 533360) - 21/04/2022 03:21:38.473453
+Processed chunk of data/tall.tsv at line 596697 (start_index = 566695, end_index = 600030) - 21/04/2022 03:21:38.520142
+Processed chunk of data/tall.tsv at line 953381 (start_index = 933380, end_index = 966715) - 21/04/2022 03:21:38.618891
+Processed chunk of data/tall.tsv at line 986716 (start_index = 966715, end_index = 1000000) - 21/04/2022 03:21:38.945137
+Processed chunk of data/tall.tsv at line 630032 (start_index = 600030, end_index = 633365) - 21/04/2022 03:21:38.957920
+Processed chunk of data/tall.tsv at line 563362 (start_index = 533360, end_index = 566695) - 21/04/2022 03:21:39.368854
+Processed chunk of data/tall.tsv at line 696702 (start_index = 666700, end_index = 700035) - 21/04/2022 03:21:39.481442
+Processed chunk of data/tall.tsv at line 730037 (start_index = 700035, end_index = 733370) - 21/04/2022 03:21:39.883438
+Processed chunk of data/tall.tsv at line 796707 (start_index = 766705, end_index = 800040) - 21/04/2022 03:21:40.120087
+Processed chunk of data/tall.tsv at line 763372 (start_index = 733370, end_index = 766705) - 21/04/2022 03:21:40.285601
+Processed chunk of data/tall.tsv at line 663367 (start_index = 633365, end_index = 666700) - 21/04/2022 03:21:40.406422
+Processed chunk of data/tall.tsv at line 830042 (start_index = 800040, end_index = 833375) - 21/04/2022 03:21:40.502461
+Processed chunk of data/tall.tsv at line 863377 (start_index = 833375, end_index = 866710) - 21/04/2022 03:21:40.692531
+Processed chunk of data/tall.tsv at line 896712 (start_index = 866710, end_index = 900045) - 21/04/2022 03:21:40.952370
+Processed chunk of data/tall.tsv at line 930047 (start_index = 900045, end_index = 933380) - 21/04/2022 03:21:41.120854
+Processed chunk of data/tall.tsv at line 963382 (start_index = 933380, end_index = 966715) - 21/04/2022 03:21:42.040421
+Processed chunk of data/tall.tsv at line 996717 (start_index = 966715, end_index = 1000000) - 21/04/2022 03:21:42.279526
+Merging the file chunks for data/tall.tsv - 21/04/2022 03:21:43.447893
+Saving meta files for data/tall_notindexed_notcompressed.f4 - 21/04/2022 03:21:56.569528
+Removed /tmp/test_build_large/ directory - 21/04/2022 03:21:56.575238
+Done converting data/tall.tsv to data/tall_notindexed_notcompressed.f4 - 21/04/2022 03:21:56.575269
+tall	No	No	30	143.381

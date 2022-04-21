@@ -26,8 +26,8 @@ def build(in_file_path, tall_or_wide, num_processes, num_cols_per_chunk, num_row
         os.unlink(file_path)
 
     start = time.time()
-    #f4py.Builder(verbose=False).convert_delimited_file(in_file_path, f4_file_path, index_columns, delimiter="\t", compression_level=compression_level, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk, num_rows_per_save=num_rows_per_save, tmp_dir_path="/tmp/test_build_large", cache_intermediate_results=True)
-    f4py.Builder(verbose=True).convert_delimited_file(in_file_path, f4_file_path, index_columns, delimiter="\t", compression_level=compression_level, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk, num_rows_per_save=num_rows_per_save, tmp_dir_path="/tmp/test_build_large", cache_intermediate_results=True)
+    f4py.Builder(verbose=False).convert_delimited_file(in_file_path, f4_file_path, index_columns, delimiter="\t", compression_level=compression_level, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk, num_rows_per_save=num_rows_per_save, tmp_dir_path="/tmp/test_build_large", cache_intermediate_results=True)
+    #f4py.Builder(verbose=True).convert_delimited_file(in_file_path, f4_file_path, index_columns, delimiter="\t", compression_level=compression_level, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk, num_rows_per_save=num_rows_per_save, tmp_dir_path="/tmp/test_build_large", cache_intermediate_results=True)
     end = time.time()
     elapsed = f"{round(end - start, 3)}"
 

@@ -12,7 +12,7 @@ def read_str_from_file(file_path, file_extension=""):
 def read_int_from_file(file_path, file_extension=""):
     return int(read_str_from_file(file_path, file_extension))
 
-def write_string_to_file(file_path, file_extension, the_string):
+def write_str_to_file(file_path, file_extension, the_string):
     with open(file_path + file_extension, 'wb') as the_file:
         the_file.write(the_string)
 

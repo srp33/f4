@@ -4,6 +4,8 @@ import gzip
 from joblib import Parallel, delayed
 import math
 import os
+import pickle
+import shutil
 import tempfile
 import zstandard
 
@@ -11,7 +13,7 @@ class Builder:
     def __init__(self, verbose=False):
         self.__verbose = verbose
 
-    def convert_delimited_file(self, delimited_file_path, f4_file_path, index_columns=[], delimiter="\t", compression_level=22, num_processes=1, num_cols_per_chunk=None, num_rows_per_save=10, tmp_dir_path=None):
+    def convert_delimited_file(self, delimited_file_path, f4_file_path, index_columns=[], delimiter="\t", compression_level=22, num_processes=1, num_cols_per_chunk=None, num_rows_per_save=10, tmp_dir_path=None, cache_intermediate_results=False):
         if type(delimiter) != str:
             raise Exception("The delimiter value must be a string.")
 
@@ -20,9 +22,10 @@ class Builder:
 
         delimiter = delimiter.encode()
 
-        tmp_dir_path = self._prepare_tmp_dir(tmp_dir_path)
-
         self._print_message(f"Converting from {delimited_file_path}")
+
+        tmp_dir_path2 = self._prepare_tmp_dir(tmp_dir_path)
+        tmp_chunk_results_file_path = f"{tmp_dir_path2}chunk_results"
 
         # Get column names. Remove any leading or trailing white space around the column names.
         in_file = _get_delimited_file_handle(delimited_file_path)
@@ -33,11 +36,19 @@ class Builder:
         if num_cols == 0:
             raise Exception(f"No data was detected in {delimited_file_path}.")
 
-        column_chunk_indices = _generate_chunk_ranges(num_cols, num_cols_per_chunk)
+        if cache_intermediate_results and os.path.exists(tmp_chunk_results_file_path):
+            self._print_message(f"Retrieving cached chunk results from {tmp_chunk_results_file_path}")
+            chunk_results = pickle.loads(f4py.read_str_from_file(tmp_chunk_results_file_path))
+        else:
+            column_chunk_indices = _generate_chunk_ranges(num_cols, num_cols_per_chunk)
 
-        # Iterate through the lines to summarize each column.
-        self._print_message(f"Summarizing each column in {delimited_file_path}")
-        chunk_results = Parallel(n_jobs=num_processes)(delayed(self._parse_columns_chunk)(delimited_file_path, delimiter, column_chunk[0], column_chunk[1]) for column_chunk in column_chunk_indices)
+            # Iterate through the lines to summarize each column.
+            self._print_message(f"Summarizing each column in {delimited_file_path}")
+            chunk_results = Parallel(n_jobs=num_processes)(delayed(self._parse_columns_chunk)(delimited_file_path, delimiter, column_chunk[0], column_chunk[1]) for column_chunk in column_chunk_indices)
+
+            if cache_intermediate_results:
+                self._print_message(f"Saving cached chunk results to {tmp_chunk_results_file_path}")
+                f4py.write_str_to_file(tmp_chunk_results_file_path, "", pickle.dumps(chunk_results))
 
         # Summarize the column sizes and types across the chunks.
         column_sizes = []
@@ -53,12 +64,12 @@ class Builder:
         if num_rows == 0:
             raise Exception(f"A header row but no data rows were detected in {delimited_file_path}")
 
-        line_length = self._convert_delimited_file_in_chunks(delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, num_rows, num_processes, num_rows_per_save, tmp_dir_path)
+        line_length = self._convert_delimited_file_in_chunks(delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, num_rows, num_processes, num_rows_per_save, tmp_dir_path2)
 
         self._print_message(f"Saving meta files for {f4_file_path}")
         self._save_meta_files(f4_file_path, column_sizes, line_length, column_names, column_types, compression_level, num_rows)
 
-        self._remove_tmp_dir(tmp_dir_path)
+        self._remove_tmp_dir(tmp_dir_path2)
         self._print_message(f"Done converting {delimited_file_path} to {f4_file_path}")
 
         if index_columns:
@@ -73,11 +84,11 @@ class Builder:
         # Calculate and save the column coordinates and max length of these coordinates.
         column_start_coords = f4py.get_column_start_coords(column_sizes)
         column_coords_string, max_column_coord_length = f4py.build_string_map(column_start_coords)
-        f4py.write_string_to_file(f4_file_path, ".cc", column_coords_string)
-        f4py.write_string_to_file(f4_file_path, ".mccl", str(max_column_coord_length).encode())
+        f4py.write_str_to_file(f4_file_path, ".cc", column_coords_string)
+        f4py.write_str_to_file(f4_file_path, ".mccl", str(max_column_coord_length).encode())
 
         # Find and save the line length.
-        f4py.write_string_to_file(f4_file_path, ".ll", str(line_length).encode())
+        f4py.write_str_to_file(f4_file_path, ".ll", str(line_length).encode())
 
         if column_names:
             column_name_index_dict = {}
@@ -92,16 +103,16 @@ class Builder:
             if column_types:
                 # Build a map of the column types and save this to a file.
                 column_types_string, max_col_type_length = f4py.build_string_map(column_types)
-                f4py.write_string_to_file(f4_file_path, ".ct", column_types_string)
-                #f4py.write_string_to_file(f4_file_path, ".mctl", str(max_col_type_length).encode())
+                f4py.write_str_to_file(f4_file_path, ".ct", column_types_string)
+                #f4py.write_str_to_file(f4_file_path, ".mctl", str(max_col_type_length).encode())
 
         # Indicate compression level.
-        f4py.write_string_to_file(f4_file_path, ".cmp", str(compression_level).encode())
+        f4py.write_str_to_file(f4_file_path, ".cmp", str(compression_level).encode())
 
         if num_rows:
             # Save number of rows and columns.
-            f4py.write_string_to_file(f4_file_path, ".nrow", str(num_rows).encode())
-            f4py.write_string_to_file(f4_file_path, ".ncol", str(len(column_names)).encode())
+            f4py.write_str_to_file(f4_file_path, ".nrow", str(num_rows).encode())
+            f4py.write_str_to_file(f4_file_path, ".ncol", str(len(column_names)).encode())
 
     def _prepare_tmp_dir(self, tmp_dir_path):
         # Figure out where temp files will be stored and create directory, if needed.
@@ -120,9 +131,12 @@ class Builder:
         # Remove the temp directory if it was generated by the code (not the user).
         if tmp_dir_path:
             try:
-                os.rmdir(tmp_dir_path)
-            except:
+                shutil.rmtree(tmp_dir_path)
+                self._print_message(f"Removed {tmp_dir_path} directory")
+            except Exception as e:
                 # Don't throw an exception if we can't delete the directory.
+                self._print_message(f"Warning: {tmp_dir_path} directory could not be removed")
+                print(e)
                 pass
 
     def _parse_columns_chunk(self, delimited_file_path, delimiter, start_index, end_index):

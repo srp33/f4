@@ -34,10 +34,10 @@ class CategoricalIndexer(BaseIndexer):
             row_indices_string = pynumparser.NumberSequence(int).encode(row_indices)
             index_string += (f"{value.decode()}\t{row_indices_string}\n").encode()
 
-        f4py.write_string_to_file(self.index_file_path, "", index_string)
+        f4py.write_str_to_file(self.index_file_path, "", index_string)
 
         # TODO: Indicate whether the index is compressed.
-        #write_string_to_file(self.__f4_file_path, ".idx.cmp", str(self.__compression_level).encode())
+        #write_str_to_file(self.__f4_file_path, ".idx.cmp", str(self.__compression_level).encode())
 
     def filter(self, fltr, end_index, num_processes=1):
         index_file = f4py.open_read_file(self.index_file_path, file_extension="")
@@ -79,11 +79,11 @@ class IdentifierIndexer(BaseIndexer):
 
         column_coords_string, rows_max_length = f4py.build_string_map(rows)
 
-        f4py.write_string_to_file(self.index_file_path, "", column_coords_string)
+        f4py.write_str_to_file(self.index_file_path, "", column_coords_string)
         f4py.Builder()._save_meta_files(self.index_file_path, [values_max_length, positions_max_length], rows_max_length + 1)
 
         # TODO: Indicate whether the index is compressed.
-        #write_string_to_file(self.__f4_file_path, ".idx.cmp", str(self.__compression_level).encode())
+        #write_str_to_file(self.__f4_file_path, ".idx.cmp", str(self.__compression_level).encode())
 
     def filter(self, fltr, end_index, num_processes=1):
         if end_index == 0:
@@ -146,11 +146,11 @@ class NumericIndexer(BaseIndexer):
 
         column_coords_string, rows_max_length = f4py.build_string_map(rows)
 
-        f4py.write_string_to_file(self.index_file_path, "", column_coords_string)
+        f4py.write_str_to_file(self.index_file_path, "", column_coords_string)
         f4py.Builder()._save_meta_files(self.index_file_path, [values_max_length, positions_max_length], rows_max_length + 1)
 
         # TODO: Indicate whether the index is compressed.
-        #write_string_to_file(self.__f4_file_path, ".idx.cmp", str(self.__compression_level).encode())
+        #write_str_to_file(self.__f4_file_path, ".idx.cmp", str(self.__compression_level).encode())
 
     def filter(self, fltr, end_index, num_processes=1):
         if end_index == 0:

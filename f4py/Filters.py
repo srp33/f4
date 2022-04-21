@@ -65,8 +65,8 @@ class __SimpleBaseFilter(BaseFilter):
     def get_column_name_set(self):
         return set([self.column_name])
 
-    def __str__(self):
-        return f"{type(self).__name__}____{self.column_name.decode()}____{self.value}"
+#    def __str__(self):
+#        return f"{type(self).__name__}____{self.column_name.decode()}____{self.value}"
 
 class StringEqualsFilter(__SimpleBaseFilter):
     def __init__(self, column_name, value):
@@ -214,8 +214,8 @@ class NumericFilter(__SimpleBaseFilter):
     def passes(self, value):
         return self.operator(fastnumbers.fast_float(value), self.value)
 
-    def __str__(self):
-        return f"{type(self).__name__}____{self.column_name.decode()}____{self.operator}____{self.value}"
+#    def __str__(self):
+#        return f"{type(self).__name__}____{self.column_name.decode()}____{self.operator}____{self.value}"
 
 class __CompositeBaseFilter(BaseFilter):
     def __init__(self, filter1, filter2):

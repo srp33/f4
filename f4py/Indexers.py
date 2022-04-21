@@ -240,8 +240,14 @@ class NumericIndexer(BaseIndexer):
             for i in range(positions[0], positions[1]):
                 matching_row_indices.add(int(index_parser._parse_row_value(i, position_coords, line_length, data_file_handle).rstrip()))
 
-            #matching_row_indices2 = Parallel(n_jobs = num_processes)(delayed(index_parser._parse_row_value2)(i, position_coords, line_length, self.index_file_path) for i in range(positions[0], positions[1]))
-            #matching_row_indices2 = Parallel(n_jobs = num_processes)(delayed(index_parser._parse_row_value2)() for i in range(positions[0], positions[1]))
-            #print(matching_row_indices2)
-
             return matching_row_indices
+
+class SequentialIndexer(BaseIndexer):
+    def __init__(self, index_file_path, compression_level):
+        super().__init__(index_file_path, compression_level)
+
+    def build(self, values_positions):
+        raise Exception("Not implemented")
+
+    def filter(self, fltr, end_index, num_processes=1):
+        raise Exception("Not implemented")

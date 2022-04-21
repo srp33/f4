@@ -56,16 +56,15 @@ def run_test(tall_or_wide, select_columns, discrete_filter_column, numeric_filte
 
     print(output)
 
+tall_select_columns = ["ID", "Discrete100", "Numeric100", "Numeric200", "Numeric300", "Numeric400", "Numeric500", "Numeric600", "Numeric700", "Numeric800", "Numeric900"]
+wide_select_columns = ["ID"] + [f"Discrete{i}" for i in range(100, 100001, 100)] + [f"Numeric{i}" for i in range(100, 900001, 100)]
+
 #def temp():
-#    #run_tall_test(4, 10)
-#    run_wide_test(1, 10)
+#    run_test("tall", tall_select_columns, "Discrete100", "Numeric900", True, True, 8, 10000)
 #profile = cProfile.Profile()
 #profile.runcall(temp)
 #ps = pstats.Stats(profile)
 #ps.print_stats()
-
-tall_select_columns = ["ID", "Discrete100", "Numeric100", "Numeric200", "Numeric300", "Numeric400", "Numeric500", "Numeric600", "Numeric700", "Numeric800", "Numeric900"]
-wide_select_columns = ["ID"] + [f"Discrete{i}" for i in range(100, 100001, 100)] + [f"Numeric{i}" for i in range(100, 900001, 100)]
 
 print(f"Shape\tIndexed\tCompressed\tNum_Processes\tElapsed_Seconds")
 

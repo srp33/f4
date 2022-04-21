@@ -23,7 +23,7 @@ class BaseFilter:
             passing_row_indices = set()
 
             for i in row_indices:
-                if self.passes(parser._parse_row_value(i, coords, line_length, data_file_handle).rstrip()):
+                if self.passes(parser._parse_row_value(i, coords, line_length, data_file_handle)):
                     passing_row_indices.add(i)
 
             return passing_row_indices

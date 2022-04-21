@@ -68,7 +68,7 @@ wide_select_columns = ["ID"] + [f"Discrete{i}" for i in range(100, 100001, 100)]
 
 print(f"Shape\tIndexed\tCompressed\tNum_Processes\tElapsed_Seconds")
 
-#for num_processes in [1, 4, 8, 16, 32]:
+#for num_processes in [1, 2, 4, 8, 16, 32]:
 for num_processes in [8]:
     run_test("tall", tall_select_columns, "Discrete100", "Numeric900", False, False, num_processes, 10000)
     run_test("wide", wide_select_columns, "Discrete100000", "Numeric900000", False, False, num_processes, 10)

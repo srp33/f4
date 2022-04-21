@@ -100,16 +100,16 @@ class IdentifierIndexer(BaseIndexer):
             if matching_position == -1:
                 return set()
 
-            matching_row_index = int(index_parser._parse_row_value(matching_position, position_coords, line_length, data_file_handle).rstrip())
+            matching_row_index = int(index_parser._parse_row_value(matching_position, position_coords, line_length, data_file_handle))
 
             return set([matching_row_index])
 
     def binary_search(self, parser, line_length, value_coords, data_file_handle, value_to_find, l, r):
-        if r == -1:
+        if r == -1 or l > r:
             return -1
 
         mid = l + (r - l) // 2
-        mid_value = parser._parse_row_value(mid, value_coords, line_length, data_file_handle).rstrip()
+        mid_value = parser._parse_row_value(mid, value_coords, line_length, data_file_handle)
 
         if mid_value == value_to_find:
             # If element is present at the middle itself
@@ -188,11 +188,11 @@ class NumericIndexer(BaseIndexer):
             return positions
 
     def find_positions_g(self, index_parser, line_length, value_coords, data_file_handle, fltr, end_index, all_true_operator, all_false_operator):
-        smallest_value = float(index_parser._parse_row_value(0, value_coords, line_length, data_file_handle).rstrip())
+        smallest_value = float(index_parser._parse_row_value(0, value_coords, line_length, data_file_handle))
         if all_true_operator(smallest_value, fltr.value):
             return 0, end_index
 
-        largest_value = float(index_parser._parse_row_value(end_index - 1, value_coords, line_length, data_file_handle).rstrip())
+        largest_value = float(index_parser._parse_row_value(end_index - 1, value_coords, line_length, data_file_handle))
         if not all_true_operator(largest_value, fltr.value):
             return 0, 0
 
@@ -201,11 +201,11 @@ class NumericIndexer(BaseIndexer):
         return matching_position + 1, end_index
 
     def find_positions_l(self, index_parser, line_length, value_coords, data_file_handle, fltr, end_index, all_true_operator, all_false_operator):
-        smallest_value = float(index_parser._parse_row_value(0, value_coords, line_length, data_file_handle).rstrip())
+        smallest_value = float(index_parser._parse_row_value(0, value_coords, line_length, data_file_handle))
         if not all_true_operator(smallest_value, fltr.value):
             return 0, 0
 
-        largest_value = float(index_parser._parse_row_value(end_index - 1, value_coords, line_length, data_file_handle).rstrip())
+        largest_value = float(index_parser._parse_row_value(end_index - 1, value_coords, line_length, data_file_handle))
         if all_true_operator(largest_value, fltr.value):
             return 0, end_index
 
@@ -216,10 +216,10 @@ class NumericIndexer(BaseIndexer):
     def search(self, index_parser, line_length, value_coords, data_file_handle, value_to_find, l, r, search_operator):
         mid = l + (r - l) // 2
 
-        mid_value = float(index_parser._parse_row_value(mid, value_coords, line_length, data_file_handle).rstrip())
+        mid_value = float(index_parser._parse_row_value(mid, value_coords, line_length, data_file_handle))
 
         if search_operator(mid_value, value_to_find):
-            next_value = index_parser._parse_row_value(mid + 1, value_coords, line_length, data_file_handle).rstrip()
+            next_value = index_parser._parse_row_value(mid + 1, value_coords, line_length, data_file_handle)
 
             if next_value == b"":
                 return mid
@@ -238,15 +238,17 @@ class NumericIndexer(BaseIndexer):
 
             matching_row_indices = set()
             for i in range(positions[0], positions[1]):
-                matching_row_indices.add(int(index_parser._parse_row_value(i, position_coords, line_length, data_file_handle).rstrip()))
+                matching_row_indices.add(int(index_parser._parse_row_value(i, position_coords, line_length, data_file_handle)))
 
             return matching_row_indices
 
-class SequentialIndexer(BaseIndexer):
+class CategoricalNumericSequentialIndexer(BaseIndexer):
     def __init__(self, index_file_path, compression_level):
         super().__init__(index_file_path, compression_level)
 
     def build(self, values_positions):
+        for x in values_positions:
+            print(x)
         raise Exception("Not implemented")
 
     def filter(self, fltr, end_index, num_processes=1):

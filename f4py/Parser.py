@@ -115,7 +115,7 @@ class Parser:
 
                 out_lines = []
                 for row_index in keep_row_indices:
-                    out_lines.append(b"\t".join([x.rstrip() for x in self.__parse_row_values(row_index, select_column_coords)]))
+                    out_lines.append(b"\t".join([x for x in self.__parse_row_values(row_index, select_column_coords)]))
 
                     if len(out_lines) % lines_per_chunk == 0:
                         out_file.write(b"\n".join(out_lines) + b"\n")
@@ -127,7 +127,7 @@ class Parser:
             sys.stdout.buffer.write(b"\t".join(select_columns) + b"\n")
 
             for row_index in keep_row_indices:
-                sys.stdout.buffer.write(b"\t".join([x.rstrip() for x in self.__parse_row_values(row_index, select_column_coords)]))
+                sys.stdout.buffer.write(b"\t".join([x for x in self.__parse_row_values(row_index, select_column_coords)]))
 
     def get_num_rows(self):
         return self.__stats[".nrow"]
@@ -191,10 +191,8 @@ class Parser:
                 column_index_dict = {}
                 for row_index in range(self.get_num_cols()):
                     values = cn_parser.__parse_row_values(row_index, coords)
-                    column_name = values[0].rstrip(b" ")
-                    column_index = int(values[1])
 
-                    column_index_dict[column_index] = column_name
+                    column_index_dict[int(values[1])] = values[0]
 
                 select_columns = []
                 for index, name in sorted(column_index_dict.items()):
@@ -273,16 +271,16 @@ class Parser:
         start_pos = start_element * segment_length
 
         for coords in data_coords:
-            yield str_like_object[(start_pos + coords[0]):(start_pos + coords[1])]
+            yield str_like_object[(start_pos + coords[0]):(start_pos + coords[1])].rstrip()
 
     def _parse_row_value(self, row_index, column_coords, line_length, file_handle):
         if self.__decompressor:
             line = self.__parse_data_value(row_index, line_length, [0, line_length], file_handle)
             line = self.__decompressor.decompress(line)
 
-            return self.__parse_data_value(0, 0, column_coords, line)
+            return self.__parse_data_value(0, 0, column_coords, line).rstrip()
 
-        return self.__parse_data_value(row_index, line_length, column_coords, file_handle)
+        return self.__parse_data_value(row_index, line_length, column_coords, file_handle).rstrip()
 
     def __parse_row_values(self, row_index, column_coords):
         if self.__decompressor:

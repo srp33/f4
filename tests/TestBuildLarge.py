@@ -47,7 +47,7 @@ def build(in_file_path, tall_or_wide, num_processes, num_cols_per_chunk, num_row
 
 print(f"Shape\tIndexed\tCompressed\tNum_Processes\tElapsed_Seconds")
 
-#for num_processes in [1, 4, 8, 16, 32]:
+#for num_processes in [1, 2, 4, 8, 16, 32]:
 for num_processes in [30]:
     build("data/tall.tsv", "tall", num_processes, 51, 10001, index_columns=None, compression_level=None)
 #    build("data/wide.tsv", "wide", num_processes, 50001, 51, index_columns=None, compression_level=None)

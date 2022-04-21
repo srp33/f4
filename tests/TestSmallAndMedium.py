@@ -344,6 +344,21 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     parser.query_and_save(fltr, ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("Filter using two index columns", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])
 
+    #f4py.IndexHelper.save_sequential_index(f4_file_path, "OrdinalA", "IntA", compression_level=compression_level)
+
+#    fltr = f4py.AndFilter(
+#             f4py.OrFilter(
+#               f4py.OrFilter(
+#                 f4py.StringEqualsFilter("ID", "A"),
+#                 f4py.StringEqualsFilter("ID", "B"),
+#               ),
+#               f4py.StringEqualsFilter("ID", "C"),
+#             ),
+#             f4py.NumericFilter("FloatA", operator.ge, 2)
+#           )
+#    parser.query_and_save(fltr, ["FloatA"], out_file_path, num_processes=num_processes)
+#    check_results("Filter using categorical-numeric sequential index", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])
+
 def run_medium_tests(num_processes):
     in_file_path = "/data/medium.tsv"
     f4_file_path = "/data/medium.f4"

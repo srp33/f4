@@ -35,6 +35,6 @@ $dockerCommand python3 TestSmallAndMedium.py
 mkdir -p results
 
 #$dockerCommand bash -c "python3 TestBuildLarge.py" | tee results/Large_Build.tsv
-$dockerCommand bash -c "python3 TestParseLarge.py" | tee results/Large_Parse.tsv
+#$dockerCommand bash -c "python3 TestParseLarge.py" | tee results/Large_Parse.tsv
 
 rm -rf f4py

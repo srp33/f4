@@ -1,4 +1,5 @@
 import datetime
+import fastnumbers
 import mmap
 
 def open_read_file(file_path, file_extension=""):
@@ -10,7 +11,7 @@ def read_str_from_file(file_path, file_extension=""):
         return the_file.read().rstrip()
 
 def read_int_from_file(file_path, file_extension=""):
-    return int(read_str_from_file(file_path, file_extension))
+    return fastnumbers.fast_int(read_str_from_file(file_path, file_extension))
 
 def write_str_to_file(file_path, file_extension, the_string):
     with open(file_path + file_extension, 'wb') as the_file:
@@ -47,3 +48,6 @@ def format_column_items(the_list, max_value_length, suffix=""):
 def print_message(message, verbose):
     if verbose:
         print(f"{message} - {datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f')}")
+
+def do_nothing(x):
+     return(x)

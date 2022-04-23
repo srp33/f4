@@ -1,5 +1,10 @@
 Implement composite ("sequential", "covering") index that supports multiple columns.
 
+Remove filter functions from Indexer classes and change these to IndexBuilder?
+
+In IndexHelper, make save_funnel_index non-public and allow user to specify a list of column names
+  for a funnel index rather than explicitly invoking save_funnel_index.
+
 Kick off full set of tests for large files and save results to GitHub.
 
 
@@ -17,10 +22,9 @@ CADD files:
     Parallelize the process of generating the output file (save to temp file)?
       This *might* help when doing a lot of decompression.
 
-
-Remove GNOMAD code/tests.
-
 Test LINCS data (see WishBuilder).
+
+Test refine.bio compendia.
 
 Remove unnecessary comments and address TODO items in ../f4py/*.
 

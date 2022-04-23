@@ -8,7 +8,7 @@ from pstats import SortKey
 import sys
 import time
 
-def run_test(tall_or_wide, select_columns, discrete_filter_column, numeric_filter_column, indexed, compressed, num_processes, lines_per_chunk):
+def run_test(tall_or_wide, select_columns, discrete_filter_column, float_filter_column, indexed, compressed, num_processes, lines_per_chunk):
     f4_file_path = f"data/{tall_or_wide}_"
     if indexed:
         f4_file_path += "indexed_"
@@ -23,9 +23,7 @@ def run_test(tall_or_wide, select_columns, discrete_filter_column, numeric_filte
 
     start = time.time()
 
-    #fltr = f4py.OrFilter(f4py.NumericFilter(numeric_filter_column, operator.ge, 0.1), f4py.NoFilter())
-    #fltr = f4py.OrFilter(f4py.StartsWithFilter(discrete_filter_column, "A"), f4py.EndsWithFilter(discrete_filter_column, "Z"))
-    fltr = f4py.AndFilter(f4py.OrFilter(f4py.StartsWithFilter(discrete_filter_column, "A"), f4py.EndsWithFilter(discrete_filter_column, "Z")), f4py.NumericFilter(numeric_filter_column, operator.ge, 0.1))
+    fltr = f4py.AndFilter(f4py.OrFilter(f4py.StartsWithFilter(discrete_filter_column, "A"), f4py.EndsWithFilter(discrete_filter_column, "Z")), f4py.FloatFilter(float_filter_column, operator.ge, 0.1))
 
     with f4py.Parser(f4_file_path) as parser:
         parser.query_and_save(fltr, select_columns, out_file_path, out_file_type="tsv", num_processes=num_processes, lines_per_chunk=lines_per_chunk)

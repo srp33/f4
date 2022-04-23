@@ -97,7 +97,7 @@ class Builder:
 
             # Build an index of the column names and save this to a file.
             sorted_column_names = sorted(column_names)
-            values_positions = [[x, column_name_index_dict[x]] for x in sorted_column_names]
+            values_positions = [[x.decode(), column_name_index_dict[x]] for x in sorted_column_names]
             f4py.IdentifierIndexer(f"{f4_file_path}.cn", None).build(values_positions)
 
             if column_types:
@@ -267,7 +267,7 @@ class Builder:
                 with open(size_file_path, 'rb') as size_file:
                     position = 0
                     for size_line in size_file:
-                        size = int(size_line.rstrip(b"\n"))
+                        size = fastnumbers.fast_int(size_line.rstrip(b"\n"))
 
                         out_line = chunk_file[position:(position + size)]
                         out_line = _format_string_as_fixed_width(out_line, line_length)

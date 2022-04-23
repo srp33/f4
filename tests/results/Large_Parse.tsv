@@ -1,7 +1,7 @@
 Shape	Indexed	Compressed	Num_Processes	Elapsed_Seconds
-tall	No	No	8	1.847
-wide	No	No	8	2.051
-tall	Yes	No	8	1.364
-wide	Yes	No	8	2.095
-tall	Yes	Yes	8	3.056
-wide	Yes	Yes	8	3.347
+tall	No	No	8	1.804
+wide	No	No	8	2.05
+tall	Yes	No	8	1.367
+wide	Yes	No	8	2.09
+tall	Yes	Yes	8	3.007
+wide	Yes	Yes	8	3.528

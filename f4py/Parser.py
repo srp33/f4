@@ -1,4 +1,5 @@
 import f4py
+import fastnumbers
 import glob
 from itertools import chain
 from joblib import Parallel, delayed
@@ -161,7 +162,7 @@ class Parser:
         position = list(f4py.IdentifierIndexer(f"{self.data_file_path}.cn", None).filter(f4py.StringEqualsFilter("NotNeeded", column_name), self.get_num_cols()))
 
         if len(position) == 0:
-            raise Exception(f"Could not retrieve index because column named {column_name} was found.")
+            raise Exception(f"Could not retrieve index because column named {column_name} was not found.")
 
         return position[0]
 
@@ -192,7 +193,7 @@ class Parser:
                 for row_index in range(self.get_num_cols()):
                     values = cn_parser.__parse_row_values(row_index, coords)
 
-                    column_index_dict[int(values[1])] = values[0]
+                    column_index_dict[fastnumbers.fast_int(values[1])] = values[0]
 
                 select_columns = []
                 for index, name in sorted(column_index_dict.items()):
@@ -247,7 +248,7 @@ class Parser:
                 data_start_pos = out_dict[index]
             # If not, retrieve the start position from the cc file and then cache it.
             else:
-                data_start_pos = int(self.__file_handles[".cc"][start_pos:next_start_pos].rstrip())
+                data_start_pos = fastnumbers.fast_int(self.__file_handles[".cc"][start_pos:next_start_pos].rstrip())
                 out_dict[index] = data_start_pos
 
             # See if we already have cached the end position.
@@ -255,7 +256,7 @@ class Parser:
                 data_end_pos = out_dict[index + 1]
             # If not, retrieve the end position from the cc file and then cache it.
             else:
-                data_end_pos = int(self.__file_handles[".cc"][next_start_pos:further_next_start_pos].rstrip())
+                data_end_pos = fastnumbers.fast_int(self.__file_handles[".cc"][next_start_pos:further_next_start_pos].rstrip())
                 out_dict[index + 1] = data_end_pos
 
             data_coords.append([data_start_pos, data_end_pos])

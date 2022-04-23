@@ -31,11 +31,8 @@ class BaseFilter:
     def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes):
         index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.column_name.decode())
         index_column_type = column_type_dict[column_index_dict[self.column_name]]
-        #return f4py.IndexHelper._get_indexer(data_file_path, compression_level, self.column_name, index_column_type, self).filter(self, end_index, num_processes)
+
         return self._get_indexer(index_file_path, compression_level, index_column_type).filter(self, end_index, num_processes)
-        #indexer = self._get_indexer(data_file_path, compression_level, index_column_type)
-        #result = indexer.filter(self, end_index, num_processes)
-        #return result
 
     def _get_indexer(self, data_file_path, compression_level, index_column_type):
         raise Exception("Not implemented")
@@ -378,8 +375,6 @@ class __RangeFilter(__CompositeBaseFilter):
 
         conversion_function = self.get_conversion_function()
 
-#        lower_indexer = f4py.IndexHelper._get_indexer(index_file_path, compression_level, self.filter1.column_name, lower_index_column_type, self.filter1)
-#        upper_indexer = f4py.IndexHelper._get_indexer(index_file_path, compression_level, self.filter2.column_name, upper_index_column_type, self.filter2)
         lower_indexer = self.filter1._get_indexer(index_file_path, compression_level, lower_index_column_type)
         lower_positions = f4py.IndexHelper._find_positions(lower_indexer.index_file_path, self.filter1, end_index, conversion_function)
 

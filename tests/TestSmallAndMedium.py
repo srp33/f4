@@ -185,6 +185,24 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     parser.query_and_save(f4py.FloatRangeFilter("FloatA", 100.0, 1000.0), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("FloatA within 100 and 1000", read_file_into_lists(out_file_path), [[b"FloatA"]])
 
+    parser.query_and_save(f4py.IntRangeFilter("IntA", -100, 100), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("IntA within -100 and 100", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
+    parser.query_and_save(f4py.IntRangeFilter("IntA", 5, 8), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("IntA within 5 and 8", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
+    parser.query_and_save(f4py.IntRangeFilter("IntA", -5, -8), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("IntA within -5 and -8", read_file_into_lists(out_file_path), [[b"FloatA"]])
+    parser.query_and_save(f4py.IntRangeFilter("IntA", 5, 7), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("IntA within 5 and 7", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"4.4"]])
+    parser.query_and_save(f4py.IntRangeFilter("IntA", 6, 8), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("IntA within 6 and 8", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"2.2"], [b"2.2"]])
+    parser.query_and_save(f4py.IntRangeFilter("IntA", 5, 5), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("IntA within 5 and 5", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"], [b"4.4"]])
+    parser.query_and_save(f4py.IntRangeFilter("IntA", 6, 6), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("IntA within 6 and 6", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"]])
+
+    #TODO: Add StringRangeFilter and tests for it.
+    #TODO: Then make FunnelFilter more generic so that StringRangeFilter and IntRangeFilter are passed to it?
+
     try:
         parser.query_and_save(FloatFilter("InvalidColumn", operator.eq, 1), ["FloatA"], out_file_path, num_processes=num_processes)
         fail_test("Invalid column name in float filter.")
@@ -344,8 +362,8 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     parser.query_and_save(fltr, ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("Filter using two index columns", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])
 
-    #f4py.IndexHelper.save_funnel_index(f4_file_path, "OrdinalA", "IntA", compression_level=compression_level)
-    #fltr = f4py.StringIntRangeFunnelFilter("OrdinalA", "Low", "IntA", 5, 6)
+    f4py.IndexHelper.save_funnel_index(f4_file_path, "OrdinalA", "IntA", compression_level=compression_level)
+    fltr = f4py.StringIntRangeFunnelFilter("OrdinalA", "Low", "IntA", 5, 6)
     #parser.query_and_save(fltr, ["FloatA"], out_file_path, num_processes=num_processes)
     #check_results("Filter using basic funnel index - categorical + integer", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"], [b"1.1"]])
 

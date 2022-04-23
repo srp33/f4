@@ -90,28 +90,6 @@ class IndexHelper:
 
         f4py.print_message(f"Done building funnel index file for {index_name} and {f4_file_path}.", verbose)
 
-#    def _get_indexer(f4_file_path, compression_level, index_column, index_column_type, fltr):
-#        index_file_path = IndexHelper._get_index_file_path(f4_file_path, index_column.decode())
-
-##        if isinstance(fltr, f4py.FunnelFilter):
-##            return f4py.FunnelIndexer(index_file_path, compression_level)
-
-#        if index_column_type == "u":
-#            if isinstance(fltr, f4py.StringEqualsFilter):
-#                return f4py.IdentifierIndexer(index_file_path, compression_level)
-#            else:
-#                raise Exception("Not yet implemented.")
-
-#        if index_column_type == "c":
-#            return f4py.CategoricalIndexer(index_file_path, compression_level)
-
-#        if isinstance(fltr, f4py.FloatFilter) or isinstance(fltr, f4py.FloatWithinFilter):
-#            return f4py.FloatIndexer(index_file_path, compression_level)
-#        elif isinstance(fltr, f4py.IntFilter) or isinstance(fltr, f4py.IntWithinFilter):
-#            return f4py.IntIndexer(index_file_path, compression_level)
-#        else:
-#            raise Exception("Not yet implemented.")
-
     def _get_index_name(column_names):
         index_name = "____".join(column_names)
 

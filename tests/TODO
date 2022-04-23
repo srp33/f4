@@ -1,9 +1,11 @@
 Implement composite ("sequential", "covering") index that supports multiple columns.
 
-Remove filter functions from Indexer classes and change these to IndexBuilder?
+Change "categorical" to "string" everywhere?
 
 In IndexHelper, make save_funnel_index non-public and allow user to specify a list of column names
   for a funnel index rather than explicitly invoking save_funnel_index.
+
+In RangeFilters, make sure upper value are higher than lower value.
 
 Kick off full set of tests for large files and save results to GitHub.
 

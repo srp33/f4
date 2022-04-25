@@ -49,11 +49,14 @@ class CategoricalIndexer(BaseIndexer):
 
     def build(self, values_positions):
         value_dict = {}
+        unique_values = set([x[0] for x in values_positions])
+        for value in unique_values:
+            value_dict[value] = []
+
         for i in range(len(values_positions)):
             value = values_positions[i][0]
             row_index = values_positions[i][1]
-
-            value_dict[value] = value_dict.setdefault(value, []) + [row_index]
+            value_dict[value].append(row_index)
 
         index_string = b""
         for value, row_indices in value_dict.items():

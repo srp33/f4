@@ -48,7 +48,7 @@ class IndexHelper:
 
     def save_indices(f4_file_path, index_columns, compression_level=None, verbose=False):
         for index_column in index_columns:
-            f4py.IndexHelper.save_index(f4_file_path, index_column, compression_level=compression_level)
+            f4py.IndexHelper.save_index(f4_file_path, index_column, compression_level=compression_level, verbose)
 
     def save_funnel_index(f4_file_path, index_column_1, index_column_2, compression_level=None, verbose=False):
         #TODO: Make sure index_column_1 and index_column_2 are valid.

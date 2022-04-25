@@ -79,7 +79,6 @@ class Builder:
         self._print_message(f"Done converting {delimited_file_path} to {f4_file_path}")
 
         if index_columns:
-            self._print_message(f"Saving index files for {f4_file_path}")
             f4py.IndexHelper.save_indices(f4_file_path, index_columns, compression_level=compression_level)
 
     #####################################################

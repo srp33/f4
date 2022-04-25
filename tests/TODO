@@ -2,6 +2,10 @@ If cache_intermediate_results is enabled, store it in /tmp/ rather than tmp_dir_
   Or maybe better, change this parameter to be a directory rather than a boolean.
     Make sure it's not the same location as tmp_dir_path.
 
+Modify the way categorical indices are stored.
+  Put all values on the first line.
+  Each subsequent line has the row indices.
+
 Implement composite ("sequential", "covering") index that supports multiple columns.
   Why are we getting data/small_compressed.f4.idx_None
 

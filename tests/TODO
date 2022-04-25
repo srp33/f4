@@ -1,11 +1,16 @@
-Implement composite ("sequential", "covering") index that supports multiple columns.
+If cache_intermediate_results is enabled, store it in /tmp/ rather than tmp_dir_path.
+  Or maybe better, change this parameter to be a directory rather than a boolean.
+    Make sure it's not the same location as tmp_dir_path.
 
-Change "categorical" to "string" everywhere?
+Implement composite ("sequential", "covering") index that supports multiple columns.
+  Why are we getting data/small_compressed.f4.idx_None
+
+In RangeFilters, make sure upper value are higher than lower value.
 
 In IndexHelper, make save_funnel_index non-public and allow user to specify a list of column names
   for a funnel index rather than explicitly invoking save_funnel_index.
 
-In RangeFilters, make sure upper value are higher than lower value.
+Change "categorical" to "string" everywhere?
 
 Kick off full set of tests for large files and save results to GitHub.
 
@@ -57,6 +62,7 @@ Bring back the filters that I commented out in Filters.py.
   Also NumericWithoutFilter, NumericBetweenFilter, NumericEqualsFilter, NumericNotEqualsFilter
 
 Expand NumericFilter to LessThanFilter, GreaterThanFilter, etc.
+Add StringGreaterThanFilter, StringLessThanFilter (already have StringGreaterThanOrEqualsFilter, etc.)
 
 The current design supports filtering on all non-indexed columns or all indexed
   columns but not a combination of both. What to do if the user violates this?

@@ -310,6 +310,32 @@ class IntFilter(__SimpleBaseFilter):
     def passes(self, value):
         return self.operator(fastnumbers.fast_int(value), self.value)
 
+class HeadFilter(BaseFilter):
+    def __init__(self, n, select_columns):
+        self.n = n
+        self.select_columns_set = set([x.encode() for x in select_columns])
+
+    def get_column_name_set(self):
+        return self.select_columns_set
+
+    def _get_num_rows(self, data_file_path):
+        with f4py.Parser(data_file_path, fixed_file_extensions=[""], stats_file_extensions=[".nrow"]) as parser:
+            return parser.get_num_rows()
+
+    def filter_column_values(self, data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict):
+        return set(range(min(self._get_num_rows(data_file_path), self.n))) & row_indices
+
+    def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes):
+        return self.filter_column_values(data_file_path, None, None, None, None)
+
+class TailFilter(HeadFilter):
+    def filter_column_values(self, data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict):
+        num_rows = self._get_num_rows(data_file_path)
+        return set(range(num_rows - self.n, num_rows)) & row_indices
+
+    def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes):
+        return self.filter_column_values(data_file_path, None, None, None, None)
+
 class __CompositeBaseFilter(BaseFilter):
     def __init__(self, filter1, filter2):
         self.filter1 = filter1

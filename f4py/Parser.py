@@ -130,6 +130,12 @@ class Parser:
             for row_index in keep_row_indices:
                 sys.stdout.buffer.write(b"\t".join([x for x in self.__parse_row_values(row_index, select_column_coords)]))
 
+    def head(self, n = 10, select_columns=None, out_file_path=None, out_file_type="tsv"):
+        self.query_and_save(f4py.HeadFilter(n, select_columns), select_columns, out_file_path=out_file_path, out_file_type=out_file_type)
+
+    def tail(self, n = 10, select_columns=None, out_file_path=None, out_file_type="tsv"):
+        self.query_and_save(f4py.TailFilter(n, select_columns), select_columns, out_file_path=out_file_path, out_file_type=out_file_type)
+
     def get_num_rows(self):
         return self.__stats[".nrow"]
 

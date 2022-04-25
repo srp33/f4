@@ -217,12 +217,11 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     fltr = f4py.AndFilter(f4py.StringRangeFilter("OrdinalA", "High", "Low"), f4py.FloatRangeFilter("FloatA", 0.0, 5.0))
     parser.query_and_save(fltr, ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("StringRangeFilter and IntRangeFilter", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"], [b"2.2"]])
-    #TODO: Test StringRangeFilter on indexed data.
-    #        Rework the tests so that index_columns is a parameter and consolidate some of the tests in run_small so it is shorter.
-    #TODO: Implement FunnelFilter.
-    #        Only works on indexed columns.
-    #        Should this be part of AndFilter rather than its own thing?
-    #          Ideally would be generic so that StringRangeFilter and IntRangeFilter can be passed to it.
+
+    parser.head(3, ["FloatA"], out_file_path)
+    check_results("Head filter", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"]])
+    parser.tail(3, ["FloatA"], out_file_path)
+    check_results("Tail filter", read_file_into_lists(out_file_path), [[b"FloatA"], [b"2.2"], [b"2.2"], [b"4.4"]])
 
     try:
         parser.query_and_save(FloatFilter("InvalidColumn", operator.eq, 1), ["FloatA"], out_file_path, num_processes=num_processes)
@@ -383,8 +382,8 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     parser.query_and_save(fltr, ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("Filter using two index columns", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])
 
-    f4py.IndexHelper.save_funnel_index(f4_file_path, "OrdinalA", "IntA", compression_level=compression_level)
-    fltr = f4py.StringIntRangeFunnelFilter("OrdinalA", "Low", "IntA", 5, 6)
+#    f4py.IndexHelper.save_funnel_index(f4_file_path, "OrdinalA", "IntA", compression_level=compression_level)
+#    fltr = f4py.StringIntRangeFunnelFilter("OrdinalA", "Low", "IntA", 5, 6)
     #parser.query_and_save(fltr, ["FloatA"], out_file_path, num_processes=num_processes)
     #check_results("Filter using basic funnel index - categorical + integer", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"], [b"1.1"]])
 

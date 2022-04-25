@@ -39,6 +39,7 @@ class Builder:
         if cache_dir_path:
             # Make sure there is a backslash at the end
             cache_dir_path = cache_dir_path.rstrip("/") + "/"
+            os.makedirs(cache_dir_path, exist_ok=True)
             tmp_chunk_results_file_path = f"{cache_dir_path}chunk_results"
 
         if tmp_chunk_results_file_path and os.path.exists(tmp_chunk_results_file_path):

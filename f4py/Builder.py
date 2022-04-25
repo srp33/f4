@@ -13,7 +13,7 @@ class Builder:
     def __init__(self, verbose=False):
         self.__verbose = verbose
 
-    def convert_delimited_file(self, delimited_file_path, f4_file_path, index_columns=[], delimiter="\t", compression_level=22, num_processes=1, num_cols_per_chunk=None, num_rows_per_save=100, tmp_dir_path=None, cache_intermediate_results=False):
+    def convert_delimited_file(self, delimited_file_path, f4_file_path, index_columns=[], delimiter="\t", compression_level=22, num_processes=1, num_cols_per_chunk=None, num_rows_per_save=100, tmp_dir_path=None, cache_dir_path=None):
         if type(delimiter) != str:
             raise Exception("The delimiter value must be a string.")
 
@@ -25,7 +25,6 @@ class Builder:
         self._print_message(f"Converting from {delimited_file_path}")
 
         tmp_dir_path2 = self._prepare_tmp_dir(tmp_dir_path)
-        tmp_chunk_results_file_path = f"{tmp_dir_path2}chunk_results"
 
         # Get column names. Remove any leading or trailing white space around the column names.
         in_file = _get_delimited_file_handle(delimited_file_path)
@@ -36,7 +35,13 @@ class Builder:
         if num_cols == 0:
             raise Exception(f"No data was detected in {delimited_file_path}.")
 
-        if cache_intermediate_results and os.path.exists(tmp_chunk_results_file_path):
+        tmp_chunk_results_file_path = None
+        if cache_dir_path:
+            # Make sure there is a backslash at the end
+            cache_dir_path = cache_dir_path.rstrip("/") + "/"
+            tmp_chunk_results_file_path = f"{cache_dir_path}chunk_results"
+
+        if tmp_chunk_results_file_path and os.path.exists(tmp_chunk_results_file_path):
             self._print_message(f"Retrieving cached chunk results from {tmp_chunk_results_file_path}")
             chunk_results = pickle.loads(f4py.read_str_from_file(tmp_chunk_results_file_path))
         else:
@@ -46,7 +51,7 @@ class Builder:
             self._print_message(f"Summarizing each column in {delimited_file_path}")
             chunk_results = Parallel(n_jobs=num_processes)(delayed(self._parse_columns_chunk)(delimited_file_path, delimiter, column_chunk[0], column_chunk[1]) for column_chunk in column_chunk_indices)
 
-            if cache_intermediate_results:
+            if tmp_chunk_results_file_path:
                 self._print_message(f"Saving cached chunk results to {tmp_chunk_results_file_path}")
                 f4py.write_str_to_file(tmp_chunk_results_file_path, "", pickle.dumps(chunk_results))
 

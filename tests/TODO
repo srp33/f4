@@ -1,10 +1,3 @@
-    #TODO: Test StringRangeFilter on indexed data.
-    #        Rework the tests so that index_columns is a parameter and consolidate some of the tests in run_small so it is shorter.
-    #TODO: Implement FunnelFilter.
-    #        Only works on indexed columns.
-    #        Should this be part of AndFilter rather than its own thing?
-    #          Ideally would be generic so that StringRangeFilter and IntRangeFilter can be passed to it.
-
 If cache_intermediate_results is enabled, store it in /tmp/ rather than tmp_dir_path.
   Or maybe better, change this parameter to be a directory rather than a boolean.
     Make sure it's not the same location as tmp_dir_path.
@@ -12,6 +5,13 @@ If cache_intermediate_results is enabled, store it in /tmp/ rather than tmp_dir_
 Modify the way categorical indices are stored.
   Put all values on the first line.
   Each subsequent line has the row indices.
+
+Test StringRangeFilter on indexed data.
+  Rework the tests so that index_columns is a parameter and consolidate some of the tests in run_small so it is shorter.
+Implement FunnelFilter.
+  Only works on indexed columns.
+  Should this be part of AndFilter rather than its own thing?
+    Ideally would be generic so that StringRangeFilter and IntRangeFilter can be passed to it.
 
 Implement composite ("sequential", "covering") index that supports multiple columns.
   Why are we getting data/small_compressed.f4.idx_None
@@ -21,13 +21,13 @@ In RangeFilters, make sure upper value are higher than lower value.
 In IndexHelper, make save_funnel_index non-public and allow user to specify a list of column names
   for a funnel index rather than explicitly invoking save_funnel_index.
 
-Change "categorical" to "string" everywhere?
+Change "categorical" to "string" everywhere.
 
-Kick off full set of tests for large files and save results to GitHub.
 
 
 
 CADD files:
+  Develop compression scheme for columns that have relatively few distinct values.
   Rebuild these files.
   Parse
   Compare against tabix. We can also compare it in terms of size.
@@ -45,6 +45,8 @@ Test LINCS data (see WishBuilder).
 Test refine.bio compendia.
 
 Remove unnecessary comments and address TODO items in ../f4py/*.
+
+Kick off full set of tests for large files and save results to GitHub.
 
 Compare against other libraries/formats.
   Update to the latest version of R (in the Dockerfile).

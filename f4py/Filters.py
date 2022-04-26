@@ -326,7 +326,7 @@ class HeadFilter(BaseFilter):
         return set(range(min(self._get_num_rows(data_file_path), self.n))) & row_indices
 
     def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes):
-        return self.filter_column_values(data_file_path, None, None, None, None)
+        return set(range(min(self._get_num_rows(data_file_path), self.n)))
 
 class TailFilter(HeadFilter):
     def filter_column_values(self, data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict):
@@ -334,7 +334,7 @@ class TailFilter(HeadFilter):
         return set(range(num_rows - self.n, num_rows)) & row_indices
 
     def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes):
-        return self.filter_column_values(data_file_path, None, None, None, None)
+        return set(range(num_rows - self.n, num_rows))
 
 class __CompositeBaseFilter(BaseFilter):
     def __init__(self, filter1, filter2):

@@ -28,18 +28,6 @@ class BaseFilter:
 
             return passing_row_indices
 
-    def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes):
-        index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.column_name.decode())
-        index_column_type = column_type_dict[column_index_dict[self.column_name]]
-
-        return self._get_indexer(index_file_path, compression_level, index_column_type).filter(self, end_index, num_processes)
-
-    def _get_indexer(self, data_file_path, compression_level, index_column_type):
-        raise Exception("Not implemented")
-
-#    def get_sub_filters(self):
-#        return [self]
-
     def passes(self, value):
         raise Exception("This function must be implemented by classes that inherit this class.")
 
@@ -80,57 +68,56 @@ class StringEqualsFilter(__SimpleBaseFilter):
 
         super().__init__(column_name, value.encode())
 
-    def _get_indexer(self, data_file_path, compression_level, index_column_type):
+    def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes):
+        index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.column_name.decode())
+        index_column_type = column_type_dict[column_index_dict[self.column_name]]
+
         if index_column_type == "u":
-            return f4py.IdentifierIndexer(data_file_path, compression_level)
+            return f4py.IdentifierIndexer().filter(index_file_path, self, end_index, num_processes)
         else:
-            return f4py.CategoricalIndexer(data_file_path, compression_level)
+            return f4py.CategoricalIndexer().filter(index_file_path, self, end_index, num_processes)
 
     def passes(self, value):
         return value == self.value
 
-class StringNotEqualsFilter(__SimpleBaseFilter):
-    def __init__(self, column_name, value):
-        if not value or type(value) != str:
-            raise Exception("The value argument must be a string.")
+class StringNotEqualsFilter(StringEqualsFilter):
+    def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes):
+        with f4py.Parser(data_file_path, fixed_file_extensions=[""], stats_file_extensions=[".nrow"]) as parser:
+            num_rows = parser.get_num_rows()
 
-        super().__init__(column_name, value.encode())
-
-    def _get_indexer(self, data_file_path, compression_level, index_column_type):
-        return f4py.CategoricalIndexer(data_file_path, compression_level)
+        matching_indices = super().filter_indexed_column_values(data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes)
+        return set(range(num_rows)) - matching_indices
 
     def passes(self, value):
         return value != self.value
 
-class StringGreaterThanOrEqualsFilter(__SimpleBaseFilter):
-    # TODO: Push this function up to a base class.
+class __StringBasicFilter(__SimpleBaseFilter):
     def __init__(self, column_name, value):
         if not value or type(value) != str:
             raise Exception("The value argument must be a string.")
 
         super().__init__(column_name, value.encode())
 
-    # TODO: Push this function up to a base class.
-    def _get_indexer(self, data_file_path, compression_level, index_column_type):
-        return f4py.CategoricalIndexer(data_file_path, compression_level)
+    def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes):
+        index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.column_name.decode())
 
+        return f4py.CategoricalIndexer().filter(index_file_path, self, end_index, num_processes)
+
+class StringGreaterThanOrEqualsFilter(__StringBasicFilter):
     def passes(self, value):
         return value >= self.value
 
-class StringLessThanOrEqualsFilter(__SimpleBaseFilter):
-    # TODO: Push this function up to a base class.
-    def __init__(self, column_name, value):
-        if not value or type(value) != str:
-            raise Exception("The value argument must be a string.")
+class StringGreaterThanFilter(__StringBasicFilter):
+    def passes(self, value):
+        return value > self.value
 
-        super().__init__(column_name, value.encode())
-
-    # TODO: Push this function up to a base class.
-    def _get_indexer(self, data_file_path, compression_level, index_column_type):
-        return f4py.CategoricalIndexer(data_file_path, compression_level)
-
+class StringLessThanOrEqualsFilter(__StringBasicFilter):
     def passes(self, value):
         return value <= self.value
+
+class StringLessThanFilter(__StringBasicFilter):
+    def passes(self, value):
+        return value < self.value
 
 #class InFilter(__SimpleBaseFilter):
 #    """
@@ -165,7 +152,7 @@ class StringLessThanOrEqualsFilter(__SimpleBaseFilter):
 #    def passes(self, value):
 #        return value not in self._values_set
 
-class StartsWithFilter(__SimpleBaseFilter):
+class StartsWithFilter(__StringBasicFilter):
     """
     This class is used to check whether values start with a particular string.
 
@@ -173,19 +160,10 @@ class StartsWithFilter(__SimpleBaseFilter):
         column_name (str): The name of a column that should be evaluated. May not be an empty string.
         query_string (str): The string to check for. Matches will be retained. May not be an empty string. Missing values will not be evaluated.
     """
-    def __init__(self, column_name, query_string):
-        if type(query_string) != str:
-            raise Exception("The query string must be a string.")
-
-        super().__init__(column_name, query_string.encode())
-
-    def _get_indexer(self, data_file_path, compression_level, index_column_type):
-        return f4py.CategoricalIndexer(data_file_path, compression_level)
-
     def passes(self, value):
         return value.startswith(self.value)
 
-class EndsWithFilter(__SimpleBaseFilter):
+class EndsWithFilter(__StringBasicFilter):
     """
     This class is used to check whether values end with a particular string.
 
@@ -193,19 +171,10 @@ class EndsWithFilter(__SimpleBaseFilter):
         column_name (str): The name of a column that should be evaluated. May not be an empty string.
         query_string (str): The string to check for. Matches will be retained. May not be an empty string. Missing values will not be evaluated.
     """
-    def __init__(self, column_name, query_string):
-        if type(query_string) != str:
-            raise Exception("The query string must be a string.")
-
-        super().__init__(column_name, query_string.encode())
-
-    def _get_indexer(self, data_file_path, compression_level, index_column_type):
-        return f4py.CategoricalIndexer(data_file_path, compression_level)
-
     def passes(self, value):
         return value.endswith(self.value)
 
-class LikeFilter(__SimpleBaseFilter):
+class LikeFilter(__StringBasicFilter):
     """
     This class is used to construct regular-expression based filters for querying any column type in an F4 file.
 
@@ -214,18 +183,14 @@ class LikeFilter(__SimpleBaseFilter):
         regular_expression (str): Values in the specified column will be compared against this regular expression. Matches will be retained. Can be a raw string. May not be an empty string. Missing values will not be evaluated.
     """
     def __init__(self, column_name, regular_expression):
-        if type(regular_expression) != str:
-            raise Exception("The regular expression must be a string.")
+        super().__init__(column_name, regular_expression)
 
-        super().__init__(column_name, re.compile(regular_expression))
-
-    def _get_indexer(self, data_file_path, compression_level, index_column_type):
-        return f4py.CategoricalIndexer(data_file_path, compression_level)
+        self.value = re.compile(self.value.decode())
 
     def passes(self, value):
         return self.value.search(value.decode())
 
-class NotLikeFilter(__SimpleBaseFilter):
+class NotLikeFilter(LikeFilter):
     """
     This class is used to construct regular-expression based filters for querying any column type.
 
@@ -233,19 +198,50 @@ class NotLikeFilter(__SimpleBaseFilter):
         column_name (str): The name of a column that should be evaluated. May not be an empty string.
         regular_expression (str): Values in the specified column will be compared against this regular expression. Matches will be retained. Can be a raw string. May not be an empty string. Missing values will not be evaluated.
     """
-    def __init__(self, column_name, regular_expression):
-        if type(regular_expression) != str:
-            raise Exception("The regular expression must be a string.")
-
-        super().__init__(column_name, re.compile(regular_expression))
-
-    def _get_indexer(self, data_file_path, compression_level, index_column_type):
-        return f4py.CategoricalIndexer(data_file_path, compression_level)
-
     def passes(self, value):
         return not self.value.search(value.decode())
 
-class FloatFilter(__SimpleBaseFilter):
+class __NumericFilter(__SimpleBaseFilter):
+    def __init__(self, column_name, oper, query_value):
+        super().__init__(column_name, query_value)
+
+        self.operator = oper
+
+    def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes):
+        if end_index == 0:
+            return set()
+
+        with f4py.IndexHelper._get_index_parser(data_file_path, self.column_name.decode()) as index_parser:
+            line_length = index_parser.get_stat(".ll")
+            coords = index_parser._parse_data_coords([0, 1])
+            file_handle = index_parser.get_file_handle("")
+
+            if self.operator == operator.eq:
+                return f4py.IndexHelper._find_row_indices_for_range(index_parser, compression_level, coords[0], coords[1], self.value, self.value, self.get_conversion_function(), end_index, num_processes)
+            else:
+                if self.operator == operator.ne:
+                    lower_position, upper_position = f4py.IndexHelper._find_bounds_for_range(index_parser, compression_level, coords[0], self.value, self.value, self.get_conversion_function(), end_index, num_processes)
+
+                    lower_positions = (0, lower_position)
+                    upper_positions = (upper_position, end_index)
+
+                    lower_row_indices = f4py.IndexHelper._retrieve_matching_row_indices(index_parser, coords[1], lower_positions, num_processes)
+                    upper_row_indices = f4py.IndexHelper._retrieve_matching_row_indices(index_parser, coords[1], upper_positions, num_processes)
+
+                    return lower_row_indices | upper_row_indices
+                else:
+                    if self.operator == operator.gt:
+                        positions = f4py.IndexHelper._find_positions_g(index_parser, line_length, coords[0], file_handle, self.value, end_index, self.operator, operator.le, self.get_conversion_function())
+                    elif self.operator == operator.ge:
+                        positions = f4py.IndexHelper._find_positions_g(index_parser, line_length, coords[0], file_handle, self.value, end_index, self.operator, operator.lt, self.get_conversion_function())
+                    elif self.operator == operator.lt:
+                        positions = f4py.IndexHelper._find_positions_l(index_parser, line_length, coords[0], file_handle, self.value, end_index, self.operator, operator.ge, self.get_conversion_function())
+                    elif self.operator == operator.le:
+                        positions = f4py.IndexHelper._find_positions_l(index_parser, line_length, coords[0], file_handle, self.value, end_index, self.operator, operator.gt, self.get_conversion_function())
+
+                    return f4py.IndexHelper._retrieve_matching_row_indices(index_parser, coords[1], positions, num_processes)
+
+class FloatFilter(__NumericFilter):
     """
     This class is used to construct filters for querying based on a float column in an F4 file.
 
@@ -259,19 +255,14 @@ class FloatFilter(__SimpleBaseFilter):
         if q_type != float:
             raise Exception("The query_value value must be a float.")
 
-        super().__init__(column_name, query_value)
-
-        self.operator = oper
+        super().__init__(column_name, oper, query_value)
 
     def check_types(self, column_index_dict, column_type_dict):
         if column_type_dict[column_index_dict[self.column_name]] != "f":
             raise Exception(f"A float filter may only be used with float columns, but {self.column_name.decode()} is not a float.")
 
-    def _get_indexer(self, data_file_path, compression_level, index_column_type):
-        if index_column_type == "u":
-            return f4py.IdentifierIndexer(data_file_path, compression_level)
-        else:
-            return f4py.FloatIndexer(data_file_path, compression_level)
+    def get_conversion_function(self):
+        return fastnumbers.fast_float
 
     def passes(self, value):
         return self.operator(fastnumbers.fast_float(value), self.value)
@@ -279,7 +270,7 @@ class FloatFilter(__SimpleBaseFilter):
 #    def __str__(self):
 #        return f"{type(self).__name__}____{self.column_name.decode()}____{self.operator}____{self.value}"
 
-class IntFilter(__SimpleBaseFilter):
+class IntFilter(__NumericFilter):
     """
     This class is used to construct filters for querying based on an integer column in an F4 file.
 
@@ -293,19 +284,14 @@ class IntFilter(__SimpleBaseFilter):
         if q_type != int:
             raise Exception("The query_value value must be an integer.")
 
-        super().__init__(column_name, query_value)
-
-        self.operator = oper
+        super().__init__(column_name, oper, query_value)
 
     def check_types(self, column_index_dict, column_type_dict):
         if column_type_dict[column_index_dict[self.column_name]] != "i":
             raise Exception(f"An integer filter may only be used with integer columns, but {self.column_name.decode()} is not an integer.")
 
-    def _get_indexer(self, data_file_path, compression_level, index_column_type):
-        if index_column_type == "u":
-            return f4py.IdentifierIndexer(data_file_path, compression_level)
-        else:
-            return f4py.IntIndexer(data_file_path, compression_level)
+    def get_conversion_function(self):
+        return fastnumbers.fast_int
 
     def passes(self, value):
         return self.operator(fastnumbers.fast_int(value), self.value)
@@ -334,6 +320,7 @@ class TailFilter(HeadFilter):
         return set(range(num_rows - self.n, num_rows)) & row_indices
 
     def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes):
+        num_rows = self._get_num_rows(data_file_path)
         return set(range(num_rows - self.n, num_rows))
 
 class __CompositeBaseFilter(BaseFilter):
@@ -425,28 +412,9 @@ class __RangeFilter(__CompositeBaseFilter):
 
 class __NumericRangeFilter(__RangeFilter):
     def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes):
-        index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.filter1.column_name.decode())
-
-        lower_index_column_type = column_type_dict[column_index_dict[self.filter1.column_name]]
-        upper_index_column_type = column_type_dict[column_index_dict[self.filter2.column_name]]
-
-        conversion_function = self.get_conversion_function()
-
-        lower_indexer = self.filter1._get_indexer(index_file_path, compression_level, lower_index_column_type)
-        lower_positions = f4py.IndexHelper._find_positions(lower_indexer.index_file_path, self.filter1, end_index, conversion_function)
-
-        upper_indexer = self.filter2._get_indexer(index_file_path, compression_level, upper_index_column_type)
-        upper_positions = f4py.IndexHelper._find_positions(lower_indexer.index_file_path, self.filter2, end_index, conversion_function)
-
-        lower_position = max(lower_positions[0], upper_positions[0])
-        upper_position = min(lower_positions[1], upper_positions[1])
-
-        #TODO: Parallelize this. We should be able to do this with _retrieve_matching_row_indices.
-        return(f4py.IndexHelper._find_matching_row_indices(index_file_path, (lower_position, upper_position)))
-
-#    def filter_indexed_column_values_parallel(self, fltr_results_dict):
-#        row_indices_1, row_indices_2 = self.get_sub_filter_row_indices(fltr_results_dict)
-#        return fltr_results_dict[str(self.filter1)] & fltr_results_dict[str(self.filter2)]
+        with f4py.IndexHelper._get_index_parser(data_file_path, self.filter1.column_name.decode()) as index_parser:
+            coords = index_parser._parse_data_coords([0, 1])
+            return f4py.IndexHelper._find_row_indices_for_range(index_parser, compression_level, coords[0], coords[1], self.filter1.value, self.filter2.value, self.get_conversion_function(), end_index, num_processes)
 
 class FloatRangeFilter(__NumericRangeFilter):
     def __init__(self, column_name, lower_bound_value, upper_bound_value):
@@ -454,6 +422,8 @@ class FloatRangeFilter(__NumericRangeFilter):
             raise Exception("The lower_bound_value must be a float.")
         if type(upper_bound_value) != float:
             raise Exception("The upper_bound_value must be a float.")
+        if lower_bound_value > upper_bound_value:
+            raise Exception("The lower_bound_value must be less than or equal to the upper_bound_value.")
 
         filter1 = FloatFilter(column_name, operator.ge, lower_bound_value)
         filter2 = FloatFilter(column_name, operator.le, upper_bound_value)
@@ -469,6 +439,8 @@ class IntRangeFilter(__NumericRangeFilter):
             raise Exception("The lower_bound_value must be a int.")
         if type(upper_bound_value) != int:
             raise Exception("The upper_bound_value must be a int.")
+        if lower_bound_value > upper_bound_value:
+            raise Exception("The lower_bound_value must be less than or equal to the upper_bound_value.")
 
         filter1 = IntFilter(column_name, operator.ge, lower_bound_value)
         filter2 = IntFilter(column_name, operator.le, upper_bound_value)
@@ -484,6 +456,8 @@ class StringRangeFilter(__RangeFilter):
             raise Exception("The lower_bound_value must be a string.")
         if type(upper_bound_value) != str:
             raise Exception("The upper_bound_value must be a string.")
+        if lower_bound_value > upper_bound_value:
+            raise Exception("The lower_bound_value must be less than or equal to the upper_bound_value.")
 
         filter1 = StringGreaterThanOrEqualsFilter(column_name, lower_bound_value)
         filter2 = StringLessThanOrEqualsFilter(column_name, upper_bound_value)
@@ -491,28 +465,13 @@ class StringRangeFilter(__RangeFilter):
         super().__init__(filter1, filter2)
 
     def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes):
-        #TODO
-
         index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.filter1.column_name.decode())
-        print(index_file_path)
-        import sys
-        sys.exit()
+        index_column_type = column_type_dict[column_index_dict[self.filter1.column_name]]
 
-#        lower_index_column_type = column_type_dict[column_index_dict[self.filter1.column_name]]
-#        upper_index_column_type = column_type_dict[column_index_dict[self.filter2.column_name]]
-
-#        conversion_function = self.get_conversion_function()
-
-#        lower_indexer = self.filter1._get_indexer(index_file_path, compression_level, lower_index_column_type)
-#        lower_positions = f4py.IndexHelper._find_positions(lower_indexer.index_file_path, self.filter1, end_index, conversion_function)
-
-#        upper_indexer = self.filter2._get_indexer(index_file_path, compression_level, upper_index_column_type)
-#        upper_positions = f4py.IndexHelper._find_positions(lower_indexer.index_file_path, self.filter2, end_index, conversion_function)
-
-#        lower_position = max(lower_positions[0], upper_positions[0])
-#        upper_position = min(lower_positions[1], upper_positions[1])
-
-#        return [1]
+        if index_column_type == "u":
+            return f4py.IdentifierIndexer().filter(index_file_path, self, end_index, num_processes)
+        else:
+            return f4py.CategoricalIndexer().double_filter(index_file_path, self.filter1, self.filter2, end_index, num_processes)
 
 class FunnelFilter(__CompositeBaseFilter):
     pass
@@ -546,7 +505,7 @@ class StringIntRangeFunnelFilter(FunnelFilter):
 #        lower_indexer = f4py.IndexHelper._get_indexer(data_file_path, compression_level, self.filter1.column_name, lower_index_column_type, self.filter1)
 #        upper_indexer = f4py.IndexHelper._get_indexer(data_file_path, compression_level, self.filter2.column_name, upper_index_column_type, self.filter2)
 
-        lower_positions = f4py.IndexHelper._find_positions(index_file_path, self.filter1, end_index, f4py.do_nothing)
+#        lower_positions = f4py.IndexHelper._find_positions(index_file_path, self.filter1, end_index, f4py.do_nothing)
 #        upper_positions = f4py.IndexHelper._find_positions(lower_indexer.index_file_path, self.filter2, end_index, fastnumbers.fast_float)
 
 #        lower_position = max(lower_positions[0], upper_positions[0])

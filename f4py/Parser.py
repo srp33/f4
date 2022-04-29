@@ -17,7 +17,6 @@ class Parser:
     Attributes:
         data_file_path (str): The path to an existing F4 file.
     """
-
     def __init__(self, data_file_path, fixed_file_extensions=["", ".cc", ".ct"], stats_file_extensions=[".ll", ".mccl", ".nrow", ".ncol"]):
         self.data_file_path = data_file_path
 
@@ -83,6 +82,7 @@ class Parser:
 #            sub_filters = fltr.get_sub_filters()
 
 #            if num_processes == 1 or len(sub_filters) == 1:
+            #index_parser = f4py.Parser(self.index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"]) as index_parser:
             keep_row_indices = sorted(fltr.filter_indexed_column_values(self.data_file_path, self.compression_level, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes))
 #            else:
 #                fltr_results_dict = {}
@@ -169,7 +169,7 @@ class Parser:
             raise Exception(f"A column with the name {column_name} does not exist.")
 
     def get_column_index_from_name(self, column_name):
-        position = list(f4py.IdentifierIndexer(f"{self.data_file_path}.cn", None).filter(f4py.StringEqualsFilter("NotNeeded", column_name), self.get_num_cols()))
+        position = list(f4py.IdentifierIndexer().filter(f"{self.data_file_path}.cn", f4py.StringEqualsFilter("NotNeeded", column_name), self.get_num_cols()))
 
         if len(position) == 0:
             raise Exception(f"Could not retrieve index because column named {column_name} was not found.")

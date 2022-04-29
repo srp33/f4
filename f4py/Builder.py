@@ -42,6 +42,9 @@ class Builder:
             os.makedirs(cache_dir_path, exist_ok=True)
             tmp_chunk_results_file_path = f"{cache_dir_path}chunk_results"
 
+        if tmp_dir_path and cache_dir_path and tmp_dir_path == cache_dir_path:
+            raise Exception("tmp_dir_path and cache_dir_path cannot point to the same location.")
+
         if tmp_chunk_results_file_path and os.path.exists(tmp_chunk_results_file_path):
             self._print_message(f"Retrieving cached chunk results from {tmp_chunk_results_file_path}")
             chunk_results = pickle.loads(f4py.read_str_from_file(tmp_chunk_results_file_path))
@@ -103,7 +106,7 @@ class Builder:
             # Build an index of the column names and save this to a file.
             sorted_column_names = sorted(column_names)
             values_positions = [[x.decode(), column_name_index_dict[x]] for x in sorted_column_names]
-            f4py.IdentifierIndexer(f"{f4_file_path}.cn", None).build(values_positions)
+            f4py.IdentifierIndexer().build(f"{f4_file_path}.cn", values_positions)
 
             if column_types:
                 # Build a map of the column types and save this to a file.

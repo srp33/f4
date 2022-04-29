@@ -1,33 +1,28 @@
-If cache_intermediate_results is enabled, store it in /tmp/ rather than tmp_dir_path.
-  Or maybe better, change this parameter to be a directory rather than a boolean.
-    Make sure it's not the same location as tmp_dir_path.
+Rework the tests so that index_columns is a parameter and consolidate some of the tests in run_small so it is shorter.
 
-Modify the way categorical indices are stored.
-  Put all values on the first line.
-  Each subsequent line has the row indices.
+Add tests for StringGreaterThanFilter and StringLessThanFilter.
 
-Test StringRangeFilter on indexed data.
-  Rework the tests so that index_columns is a parameter and consolidate some of the tests in run_small so it is shorter.
-Implement FunnelFilter.
-  Only works on indexed columns.
-  Should this be part of AndFilter rather than its own thing?
-    Ideally would be generic so that StringRangeFilter and IntRangeFilter can be passed to it.
+In IndexHelper, allow user to specify a list of column names
+  for an index rather than having to explicitly invoke save_funnel_index.
+
+Remove column_coords_dict (and possibly column_type_dict and column_index_dict) from filter_indexed_column_values function signature.
+Change Indexer classes to IndexBuilder.
+Change "categorical" to "string" everywhere.
+Change f4_file_path to data_file_path everywhere for consistency.
 
 Implement composite ("sequential", "covering") index that supports multiple columns.
-  Why are we getting data/small_compressed.f4.idx_None
-
-In RangeFilters, make sure upper value are higher than lower value.
-
-In IndexHelper, make save_funnel_index non-public and allow user to specify a list of column names
-  for a funnel index rather than explicitly invoking save_funnel_index.
-
-Change "categorical" to "string" everywhere.
-
+  Implement FunnelFilter.
+    Only works on indexed columns.
+    Should this be part of AndFilter rather than its own thing?
+    Ideally would be generic so that StringRangeFilter and IntRangeFilter can be passed to it.
 
 
 
 CADD files:
   Develop compression scheme for columns that have relatively few distinct values.
+    Modify the way categorical indices are stored.
+      Put all values on the first line.
+      Each subsequent line has the row indices.
   Rebuild these files.
   Parse
   Compare against tabix. We can also compare it in terms of size.
@@ -59,6 +54,8 @@ Modify name? Put Parallel(ize) in it?
 #####################################################
 # After benchmark paper (for software packages)
 #####################################################
+
+Raise a friendly exception if the user tries to do an indexed query when the index has not been created.
 
 Allow user to specify missing values in Builder.convert() function. There is a function called is_missing_value in Utilities.py that should be removed.
 

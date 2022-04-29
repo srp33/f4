@@ -51,16 +51,21 @@ def fail_test(message):
     print(f"FAIL: {message}")
     sys.exit(1)
 
-def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1, compression_level=None):
+def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1, compression_level=None, index_columns=None):
     print("-------------------------------------------------------")
-    print(f"Running all tests for {in_file_path}, {num_processes}, {num_cols_per_chunk}, {lines_per_chunk}")
+    print(f"Running all tests for {in_file_path}")
+    print(f"num_processes: {num_processes}")
+    print(f"num_cols_per_chunk: {num_cols_per_chunk}")
+    print(f"lines_per_chunk: {lines_per_chunk}")
+    print(f"compression_level: {compression_level}")
+    print(f"index_columns: {index_columns}")
     print("-------------------------------------------------------")
 
     # Clean up data files if they already exist
     for file_path in glob.glob(f"{f4_file_path}*"):
         os.unlink(file_path)
 
-    f4py.Builder().convert_delimited_file(in_file_path, f4_file_path, compression_level=compression_level, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk)
+    f4py.Builder().convert_delimited_file(in_file_path, f4_file_path, compression_level=compression_level, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk, index_columns=index_columns)
 
     try:
         parser = Parser("bogus_file_path")
@@ -116,7 +121,28 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     parser.query_and_save(f4py.StringNotEqualsFilter("ID", "A"), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("Filter by ID using not equals filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"],[b"2.2"],[b"2.2"],[b"4.4"],])
 
-    parser.query_and_save(f4py.AndFilter(f4py.FloatFilter("FloatA", operator.ne, 1.1), f4py.IntFilter("IntA", operator.eq, 7)), ["FloatA"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.IntRangeFilter("IntA", -100, 100), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("IntA within -100 and 100", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
+
+    parser.query_and_save(f4py.IntFilter("IntA", operator.eq, 7), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("Int equals filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"]])
+
+    parser.query_and_save(f4py.IntFilter("IntA", operator.eq, 5), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("Int equals filter - one match", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"], [b"4.4"]])
+
+    parser.query_and_save(f4py.IntFilter("IntA", operator.ne, 5), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("Int not equals filter - two matches", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"],[b"2.2"],[b"2.2"]])
+
+    parser.query_and_save(f4py.FloatFilter("FloatA", operator.eq, 1.1), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("Float equals filter - one match", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"]])
+
+    parser.query_and_save(f4py.FloatFilter("FloatA", operator.eq, 2.2), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("Float equals filter - two matches", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"2.2"]])
+
+    parser.query_and_save(f4py.FloatFilter("FloatA", operator.ne, 1.1), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("Float not equals filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"],[b"2.2"],[b"2.2"],[b"4.4"]])
+
+    parser.query_and_save(f4py.AndFilter(f4py.IntFilter("IntA", operator.eq, 7), f4py.FloatFilter("FloatA", operator.ne, 1.1)), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("Two numeric filters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"]])
 
     fltr = f4py.AndFilter(
@@ -132,6 +158,19 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
                f4py.StringEqualsFilter("IntB", "77")
              )
            )
+    #TODO: The following filter is just for debugging.
+    or_1 = f4py.OrFilter(
+       f4py.StringEqualsFilter("OrdinalA", "Med"),
+       f4py.StringEqualsFilter("OrdinalA", "High")
+     )
+    or_2 = f4py.OrFilter(
+               f4py.OrFilter(
+                 f4py.IntFilter("IntB", operator.eq, 44),
+                 f4py.IntFilter("IntB", operator.eq, 99)
+               ),
+               f4py.IntFilter("IntB", operator.eq, 77)
+             )
+    fltr = f4py.AndFilter(or_1, or_2)
     parser.query_and_save(fltr, ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("Nested or filters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"2.2"],[b"4.4"]])
 
@@ -154,23 +193,11 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     parser.query_and_save(f4py.NotLikeFilter("CategoricalB", r"ow$"), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("NotLike filter on categorical column", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"],[b"2.2"],[b"4.4"]])
 
-    parser.query_and_save(f4py.AndFilter(f4py.LikeFilter("FloatB", r"^\d\d\.\d$"), f4py.LikeFilter("FloatB", r"88")), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Like filter on numeric columns", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"]])
-
     parser.query_and_save(f4py.StartsWithFilter("CategoricalB", "Yell"), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("StartsWith filter on categorical column", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"],[b"2.2"]])
 
     parser.query_and_save(f4py.EndsWithFilter("CategoricalB", "ow"), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("EndsWith filter on categorical column", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"],[b"2.2"]])
-
-    parser.query_and_save(f4py.OrFilter(f4py.LikeFilter("FloatB", r"^x$"), f4py.StringEqualsFilter("FloatB", "88.8")), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Or filter simple", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"]])
-
-    parser.query_and_save(f4py.OrFilter(f4py.OrFilter(f4py.LikeFilter("FloatB", r"^x$"), f4py.StringEqualsFilter("FloatB", "88.8")), f4py.FloatFilter("FloatB", operator.eq, 44.4)), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Or filter multiple", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"],[b"4.4"]])
-
-    parser.query_and_save(f4py.AndFilter(f4py.OrFilter(f4py.LikeFilter("FloatB", r"^x$"), f4py.OrFilter(f4py.StringEqualsFilter("FloatB", "88.8"), f4py.FloatFilter("FloatB", operator.eq, 44.4))), f4py.AndFilter(f4py.FloatFilter("FloatA", operator.ge, 2.2), f4py.AndFilter(f4py.FloatFilter("FloatA", operator.le, 10.0), f4py.OrFilter(f4py.StringEqualsFilter("FloatA", "2.2"), f4py.LikeFilter("FloatA", r"2\.2"))))), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Nested filters", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"]])
 
     parser.query_and_save(f4py.FloatRangeFilter("FloatA", -9.9, 4.4), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("FloatA within -9.9 and 4.4", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
@@ -189,8 +216,8 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     check_results("IntA within -100 and 100", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
     parser.query_and_save(f4py.IntRangeFilter("IntA", 5, 8), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("IntA within 5 and 8", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
-    parser.query_and_save(f4py.IntRangeFilter("IntA", -5, -8), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("IntA within -5 and -8", read_file_into_lists(out_file_path), [[b"FloatA"]])
+    parser.query_and_save(f4py.IntRangeFilter("IntA", -8, -5), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("IntA within -8 and -5", read_file_into_lists(out_file_path), [[b"FloatA"]])
     parser.query_and_save(f4py.IntRangeFilter("IntA", 5, 7), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("IntA within 5 and 7", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"4.4"]])
     parser.query_and_save(f4py.IntRangeFilter("IntA", 6, 8), ["FloatA"], out_file_path, num_processes=num_processes)
@@ -283,84 +310,66 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     except:
         pass_test("Non-filter is passed as a filter.")
 
-    # Test ability to query based on index columns.
-    f4py.Builder().convert_delimited_file(in_file_path, f4_file_path, index_columns=["ID", "FloatA", "OrdinalA"], compression_level=compression_level, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk)
-
-    parser = f4py.Parser(f4_file_path)
-
     parser.query_and_save(f4py.StringEqualsFilter("ID", "A"), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter ID = A", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"]])
+    check_results("Filter ID = A", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"]])
     parser.query_and_save(f4py.StringEqualsFilter("ID", "B"), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter ID = B", read_file_into_lists(out_file_path), [[b"FloatA"], [b"2.2"]])
+    check_results("Filter ID = B", read_file_into_lists(out_file_path), [[b"FloatA"], [b"2.2"]])
     parser.query_and_save(f4py.StringEqualsFilter("ID", "D"), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter ID = D", read_file_into_lists(out_file_path), [[b"FloatA"], [b"4.4"]])
+    check_results("Filter ID = D", read_file_into_lists(out_file_path), [[b"FloatA"], [b"4.4"]])
     parser.query_and_save(f4py.StringEqualsFilter("ID", "E"), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter ID = E", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"]])
+    check_results("Filter ID = E", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"]])
 
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.gt, 0.0), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA > 0", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
+    check_results("Filter FloatA > 0", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.gt, 1.1), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA > 1.1", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"2.2"], [b"2.2"], [b"4.4"]])
+    check_results("Filter FloatA > 1.1", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"2.2"], [b"2.2"], [b"4.4"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.gt, 2.2), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA > 2.2", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"4.4"]])
+    check_results("Filter FloatA > 2.2", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"4.4"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.gt, 4.4), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA > 4.4", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"]])
+    check_results("Filter FloatA > 4.4", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.gt, 9.9), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA > 9.9", read_file_into_lists(out_file_path), [[b"FloatA"]])
+    check_results("Filter FloatA > 9.9", read_file_into_lists(out_file_path), [[b"FloatA"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.gt, 100.0), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA > 100", read_file_into_lists(out_file_path), [[b"FloatA"]])
+    check_results("Filter FloatA > 100", read_file_into_lists(out_file_path), [[b"FloatA"]])
 
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.ge, 0.0), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA >= 0", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
+    check_results("Filter FloatA >= 0", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.ge, 1.1), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA >= 1.1", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
+    check_results("Filter FloatA >= 1.1", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.ge, 2.2), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA >= 2.2", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"2.2"], [b"2.2"], [b"4.4"]])
+    check_results("Filter FloatA >= 2.2", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"2.2"], [b"2.2"], [b"4.4"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.ge, 4.4), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA >= 4.4", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"4.4"]])
+    check_results("Filter FloatA >= 4.4", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"4.4"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.ge, 9.9), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA >= 9.9", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"]])
+    check_results("Filter FloatA >= 9.9", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.ge, 100.0), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA >= 100", read_file_into_lists(out_file_path), [[b"FloatA"]])
+    check_results("Filter FloatA >= 100", read_file_into_lists(out_file_path), [[b"FloatA"]])
 
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.lt, 0.0), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA < 0", read_file_into_lists(out_file_path), [[b"FloatA"]])
+    check_results("Filter FloatA < 0", read_file_into_lists(out_file_path), [[b"FloatA"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.lt, 1.1), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA < 1.1", read_file_into_lists(out_file_path), [[b"FloatA"]])
+    check_results("Filter FloatA < 1.1", read_file_into_lists(out_file_path), [[b"FloatA"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.lt, 2.2), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA < 2.2", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"]])
+    check_results("Filter FloatA < 2.2", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.lt, 4.4), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA < 4.4", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"], [b"2.2"], [b"2.2"]])
+    check_results("Filter FloatA < 4.4", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"], [b"2.2"], [b"2.2"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.lt, 9.9), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA < 9.9", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
+    check_results("Filter FloatA < 9.9", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.lt, 100.0), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA < 100", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
+    check_results("Filter FloatA < 100", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
 
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.le, 0.0), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA <= 0", read_file_into_lists(out_file_path), [[b"FloatA"]])
+    check_results("Filter FloatA <= 0", read_file_into_lists(out_file_path), [[b"FloatA"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.le, 1.1), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA <= 1.1", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"]])
+    check_results("Filter FloatA <= 1.1", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.le, 2.2), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA <= 2.2", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"], [b"2.2"], [b"2.2"]])
+    check_results("Filter FloatA <= 2.2", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"], [b"2.2"], [b"2.2"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.le, 4.4), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA <= 4.4", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
+    check_results("Filter FloatA <= 4.4", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.le, 9.9), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA <= 9.9", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
+    check_results("Filter FloatA <= 9.9", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.le, 100.0), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA <= 100", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
-
-    parser.query_and_save(f4py.FloatRangeFilter("FloatA", -9.9, 4.4), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA within -9.9 and 4.4", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
-    parser.query_and_save(f4py.FloatRangeFilter("FloatA", 2.2, 4.4), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA within 2.2 and 4.4", read_file_into_lists(out_file_path), [[b"FloatA"], [b"2.2"], [b"2.2"], [b"4.4"]])
-    parser.query_and_save(f4py.FloatRangeFilter("FloatA", 4.4, 9.9), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA within 4.4 and 9.9", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"4.4"]])
-    parser.query_and_save(f4py.FloatRangeFilter("FloatA", 1.1, 1.1), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA within 1.1 and 1.1", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"]])
-    parser.query_and_save(f4py.FloatRangeFilter("FloatA", 2.2, 2.2), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA within 2.2 and 2.2", read_file_into_lists(out_file_path), [[b"FloatA"], [b"2.2"], [b"2.2"]])
-    parser.query_and_save(f4py.FloatRangeFilter("FloatA", 100.0, 1000.0), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Indexed filter FloatA within 100 and 1000", read_file_into_lists(out_file_path), [[b"FloatA"]])
+    check_results("Filter FloatA <= 100", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
 
     parser.query_and_save(f4py.StringEqualsFilter("OrdinalA", "Low"), ["ID"], out_file_path, num_processes=num_processes)
     check_results("Categorical filter OrdinalA = Low", read_file_into_lists(out_file_path), [[b"ID"], [b"E"], [b"A"]])
@@ -380,7 +389,7 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
              f4py.FloatFilter("FloatA", operator.ge, 2.0)
            )
     parser.query_and_save(fltr, ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Filter using two index columns", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])
+    check_results("Filter using two index columns", read_file_into_lists(out_file_path), [[b"FloatA"], [b"2.2"], [b"2.2"]])
 
 #    f4py.IndexHelper.save_funnel_index(f4_file_path, "OrdinalA", "IntA", compression_level=compression_level)
 #    fltr = f4py.StringIntRangeFunnelFilter("OrdinalA", "Low", "IntA", 5, 6)
@@ -447,8 +456,8 @@ def run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, 
     check_results("Filter FloatWithin = 0.0-1.0", read_file_into_lists(out_file_path), medium_ID)
     parser.query_and_save(f4py.FloatRangeFilter("Numeric1", 0.85, 0.90), ["ID"], out_file_path, num_processes=num_processes)
     check_results("Filter FloatWithin = 0.85-0.90", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[1], medium_ID[19], medium_ID[84], medium_ID[100]])
-    parser.query_and_save(f4py.FloatRangeFilter("Numeric1", -0.85, -0.90), ["ID"], out_file_path, num_processes=num_processes)
-    check_results("Filter FloatWithin = -0.85--0.90", read_file_into_lists(out_file_path), [medium_ID[0]])
+    parser.query_and_save(f4py.FloatRangeFilter("Numeric1", -0.90, -0.85), ["ID"], out_file_path, num_processes=num_processes)
+    check_results("Filter FloatWithin = -0.90--0.85", read_file_into_lists(out_file_path), [medium_ID[0]])
     parser.query_and_save(f4py.FloatRangeFilter("Numeric1", float(medium_Numeric1[1][0].decode()), float(medium_Numeric1[1][0].decode())), ["ID"], out_file_path, num_processes=num_processes)
     check_results("Filter FloatWithin = row 1", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[1]])
     parser.query_and_save(f4py.FloatRangeFilter("Numeric1", float(medium_Numeric1[2][0].decode()), float(medium_Numeric1[2][0].decode())), ["ID"], out_file_path, num_processes=num_processes)
@@ -475,20 +484,28 @@ def run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, 
     parser.query_and_save(f4py.StringEqualsFilter("Discrete1", medium_Discrete1[100][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
     check_results("Filter Discrete1 = row 100", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[100]])
 
+# Basic small tests
 f4_file_path = "/data/small.f4"
 out_file_path = "/tmp/small_out.tsv"
-
 run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
 run_small_tests("/data/small.tsv.gz", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
 run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
 run_small_tests("/data/small.tsv.gz", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
 
+# Small tests with compression
 f4_file_path = "/data/small_compressed.f4"
 out_file_path = "/tmp/small_compressed_out.tsv"
-
 run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1, compression_level = 22)
 run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2, compression_level = 22)
 
+# Small tests with indexing
+f4_file_path = "/data/small_indexing.f4"
+out_file_path = "/tmp/small_indexing_out.tsv"
+index_columns = ["ID", "CategoricalB", "FloatA", "FloatB", "IntA", "IntB", "OrdinalA"]
+run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1, index_columns = index_columns)
+run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2, index_columns = index_columns)
+
+# Medium tests
 run_medium_tests(num_processes=1)
 run_medium_tests(num_processes=2)
 

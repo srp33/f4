@@ -97,8 +97,7 @@ class IndexHelper:
         index_file_path_extension = f".idx_{index_name}"
         return f"{data_file_path}{index_file_path_extension}"
 
-    def _get_index_parser(data_file_path, column_name):
-        index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, column_name)
+    def _get_index_parser(index_file_path):
         return f4py.Parser(index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
 
     def _binary_index_search(parser, line_length, value_coords, data_file_handle, value_to_find, l, r):
@@ -174,7 +173,7 @@ class IndexHelper:
 
     def _find_matching_row_indices(index_file_path, position_coords, positions):
         # To make this paralellizable, we pass just a file path rather than index_parser.
-        with f4py.Parser(index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"]) as index_parser:
+        with IndexHelper._get_index_parser(index_file_path) as index_parser:
             line_length = index_parser.get_stat(".ll")
             data_file_handle = index_parser.get_file_handle("")
 

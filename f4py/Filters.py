@@ -211,7 +211,9 @@ class __NumericFilter(__SimpleBaseFilter):
         if end_index == 0:
             return set()
 
-        with f4py.IndexHelper._get_index_parser(data_file_path, self.column_name.decode()) as index_parser:
+        index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.column_name.decode())
+
+        with f4py.IndexHelper._get_index_parser(index_file_path) as index_parser:
             line_length = index_parser.get_stat(".ll")
             coords = index_parser._parse_data_coords([0, 1])
             file_handle = index_parser.get_file_handle("")
@@ -412,7 +414,9 @@ class __RangeFilter(__CompositeBaseFilter):
 
 class __NumericRangeFilter(__RangeFilter):
     def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes):
-        with f4py.IndexHelper._get_index_parser(data_file_path, self.filter1.column_name.decode()) as index_parser:
+        index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.filter1.column_name.decode())
+
+        with f4py.IndexHelper._get_index_parser(index_file_path) as index_parser:
             coords = index_parser._parse_data_coords([0, 1])
             return f4py.IndexHelper._find_row_indices_for_range(index_parser, compression_level, coords[0], coords[1], self.filter1.value, self.filter2.value, self.get_conversion_function(), end_index, num_processes)
 

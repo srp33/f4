@@ -119,7 +119,10 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     check_results("Filter by ID using equals filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"]])
 
     parser.query_and_save(f4py.StringNotEqualsFilter("ID", "A"), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Filter by ID using not equals filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"],[b"2.2"],[b"2.2"],[b"4.4"],])
+    check_results("Filter by ID using not equals filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"],[b"2.2"],[b"2.2"],[b"4.4"]])
+
+#    parser.query_and_save(f4py.StringGreaterThanOrEqualsFilter("ID", "A"), ["FloatA"], out_file_path, num_processes=num_processes)
+#    check_results("Filter by ID using string >= filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
 
     parser.query_and_save(f4py.IntRangeFilter("IntA", -100, 100), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("IntA within -100 and 100", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])

@@ -1,9 +1,18 @@
-Add tests for StringGreaterThanFilter and StringLessThanFilter.
+Rework/remove CategoricalIndexer and IdentifierIndexer.
+  Test speed and look at index file size on large files first with current approach.
+  No longer store in a different format for categorical?
+  No longer have a "u" column type.
+  Test speed and look at index file size on large files after these changes.
+  Remove/comment binary_search function and IdentifierIndexer.
 
 Remove column_coords_dict (and possibly column_type_dict and column_index_dict) from filter_indexed_column_values function signature?
-Change Indexer classes to IndexBuilder?
 Change f4_file_path to data_file_path everywhere for consistency.
 Change "categorical" to "string" everywhere.
+Modify Builder._convert_delimited_file_in_chunks so that it only uses one thread of num_processes = 1.
+
+Add tests for StringGreaterThanFilter and StringLessThanFilter.
+  I have one test commented out in TestSmall...
+  Wait on this until we have reworked/removed CategoricalIndexer.
 
 Implement composite ("sequential", "covering") index that supports multiple columns.
   Implement FunnelFilter.

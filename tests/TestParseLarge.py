@@ -8,7 +8,7 @@ from pstats import SortKey
 import sys
 import time
 
-def run_test(tall_or_wide, select_columns, discrete_filter_column, float_filter_column, indexed, compressed, num_processes, lines_per_chunk):
+def run_test(description, tall_or_wide, select_columns, discrete_filter1, discrete_filter2, float_filter, indexed, compressed, num_processes, lines_per_chunk, expected_size):
     f4_file_path = f"data/{tall_or_wide}_"
     if indexed:
         f4_file_path += "indexed_"
@@ -23,24 +23,20 @@ def run_test(tall_or_wide, select_columns, discrete_filter_column, float_filter_
 
     start = time.time()
 
-    fltr = f4py.AndFilter(f4py.OrFilter(f4py.StartsWithFilter(discrete_filter_column, "A"), f4py.EndsWithFilter(discrete_filter_column, "Z")), f4py.FloatFilter(float_filter_column, operator.ge, 0.1))
+    fltr = f4py.AndFilter(f4py.OrFilter(discrete_filter1, discrete_filter2), float_filter)
 
     with f4py.Parser(f4_file_path) as parser:
         parser.query_and_save(fltr, select_columns, out_file_path, out_file_type="tsv", num_processes=num_processes, lines_per_chunk=lines_per_chunk)
 
     file_size = os.path.getsize(out_file_path)
-    if tall_or_wide == "tall":
-        expected_size = 7613257
-    else:
-        expected_size = 7177264
     if file_size != expected_size:
-        print("Error: output file size was invalid!")
+        print(f"ERROR: output file size was {file_size}, but it was expected to be {expected_size}.")
         sys.exit()
 
     end = time.time()
     elapsed = f"{round(end - start, 3)}"
 
-    output = f"{tall_or_wide}\t"
+    output = f"{description}\t{tall_or_wide}\t"
     if indexed:
         output += "Yes\t"
     else:
@@ -54,6 +50,16 @@ def run_test(tall_or_wide, select_columns, discrete_filter_column, float_filter_
 
     print(output)
 
+def run_tests(description, tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, num_processes, tall_expected_size, wide_expected_size):
+    run_test(description, "tall", tall_select_columns, tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, False, False, num_processes, 10000, tall_expected_size)
+    run_test(description, "wide", wide_select_columns, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, False, False, num_processes, 10, wide_expected_size)
+
+    run_test(description, "tall", tall_select_columns, tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, True, False, num_processes, 10000, tall_expected_size)
+    run_test(description, "wide", wide_select_columns, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, True, False, num_processes, 10, wide_expected_size)
+
+    run_test(description, "tall", tall_select_columns, tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, True, True, num_processes, 10000, tall_expected_size)
+    run_test(description, "wide", wide_select_columns, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, True, True, num_processes, 10, wide_expected_size)
+
 tall_select_columns = ["ID", "Discrete100", "Numeric100", "Numeric200", "Numeric300", "Numeric400", "Numeric500", "Numeric600", "Numeric700", "Numeric800", "Numeric900"]
 wide_select_columns = ["ID"] + [f"Discrete{i}" for i in range(100, 100001, 100)] + [f"Numeric{i}" for i in range(100, 900001, 100)]
 
@@ -64,15 +70,25 @@ wide_select_columns = ["ID"] + [f"Discrete{i}" for i in range(100, 100001, 100)]
 #ps = pstats.Stats(profile)
 #ps.print_stats()
 
-print(f"Shape\tIndexed\tCompressed\tNum_Processes\tElapsed_Seconds")
+print(f"Description\tShape\tIndexed\tCompressed\tNum_Processes\tElapsed_Seconds")
 
 #for num_processes in [1, 2, 4, 8, 16, 32]:
 for num_processes in [8]:
-    run_test("tall", tall_select_columns, "Discrete100", "Numeric900", False, False, num_processes, 10000)
-    run_test("wide", wide_select_columns, "Discrete100000", "Numeric900000", False, False, num_processes, 10)
+    tall_discrete_filter1 = f4py.StartsWithFilter("Discrete100", "A")
+    wide_discrete_filter1 = f4py.StartsWithFilter("Discrete100000", "A")
 
-    run_test("tall", tall_select_columns, "Discrete100", "Numeric900", True, False, num_processes, 10000)
-    run_test("wide", wide_select_columns, "Discrete100000", "Numeric900000", True, False, num_processes, 10)
+    tall_discrete_filter2 = f4py.EndsWithFilter("Discrete100", "Z")
+    wide_discrete_filter2 = f4py.EndsWithFilter("Discrete100000", "Z")
 
-    run_test("tall", tall_select_columns, "Discrete100", "Numeric900", True, True, num_processes, 10000)
-    run_test("wide", wide_select_columns, "Discrete100000", "Numeric900000", True, True, num_processes, 10)
+    tall_float_filter = f4py.FloatFilter("Numeric900", operator.ge, 0.1)
+    wide_float_filter = f4py.FloatFilter("Numeric900000", operator.ge, 0.1)
+
+    run_tests("EndsStartsWith", tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, num_processes, 7613257, 7177264)
+
+    tall_discrete_filter1 = f4py.StringFilter("Discrete100", operator.eq, "AA")
+    wide_discrete_filter1 = f4py.StringFilter("Discrete100000", operator.eq, "AA")
+
+    tall_discrete_filter2 = f4py.StringFilter("Discrete100", operator.eq, "ZZ")
+    wide_discrete_filter2 = f4py.StringFilter("Discrete100000", operator.eq, "ZZ")
+
+    run_tests("AA_ZZ", tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, num_processes, 289122, 342803)

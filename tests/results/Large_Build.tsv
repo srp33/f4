@@ -1,7 +1,7 @@
 Shape	Indexed	Compressed	Num_Processes	Elapsed_Seconds
-tall	No	No	30	220.662
-wide	No	No	30	294.975
-tall	Yes	No	30	242.362
-wide	Yes	No	30	292.899
-tall	Yes	Yes	30	373.898
-wide	Yes	Yes	30	757.425
+tall	No	No	30	203.099
+wide	No	No	30	233.418
+tall	Yes	No	30	216.83
+wide	Yes	No	30	229.534
+tall	Yes	Yes	30	354.274
+wide	Yes	Yes	30	700.589

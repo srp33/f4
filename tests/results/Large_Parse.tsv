@@ -1,7 +1,13 @@
-Shape	Indexed	Compressed	Num_Processes	Elapsed_Seconds
-tall	No	No	8	2.338
-wide	No	No	8	2.035
-tall	Yes	No	8	1.489
-wide	Yes	No	8	2.178
-tall	Yes	Yes	8	3.178
-wide	Yes	Yes	8	3.395
+Description	Shape	Indexed	Compressed	Num_Processes	Elapsed_Seconds
+EndsStartsWith	tall	No	No	8	2.001
+EndsStartsWith	wide	No	No	8	2.018
+EndsStartsWith	tall	Yes	No	8	3.719
+EndsStartsWith	wide	Yes	No	8	2.062
+EndsStartsWith	tall	Yes	Yes	8	5.173
+EndsStartsWith	wide	Yes	Yes	8	3.384
+AA_ZZ	tall	No	No	8	0.969
+AA_ZZ	wide	No	No	8	1.691
+AA_ZZ	tall	Yes	No	8	0.408
+AA_ZZ	wide	Yes	No	8	1.676
+AA_ZZ	tall	Yes	Yes	8	0.462
+AA_ZZ	wide	Yes	Yes	8	1.712

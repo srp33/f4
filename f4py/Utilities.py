@@ -49,5 +49,8 @@ def print_message(message, verbose):
     if verbose:
         print(f"{message} - {datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f')}")
 
+def decode_string(x):
+    return x.decode()
+
 def do_nothing(x):
      return(x)

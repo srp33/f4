@@ -158,7 +158,8 @@ class Builder:
         column_types_dict = {}
         for i in range(start_index, end_index):
             column_sizes_dict[i] = 0
-            column_types_dict[i] = {b"i": 0, b"f": 0, b"s": 0, "unique_s": set()}
+            #column_types_dict[i] = {b"i": 0, b"f": 0, b"s": 0, "unique_s": set()}
+            column_types_dict[i] = {b"i": 0, b"f": 0, b"s": 0}
 
         # Loop through the file for the specified columns.
         num_rows = 0
@@ -169,8 +170,8 @@ class Builder:
 
                 inferred_type = _infer_type(line_items[i])
                 if inferred_type:
-                    if inferred_type == b"s":
-                        column_types_dict[i]["unique_s"].add(line_items[i])
+                    #if inferred_type == b"s":
+                    #    column_types_dict[i]["unique_s"].add(line_items[i])
 
                     column_types_dict[i][inferred_type] += 1
 
@@ -333,9 +334,9 @@ def _infer_type_for_column(types_dict, num_rows):
         return list(types_dict.keys())[0]
 
     if types_dict[b"s"] > 0:
-        if len(types_dict["unique_s"]) == num_rows:
-            return b"u"
-        return b"c"
+#        if len(types_dict["unique_s"]) == num_rows:
+#            return b"u"
+        return b"s"
     elif types_dict[b"f"] > 0:
         return b"f"
 

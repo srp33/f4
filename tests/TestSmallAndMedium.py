@@ -84,15 +84,15 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     check_result("Column index", "OrdinalA column", parser.get_column_index_from_name("OrdinalA"), 3)
     check_result("Column index", "OrdinalB column", parser.get_column_index_from_name("OrdinalB"), 4)
 
-    check_result("Column types", "ID column", parser.get_column_type_from_name("ID"), "u")
+    check_result("Column types", "ID column", parser.get_column_type_from_name("ID"), "s")
     check_result("Column types", "FloatA column", parser.get_column_type_from_name("FloatA"), "f")
     check_result("Column types", "FloatB column", parser.get_column_type_from_name("FloatB"), "f")
-    check_result("Column types", "OrdinalA column", parser.get_column_type_from_name("OrdinalA"), "c")
-    check_result("Column types", "OrdinalB column", parser.get_column_type_from_name("OrdinalB"), "c")
+    check_result("Column types", "OrdinalA column", parser.get_column_type_from_name("OrdinalA"), "s")
+    check_result("Column types", "OrdinalB column", parser.get_column_type_from_name("OrdinalB"), "s")
     check_result("Column types", "IntA column", parser.get_column_type_from_name("IntA"), "i")
     check_result("Column types", "IntB column", parser.get_column_type_from_name("IntB"), "i")
-    check_result("Column types", "CategoricalA column", parser.get_column_type_from_name("CategoricalA"), "c")
-    check_result("Column types", "CategoricalB column", parser.get_column_type_from_name("CategoricalB"), "c")
+    check_result("Column types", "CategoricalA column", parser.get_column_type_from_name("CategoricalA"), "s")
+    check_result("Column types", "CategoricalB column", parser.get_column_type_from_name("CategoricalB"), "s")
 
     parser.query_and_save(f4py.NoFilter(), [], out_file_path, num_processes=num_processes, lines_per_chunk=lines_per_chunk)
     check_results("No filters, select all columns", read_file_into_lists(out_file_path), read_file_into_lists(in_file_path))
@@ -115,14 +115,23 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     except:
         pass_test("Invalid column name in select.")
 
-    parser.query_and_save(f4py.StringEqualsFilter("ID", "A"), ["FloatA"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.StringFilter("ID", operator.eq, "A"), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("Filter by ID using equals filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"]])
 
-    parser.query_and_save(f4py.StringNotEqualsFilter("ID", "A"), ["FloatA"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.StringFilter("ID", operator.ne, "A"), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("Filter by ID using not equals filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"],[b"2.2"],[b"2.2"],[b"4.4"]])
 
-#    parser.query_and_save(f4py.StringGreaterThanOrEqualsFilter("ID", "A"), ["FloatA"], out_file_path, num_processes=num_processes)
-#    check_results("Filter by ID using string >= filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
+    parser.query_and_save(f4py.StringFilter("ID", operator.ge, "A"), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("Filter by ID using string >= filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
+
+    parser.query_and_save(f4py.StringFilter("ID", operator.gt, "A"), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("Filter by ID using string > filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"], [b"2.2"], [b"2.2"], [b"4.4"]])
+
+    parser.query_and_save(f4py.StringFilter("ID", operator.le, "A"), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("Filter by ID using string <= filter", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"]])
+
+    parser.query_and_save(f4py.StringFilter("ID", operator.lt, "A"), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("Filter by ID using string < filter", read_file_into_lists(out_file_path), [[b"FloatA"]])
 
     parser.query_and_save(f4py.IntRangeFilter("IntA", -100, 100), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("IntA within -100 and 100", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
@@ -150,21 +159,21 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
 
     fltr = f4py.AndFilter(
              f4py.OrFilter(
-               f4py.StringEqualsFilter("OrdinalA", "Med"),
-               f4py.StringEqualsFilter("OrdinalA", "High")
+               f4py.StringFilter("OrdinalA", operator.eq, "Med"),
+               f4py.StringFilter("OrdinalA", operator.eq, "High")
              ),
              f4py.OrFilter(
                f4py.OrFilter(
-                 f4py.StringEqualsFilter("IntB", "44"),
-                 f4py.StringEqualsFilter("IntB", "99")
+                 f4py.StringFilter("IntB", operator.eq, "44"),
+                 f4py.StringFilter("IntB", operator.eq, "99")
                ),
-               f4py.StringEqualsFilter("IntB", "77")
+               f4py.StringFilter("IntB", operator.eq, "77")
              )
            )
     #TODO: The following filter is just for debugging.
     or_1 = f4py.OrFilter(
-       f4py.StringEqualsFilter("OrdinalA", "Med"),
-       f4py.StringEqualsFilter("OrdinalA", "High")
+       f4py.StringFilter("OrdinalA", operator.eq, "Med"),
+       f4py.StringFilter("OrdinalA", operator.eq, "High")
      )
     or_2 = f4py.OrFilter(
                f4py.OrFilter(
@@ -180,10 +189,10 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     fltr = f4py.AndFilter(
              f4py.OrFilter(
                f4py.OrFilter(
-                 f4py.StringEqualsFilter("OrdinalA", "Low"),
-                 f4py.StringEqualsFilter("OrdinalA", "Med")
+                 f4py.StringFilter("OrdinalA", operator.eq, "Low"),
+                 f4py.StringFilter("OrdinalA", operator.eq, "Med")
                ),
-               f4py.StringEqualsFilter("OrdinalA", "High")
+               f4py.StringFilter("OrdinalA", operator.eq, "High")
              ),
              f4py.FloatFilter("FloatB", operator.le, 44.4)
            )
@@ -266,34 +275,16 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
         pass_test("Non-string column name in float filter.")
 
     try:
-        parser.query_and_save(EqualsFilter("CategoricalA", None), ["FloatA"], out_file_path, num_processes=num_processes)
+        parser.query_and_save(StringFilter("CategoricalA", operator.eq, None), ["FloatA"], out_file_path, num_processes=num_processes)
         fail_test("None value to equals filter.")
     except:
         pass_test("None value to equals filter.")
 
     try:
-        parser.query_and_save(EqualsFilter("CategoricalA", 1), ["FloatA"], out_file_path, num_processes=num_processes)
+        parser.query_and_save(StringFilter("CategoricalA", operator.eq, 1), ["FloatA"], out_file_path, num_processes=num_processes)
         fail_test("Non-string value to equals filter.")
     except:
         pass_test("Non-string value to equals filter.")
-
-    #try:
-    #    parser.query_and_save(InFilter("CategoricalA", []), ["FloatA"], out_file_path, num_processes=num_processes)
-    #    fail_test("Empty values list in In filter.")
-    #except:
-    #    pass_test("Empty values list in In filter.")
-
-    #try:
-    #    parser.query_and_save(InFilter("CategoricalA", [2, 3.3]), ["FloatA"], out_file_path, num_processes=num_processes)
-    #    fail_test("No string specified in In filter.")
-    #except:
-    #    pass_test("No string specified in In filter.")
-
-    #try:
-    #    parser.query_and_save(InFilter(2, ["A"]), ["FloatA"], out_file_path, num_processes=num_processes)
-    #    fail_test("Non-string column name in In filter.")
-    #except:
-    #    pass_test("Non-string column name in In filter.")
 
     try:
         parser.query_and_save(FloatFilter("FloatA", operator.eq, "2"), ["FloatA"], out_file_path, num_processes=num_processes)
@@ -313,13 +304,13 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     except:
         pass_test("Non-filter is passed as a filter.")
 
-    parser.query_and_save(f4py.StringEqualsFilter("ID", "A"), ["FloatA"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.StringFilter("ID", operator.eq, "A"), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("Filter ID = A", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"]])
-    parser.query_and_save(f4py.StringEqualsFilter("ID", "B"), ["FloatA"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.StringFilter("ID", operator.eq, "B"), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("Filter ID = B", read_file_into_lists(out_file_path), [[b"FloatA"], [b"2.2"]])
-    parser.query_and_save(f4py.StringEqualsFilter("ID", "D"), ["FloatA"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.StringFilter("ID", operator.eq, "D"), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("Filter ID = D", read_file_into_lists(out_file_path), [[b"FloatA"], [b"4.4"]])
-    parser.query_and_save(f4py.StringEqualsFilter("ID", "E"), ["FloatA"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.StringFilter("ID", operator.eq, "E"), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("Filter ID = E", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"]])
 
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.gt, 0.0), ["FloatA"], out_file_path, num_processes=num_processes)
@@ -374,20 +365,20 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     parser.query_and_save(f4py.FloatFilter("FloatA", operator.le, 100.0), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("Filter FloatA <= 100", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
 
-    parser.query_and_save(f4py.StringEqualsFilter("OrdinalA", "Low"), ["ID"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.StringFilter("OrdinalA", operator.eq, "Low"), ["ID"], out_file_path, num_processes=num_processes)
     check_results("Categorical filter OrdinalA = Low", read_file_into_lists(out_file_path), [[b"ID"], [b"E"], [b"A"]])
-    parser.query_and_save(f4py.StringEqualsFilter("OrdinalA", "Med"), ["ID"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.StringFilter("OrdinalA", operator.eq, "Med"), ["ID"], out_file_path, num_processes=num_processes)
     check_results("Categorical filter OrdinalA = Med", read_file_into_lists(out_file_path), [[b"ID"], [b"C"], [b"D"]])
-    parser.query_and_save(f4py.StringEqualsFilter("OrdinalA", "High"), ["ID"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.StringFilter("OrdinalA", operator.eq, "High"), ["ID"], out_file_path, num_processes=num_processes)
     check_results("Categorical filter OrdinalA = High", read_file_into_lists(out_file_path), [[b"ID"], [b"B"]])
 
     fltr = f4py.AndFilter(
              f4py.OrFilter(
                f4py.OrFilter(
-                 f4py.StringEqualsFilter("ID", "A"),
-                 f4py.StringEqualsFilter("ID", "B"),
+                 f4py.StringFilter("ID", operator.eq, "A"),
+                 f4py.StringFilter("ID", operator.eq, "B"),
                ),
-               f4py.StringEqualsFilter("ID", "C"),
+               f4py.StringFilter("ID", operator.eq, "C"),
              ),
              f4py.FloatFilter("FloatA", operator.ge, 2.0)
            )
@@ -446,13 +437,13 @@ def run_medium_tests(num_processes):
 def run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, medium_Numeric1, num_processes):
     parser = f4py.Parser(f4_file_path)
 
-    parser.query_and_save(f4py.StringEqualsFilter("ID", "Row1"), ["Discrete1"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.StringFilter("ID", operator.eq, "Row1"), ["Discrete1"], out_file_path, num_processes=num_processes)
     check_results("Filter ID = Row1", read_file_into_lists(out_file_path), [[b"Discrete1"],[b"MY"]])
-    parser.query_and_save(f4py.StringEqualsFilter("ID", "Row33"), ["Discrete1"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.StringFilter("ID", operator.eq, "Row33"), ["Discrete1"], out_file_path, num_processes=num_processes)
     check_results("Filter ID = Row33", read_file_into_lists(out_file_path), [[b"Discrete1"],[b"CV"]])
-    parser.query_and_save(f4py.StringEqualsFilter("ID", "Row91"), ["Discrete1"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.StringFilter("ID", operator.eq, "Row91"), ["Discrete1"], out_file_path, num_processes=num_processes)
     check_results("Filter ID = Row91", read_file_into_lists(out_file_path), [[b"Discrete1"],[b"AB"]])
-    parser.query_and_save(f4py.StringEqualsFilter("ID", "Row100"), ["Discrete1"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.StringFilter("ID", operator.eq, "Row100"), ["Discrete1"], out_file_path, num_processes=num_processes)
     check_results("Filter ID = Row100", read_file_into_lists(out_file_path), [[b"Discrete1"],[b"UG"]])
 
     parser.query_and_save(f4py.FloatRangeFilter("Numeric1", 0.0, 1.0), ["ID"], out_file_path, num_processes=num_processes)
@@ -474,17 +465,17 @@ def run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, 
     parser.query_and_save(f4py.FloatRangeFilter("Numeric1", float(medium_Numeric1[100][0].decode()), float(medium_Numeric1[100][0].decode())), ["ID"], out_file_path, num_processes=num_processes)
     check_results("Filter FloatWithin = row 100", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[100]])
 
-    parser.query_and_save(f4py.StringEqualsFilter("Discrete1", medium_Discrete1[1][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.StringFilter("Discrete1", operator.eq, medium_Discrete1[1][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
     check_results("Filter Discrete1 = row 1", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[1]])
-    parser.query_and_save(f4py.StringEqualsFilter("Discrete1", medium_Discrete1[2][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.StringFilter("Discrete1", operator.eq, medium_Discrete1[2][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
     check_results("Filter Discrete1 = row 2", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[2]])
-    parser.query_and_save(f4py.StringEqualsFilter("Discrete1", medium_Discrete1[3][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.StringFilter("Discrete1", operator.eq, medium_Discrete1[3][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
     check_results("Filter Discrete1 = row 3", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[3]])
-    parser.query_and_save(f4py.StringEqualsFilter("Discrete1", medium_Discrete1[98][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.StringFilter("Discrete1", operator.eq, medium_Discrete1[98][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
     check_results("Filter Discrete1 = row 98", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[98]])
-    parser.query_and_save(f4py.StringEqualsFilter("Discrete1", medium_Discrete1[99][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.StringFilter("Discrete1", operator.eq, medium_Discrete1[99][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
     check_results("Filter Discrete1 = row 99", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[99]])
-    parser.query_and_save(f4py.StringEqualsFilter("Discrete1", medium_Discrete1[100][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
+    parser.query_and_save(f4py.StringFilter("Discrete1", operator.eq, medium_Discrete1[100][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
     check_results("Filter Discrete1 = row 100", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[100]])
 
 # Basic small tests

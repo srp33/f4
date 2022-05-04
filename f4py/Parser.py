@@ -58,8 +58,8 @@ class Parser:
         if not fltr:
             raise Exception("A filter must be specified.")
 
-        if not isinstance(fltr, f4py.BaseFilter):
-            raise Exception("An object that inherits from BaseFilter must be specified.")
+        if not isinstance(fltr, f4py.NoFilter):
+            raise Exception("An object that inherits from NoFilter must be specified.")
 
         if out_file_type != "tsv":
             raise Exception("The only out_file_type currently supported is tsv.")
@@ -169,7 +169,7 @@ class Parser:
             raise Exception(f"A column with the name {column_name} does not exist.")
 
     def get_column_index_from_name(self, column_name):
-        position = list(f4py.IdentifierIndexer().filter(f"{self.data_file_path}.cn", f4py.StringEqualsFilter("NotNeeded", column_name), self.get_num_cols()))
+        position = list(f4py.IdentifierIndexer().filter(f"{self.data_file_path}.cn", column_name.encode(), self.get_num_cols()))
 
         if len(position) == 0:
             raise Exception(f"Could not retrieve index because column named {column_name} was not found.")

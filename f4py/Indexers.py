@@ -3,8 +3,10 @@ import fastnumbers
 from operator import itemgetter
 import pynumparser
 
-class BaseIndexer():
+#class BaseIndexer():
+class StringIndexer():
     def build(self, index_file_path, values_positions):
+        #TODO: Does this speed things up at all?
         conversion_function = self._get_conversion_function()
 
         for i in range(len(values_positions)):
@@ -31,63 +33,67 @@ class BaseIndexer():
         f4py.Builder()._save_meta_files(index_file_path, [values_max_length, positions_max_length], rows_max_length + 1)
 
     def _get_conversion_function(self):
+        #return f4py.do_nothing
+        return f4py.decode_string
+
+#    def filter(self, index_file_path, fltr, end_index, num_processes=1):
+#        raise Exception("This function must be implemented by classes that inherit this class.")
+
+#class CategoricalIndexer(BaseIndexer):
+#    def build(self, index_file_path, values_positions):
+#        value_dict = {}
+#        unique_values = set([x[0] for x in values_positions])
+#        for value in unique_values:
+#            value_dict[value] = []
+#
+#        for i in range(len(values_positions)):
+#            value = values_positions[i][0]
+#            row_index = values_positions[i][1]
+#            value_dict[value].append(row_index)
+#
+#        index_string = b""
+#        for value, row_indices in value_dict.items():
+#            row_indices_string = pynumparser.NumberSequence(int).encode(row_indices)
+#            index_string += (f"{value.decode()}\t{row_indices_string}\n").encode()
+#
+#        f4py.write_str_to_file(index_file_path, "", index_string)
+#
+#    def filter(self, index_file_path, fltr, end_index, num_processes=1):
+#        with f4py.open_read_file(index_file_path, file_extension="") as index_file:
+#            row_indices = set()
+#
+#            while True:
+#                line_items = index_file.readline().rstrip(b"\n").split(b"\t")
+#
+#                if len(line_items) < 2:
+#                    break
+#
+#                if fltr.passes(line_items[0].rstrip()):
+#                    row_indices = row_indices | set(pynumparser.NumberSequence(int).parse(line_items[1].decode()))
+#
+#            return row_indices
+#
+#    def double_filter(self, index_file_path, filter1, filter2, end_index, num_processes=1):
+#        with f4py.open_read_file(index_file_path, file_extension="") as index_file:
+#            row_indices = set()
+#
+#            while True:
+#                line_items = index_file.readline().rstrip(b"\n").split(b"\t")
+#
+#                if len(line_items) < 2:
+#                    break
+#
+#                value = line_items[0].rstrip()
+#                if filter1.passes(value) and filter2.passes(value):
+#                    row_indices = row_indices | set(pynumparser.NumberSequence(int).parse(line_items[1].decode()))
+#
+#            return row_indices
+
+class IdentifierIndexer(StringIndexer):
+    def _get_conversion_function(self):
         return f4py.do_nothing
 
-    def filter(self, index_file_path, fltr, end_index, num_processes=1):
-        raise Exception("This function must be implemented by classes that inherit this class.")
-
-class CategoricalIndexer(BaseIndexer):
-    def build(self, index_file_path, values_positions):
-        value_dict = {}
-        unique_values = set([x[0] for x in values_positions])
-        for value in unique_values:
-            value_dict[value] = []
-
-        for i in range(len(values_positions)):
-            value = values_positions[i][0]
-            row_index = values_positions[i][1]
-            value_dict[value].append(row_index)
-
-        index_string = b""
-        for value, row_indices in value_dict.items():
-            row_indices_string = pynumparser.NumberSequence(int).encode(row_indices)
-            index_string += (f"{value.decode()}\t{row_indices_string}\n").encode()
-
-        f4py.write_str_to_file(index_file_path, "", index_string)
-
-    def filter(self, index_file_path, fltr, end_index, num_processes=1):
-        with f4py.open_read_file(index_file_path, file_extension="") as index_file:
-            row_indices = set()
-
-            while True:
-                line_items = index_file.readline().rstrip(b"\n").split(b"\t")
-
-                if len(line_items) < 2:
-                    break
-
-                if fltr.passes(line_items[0].rstrip()):
-                    row_indices = row_indices | set(pynumparser.NumberSequence(int).parse(line_items[1].decode()))
-
-            return row_indices
-
-    def double_filter(self, index_file_path, filter1, filter2, end_index, num_processes=1):
-        with f4py.open_read_file(index_file_path, file_extension="") as index_file:
-            row_indices = set()
-
-            while True:
-                line_items = index_file.readline().rstrip(b"\n").split(b"\t")
-
-                if len(line_items) < 2:
-                    break
-
-                value = line_items[0].rstrip()
-                if filter1.passes(value) and filter2.passes(value):
-                    row_indices = row_indices | set(pynumparser.NumberSequence(int).parse(line_items[1].decode()))
-
-            return row_indices
-
-class IdentifierIndexer(BaseIndexer):
-    def filter(self, index_file_path, fltr, end_index, num_processes=1):
+    def filter(self, index_file_path, query_value, end_index, num_processes=1):
         if end_index == 0:
             return set()
 
@@ -97,7 +103,7 @@ class IdentifierIndexer(BaseIndexer):
             value_coords = index_parser._parse_data_coords([0])[0]
             position_coords = index_parser._parse_data_coords([1])[0]
 
-            matching_position = f4py.IndexHelper._binary_index_search(index_parser, line_length, value_coords, data_file_handle, fltr.value, 0, end_index)
+            matching_position = f4py.IndexHelper._binary_identifier_search(index_parser, line_length, value_coords, data_file_handle, query_value, 0, end_index)
 
             if matching_position == -1:
                 return set()
@@ -106,11 +112,13 @@ class IdentifierIndexer(BaseIndexer):
 
             return set([matching_row_index])
 
-class FloatIndexer(BaseIndexer):
+#class FloatIndexer(BaseIndexer):
+class FloatIndexer(StringIndexer):
     def _get_conversion_function(self):
         return fastnumbers.fast_float
 
-class IntIndexer(FloatIndexer):
+#class IntIndexer(BaseIndexer):
+class IntIndexer(StringIndexer):
     def _get_conversion_function(self):
         return fastnumbers.fast_int
 

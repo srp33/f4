@@ -96,24 +96,23 @@ class IndexHelper:
     def _get_index_parser(index_file_path):
         return f4py.Parser(index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
 
-    def _get_identifier_row_index(index_file_path, query_value, end_index, num_processes=1):
+    def _get_identifier_row_index(index_parser, query_value, end_index, num_processes=1):
         if end_index == 0:
             return -1
 
-        with f4py.Parser(index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"]) as index_parser:
-            line_length = index_parser.get_stat(".ll")
-            data_file_handle = index_parser.get_file_handle("")
-            value_coords = index_parser._parse_data_coords([0])[0]
-            position_coords = index_parser._parse_data_coords([1])[0]
+        line_length = index_parser.get_stat(".ll")
+        data_file_handle = index_parser.get_file_handle("")
+        value_coords = index_parser._parse_data_coords([0])[0]
+        position_coords = index_parser._parse_data_coords([1])[0]
 
-            matching_position = IndexHelper._binary_identifier_search(index_parser, line_length, value_coords, data_file_handle, query_value, 0, end_index)
+        matching_position = IndexHelper._binary_identifier_search(index_parser, line_length, value_coords, data_file_handle, query_value, 0, end_index)
 
-            if matching_position == -1:
-                return -1
+        if matching_position == -1:
+            return -1
 
-            matching_row_index = fastnumbers.fast_int(index_parser._parse_row_value(matching_position, position_coords, line_length, data_file_handle))
+        matching_row_index = fastnumbers.fast_int(index_parser._parse_row_value(matching_position, position_coords, line_length, data_file_handle))
 
-            return matching_row_index
+        return matching_row_index
 
     # Searches for a single matching value.
     def _binary_identifier_search(parser, line_length, value_coords, data_file_handle, value_to_find, l, r):

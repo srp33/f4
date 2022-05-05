@@ -78,12 +78,6 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     check_result("Parser properties", "Number of rows", parser.get_num_rows(), 5)
     check_result("Parser properties", "Number of columns", parser.get_num_cols(), 9)
 
-    check_result("Column index", "ID column", parser.get_column_index_from_name("ID"), 0)
-    check_result("Column index", "CategoricalA column", parser.get_column_index_from_name("CategoricalA"), 7)
-    check_result("Column index", "CategoricalB column", parser.get_column_index_from_name("CategoricalB"), 8)
-    check_result("Column index", "OrdinalA column", parser.get_column_index_from_name("OrdinalA"), 3)
-    check_result("Column index", "OrdinalB column", parser.get_column_index_from_name("OrdinalB"), 4)
-
     check_result("Column types", "ID column", parser.get_column_type_from_name("ID"), "s")
     check_result("Column types", "FloatA column", parser.get_column_type_from_name("FloatA"), "f")
     check_result("Column types", "FloatB column", parser.get_column_type_from_name("FloatB"), "f")

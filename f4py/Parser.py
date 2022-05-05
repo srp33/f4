@@ -82,7 +82,6 @@ class Parser:
 #            sub_filters = fltr.get_sub_filters()
 
 #            if num_processes == 1 or len(sub_filters) == 1:
-            #index_parser = f4py.Parser(self.index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"]) as index_parser:
             keep_row_indices = sorted(fltr.filter_indexed_column_values(self.data_file_path, self.compression_level, self.get_num_rows(), num_processes))
 #            else:
 #                fltr_results_dict = {}
@@ -150,26 +149,14 @@ class Parser:
         return next(self.__parse_data_values(column_index, 2, [[0, 1]], self.__file_handles[".ct"])).decode()
 
     def get_column_type_from_name(self, column_name):
-        """
-        Find the type of a specified column.
-
-        Args:
-            column_name (str): Name of the column.
-        Returns:
-            A character indicating the data type for the specified column.
-            The character will be one of the following:
-                * c (categorical)
-                * f (float)
-                * i (integer)
-        """
-
         try:
-            return self.get_column_type(self.get_column_index_from_name(column_name))
+            with f4py.IndexHelper._get_index_parser(f"{self.data_file_path}.cn") as index_parser:
+                return self.get_column_type(self._get_column_index_from_name(index_parser, column_name))
         except:
             raise Exception(f"A column with the name {column_name} does not exist.")
 
-    def get_column_index_from_name(self, column_name):
-        position = f4py.IndexHelper._get_identifier_row_index(f"{self.data_file_path}.cn", column_name.encode(), self.get_num_cols(), num_processes=1)
+    def _get_column_index_from_name(self, index_parser, column_name):
+        position = f4py.IndexHelper._get_identifier_row_index(index_parser, column_name.encode(), self.get_num_cols(), num_processes=1)
 
         if position < 0:
             raise Exception(f"Could not retrieve index because column named {column_name} was not found.")
@@ -212,7 +199,11 @@ class Parser:
                 column_index_dict = {name: index for index, name in enumerate(select_columns)}
         else:
             select_columns = [x.encode() for x in select_columns]
-            column_index_dict = {name: self.get_column_index_from_name(name.decode()) for name in fltr.get_column_name_set() | set(select_columns)}
+
+            column_names_file_path = f"{self.data_file_path}.cn"
+
+            with f4py.IndexHelper._get_index_parser(column_names_file_path) as index_parser:
+                column_index_dict = {name: self._get_column_index_from_name(index_parser, name.decode()) for name in fltr.get_column_name_set() | set(select_columns)}
 
         type_columns = fltr.get_column_name_set() | set(select_columns)
         filter_column_type_dict = {}

@@ -169,12 +169,12 @@ class Parser:
             raise Exception(f"A column with the name {column_name} does not exist.")
 
     def get_column_index_from_name(self, column_name):
-        position = list(f4py.IdentifierIndexer().filter(f"{self.data_file_path}.cn", column_name.encode(), self.get_num_cols()))
+        position = f4py.IndexHelper._get_identifier_row_index(f"{self.data_file_path}.cn", column_name.encode(), self.get_num_cols(), num_processes=1)
 
-        if len(position) == 0:
+        if position < 0:
             raise Exception(f"Could not retrieve index because column named {column_name} was not found.")
 
-        return position[0]
+        return position
 
     def get_file_handle(self, ext):
         return self.__file_handles[ext]

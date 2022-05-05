@@ -22,14 +22,16 @@ class NoFilter:
 
 class __SimpleBaseFilter(NoFilter):
     def __init__(self, column_name, value):
-        if not column_name or column_name == "":
-            raise Exception("An empty value is not supported for the column_name argument.")
-
-        if type(column_name) != str:
-            raise Exception("The column name must be a string.")
-
+        self.check_argument(column_name, "column_name", str)
         self.column_name = column_name.encode()
         self.value = value
+
+    def check_argument(self, x, argument_name, expected_value_type):
+        if x == None:
+            raise Exception(f"A value of None was specified for the {argument_name} argument of the {type(self).__name__} class.")
+
+        if type(x) != expected_value_type:
+            raise Exception(f"A variable of {expected_value_type.__name__} type is required for the {argument_name} argument of the {type(self).__name__} class, but the type was {type(x).__name__}.")
 
     def get_column_name_set(self):
         return set([self.column_name])
@@ -55,39 +57,36 @@ class __SimpleBaseFilter(NoFilter):
 #        return f"{type(self).__name__}____{self.column_name.decode()}____{self.value}"
 
 class __OperatorFilter(__SimpleBaseFilter):
-    def __init__(self, column_name, operator, value):
+    def __init__(self, column_name, oper, value):
         super().__init__(column_name, value)
 
-        self.operator = operator
+        self.oper = oper
 
     def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes):
         index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.column_name.decode())
 
         return f4py.IndexHelper._filter_using_operator(index_file_path, compression_level, self, end_index, num_processes)
 
+    def check_column_types(self, column_index_dict, column_type_dict, expected_column_type, expected_column_type_description):
+        if column_type_dict[column_index_dict[self.column_name]] != expected_column_type:
+            raise Exception(f"A {type(self).__name__} may only be used with {expected_column_type_description} columns, and {self.column_name.decode()} is not a {expected_column_type_description}.")
+
     def passes(self, value):
-        return self.operator(self.get_conversion_function()(value), self.value)
+        return self.oper(self.get_conversion_function()(value), self.value)
 
 class StringFilter(__OperatorFilter):
-    #TODO: Refactor this to one of the super classes or to Utilities.
-    def __init__(self, column_name, operator, value):
-        if not value or type(value) != str:
-            raise Exception("The value argument must be a string.")
+    def __init__(self, column_name, oper, value):
+        self.check_argument(value, "value", str)
+        super().__init__(column_name, oper, value.encode())
 
-        super().__init__(column_name, operator, value.encode())
-
-    #TODO: Refactor this to one of the super classes or to Utilities.
     def check_types(self, column_index_dict, column_type_dict):
         if column_type_dict[column_index_dict[self.column_name]] != "s":
-            raise Exception(f"A float filter may only be used with string columns, but {self.column_name.decode()} is not a string.")
+            raise Exception(f"A StringFilter may only be used with string columns, and {self.column_name.decode()} is not a string.")
 
 class FloatFilter(__OperatorFilter):
-    def __init__(self, column_name, oper, query_value):
-        q_type = type(query_value)
-        if q_type != float:
-            raise Exception("The query_value value must be a float.")
-
-        super().__init__(column_name, oper, query_value)
+    def __init__(self, column_name, oper, value):
+        self.check_argument(value, "value", float)
+        super().__init__(column_name, oper, value)
 
     def check_types(self, column_index_dict, column_type_dict):
         if column_type_dict[column_index_dict[self.column_name]] != "f":
@@ -97,12 +96,9 @@ class FloatFilter(__OperatorFilter):
         return fastnumbers.fast_float
 
 class IntFilter(__OperatorFilter):
-    def __init__(self, column_name, oper, query_value):
-        q_type = type(query_value)
-        if q_type != int:
-            raise Exception("The query_value value must be an integer.")
-
-        super().__init__(column_name, oper, query_value)
+    def __init__(self, column_name, oper, value):
+        self.check_argument(value, "value", int)
+        super().__init__(column_name, oper, value)
 
     def check_types(self, column_index_dict, column_type_dict):
         if column_type_dict[column_index_dict[self.column_name]] != "i":
@@ -112,11 +108,8 @@ class IntFilter(__OperatorFilter):
         return fastnumbers.fast_int
 
 class __NonOperatorStringFilter(__SimpleBaseFilter):
-    #TODO: Refactor this to one of the super classes or to Utilities.
     def __init__(self, column_name, value):
-        if not value or type(value) != str:
-            raise Exception("The value argument must be a string.")
-
+        self.check_argument(value, "value", str)
         super().__init__(column_name, value.encode())
 
     def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes):
@@ -267,6 +260,12 @@ class OrFilter(__CompositeFilter):
 #        return row_indices_1 | row_indices_2
 
 class __RangeFilter(__CompositeFilter):
+    def __init__(self, filter1, filter2):
+        super().__init__(filter1, filter2)
+
+        if filter1.value > filter2.value:
+            raise Exception("The lower_bound_value must be less than or equal to the upper_bound_value.")
+
     def filter_column_values(self, data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict):
         return AndFilter(self.filter1, self.filter2).filter_column_values(data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict)
 
@@ -281,15 +280,7 @@ class __RangeFilter(__CompositeFilter):
         return fastnumbers.fast_int
 
 class FloatRangeFilter(__RangeFilter):
-    #TODO: Refactor?
     def __init__(self, column_name, lower_bound_value, upper_bound_value):
-        if type(lower_bound_value) != float:
-            raise Exception("The lower_bound_value must be a float.")
-        if type(upper_bound_value) != float:
-            raise Exception("The upper_bound_value must be a float.")
-        if lower_bound_value > upper_bound_value:
-            raise Exception("The lower_bound_value must be less than or equal to the upper_bound_value.")
-
         filter1 = FloatFilter(column_name, operator.ge, lower_bound_value)
         filter2 = FloatFilter(column_name, operator.le, upper_bound_value)
 
@@ -299,15 +290,7 @@ class FloatRangeFilter(__RangeFilter):
         return fastnumbers.fast_float
 
 class IntRangeFilter(__RangeFilter):
-    #TODO: Refactor?
     def __init__(self, column_name, lower_bound_value, upper_bound_value):
-        if type(lower_bound_value) != int:
-            raise Exception("The lower_bound_value must be a int.")
-        if type(upper_bound_value) != int:
-            raise Exception("The upper_bound_value must be a int.")
-        if lower_bound_value > upper_bound_value:
-            raise Exception("The lower_bound_value must be less than or equal to the upper_bound_value.")
-
         filter1 = IntFilter(column_name, operator.ge, lower_bound_value)
         filter2 = IntFilter(column_name, operator.le, upper_bound_value)
 
@@ -317,33 +300,11 @@ class IntRangeFilter(__RangeFilter):
         return fastnumbers.fast_int
 
 class StringRangeFilter(__RangeFilter):
-    #TODO: Refactor?
     def __init__(self, column_name, lower_bound_value, upper_bound_value):
-        if type(lower_bound_value) != str:
-            raise Exception("The lower_bound_value must be a string.")
-        if type(upper_bound_value) != str:
-            raise Exception("The upper_bound_value must be a string.")
-        if lower_bound_value > upper_bound_value:
-            raise Exception("The lower_bound_value must be less than or equal to the upper_bound_value.")
-
-#        filter1 = StringGreaterThanOrEqualsFilter(column_name, lower_bound_value)
-#        filter2 = StringLessThanOrEqualsFilter(column_name, upper_bound_value)
-#
-#        super().__init__(filter1, filter2)
-
         filter1 = StringFilter(column_name, operator.ge, lower_bound_value)
         filter2 = StringFilter(column_name, operator.le, upper_bound_value)
 
         super().__init__(filter1, filter2)
-
-#    def filter_indexed_column_values(self, data_file_path, compression_level, column_index_dict, column_type_dict, column_coords_dict, end_index, num_processes):
-#        index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.filter1.column_name.decode())
-#        index_column_type = column_type_dict[column_index_dict[self.filter1.column_name]]
-#
-#        if index_column_type == "u":
-#            return f4py.IdentifierIndexer().filter(index_file_path, self, end_index, num_processes)
-#        else:
-#            return f4py.CategoricalIndexer().double_filter(index_file_path, self.filter1, self.filter2, end_index, num_processes)
 
 #class FunnelFilter(__CompositeFilter):
 #    pass

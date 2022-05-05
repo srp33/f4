@@ -2,7 +2,7 @@ import f4py
 import fastnumbers
 from itertools import chain
 from joblib import Parallel, delayed
-import math #TODO: keep?
+import math
 import operator
 
 class IndexHelper:
@@ -34,17 +34,11 @@ class IndexHelper:
 
             f4py.print_message(f"Building index file for {index_column} index for {f4_file_path}.", verbose)
             if index_column_type == "s":
-                #f4py.CategoricalIndexer().build(index_file_path, values_positions)
-                f4py.StringIndexer().build(index_file_path, values_positions)
+                f4py.StringIndexBuilder().build(index_file_path, values_positions)
             elif index_column_type == "f":
-                f4py.FloatIndexer().build(index_file_path, values_positions)
-            #elif index_column_type == "i":
+                f4py.FloatIndexBuilder().build(index_file_path, values_positions)
             else:
-                f4py.IntIndexer().build(index_file_path, values_positions)
-            #else: # u
-            #    for i in range(len(values_positions)):
-            #        values_positions[i][0] = values_positions[i][0].decode()
-            #    f4py.IdentifierIndexer().build(index_file_path, values_positions)
+                f4py.IntIndexBuilder().build(index_file_path, values_positions)
 
         f4py.print_message(f"Done building index file for {index_column} index for {f4_file_path}.", verbose)
 
@@ -86,7 +80,7 @@ class IndexHelper:
 
             f4py.print_message(f"Building funnel index file for {index_name} and {f4_file_path}.", verbose)
             if index_column_1_type == "s" and index_column_2_type == "i":
-                f4py.FunnelIndexer(index_file_path, compression_level).build(values_positions)
+                f4py.FunnelIndexBuilder(index_file_path, compression_level).build(values_positions)
             else:
                 raise Exception("Funnel indices are currently only supported for string + numeric columns.")
 
@@ -101,6 +95,25 @@ class IndexHelper:
 
     def _get_index_parser(index_file_path):
         return f4py.Parser(index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
+
+    def _get_identifier_row_index(index_file_path, query_value, end_index, num_processes=1):
+        if end_index == 0:
+            return -1
+
+        with f4py.Parser(index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"]) as index_parser:
+            line_length = index_parser.get_stat(".ll")
+            data_file_handle = index_parser.get_file_handle("")
+            value_coords = index_parser._parse_data_coords([0])[0]
+            position_coords = index_parser._parse_data_coords([1])[0]
+
+            matching_position = IndexHelper._binary_identifier_search(index_parser, line_length, value_coords, data_file_handle, query_value, 0, end_index)
+
+            if matching_position == -1:
+                return -1
+
+            matching_row_index = fastnumbers.fast_int(index_parser._parse_row_value(matching_position, position_coords, line_length, data_file_handle))
+
+            return matching_row_index
 
     # Searches for a single matching value.
     def _binary_identifier_search(parser, line_length, value_coords, data_file_handle, value_to_find, l, r):
@@ -128,10 +141,10 @@ class IndexHelper:
             coords = index_parser._parse_data_coords([0, 1])
             file_handle = index_parser.get_file_handle("")
 
-            if fltr.operator == operator.eq:
+            if fltr.oper == operator.eq:
                 return IndexHelper._find_row_indices_for_range(index_parser, compression_level, coords[0], coords[1], fltr.value, fltr.value, fltr.get_conversion_function(), end_index, num_processes)
             else:
-                if fltr.operator == operator.ne:
+                if fltr.oper == operator.ne:
                     lower_position, upper_position = IndexHelper._find_bounds_for_range(index_parser, compression_level, coords[0], fltr.value, fltr.value, fltr.get_conversion_function(), end_index, num_processes)
 
                     lower_positions = (0, lower_position)
@@ -142,14 +155,14 @@ class IndexHelper:
 
                     return lower_row_indices | upper_row_indices
                 else:
-                    if fltr.operator == operator.gt:
-                        positions = IndexHelper._find_positions_g(index_parser, line_length, coords[0], file_handle, fltr.value, end_index, fltr.operator, operator.le, fltr.get_conversion_function())
-                    elif fltr.operator == operator.ge:
-                        positions = IndexHelper._find_positions_g(index_parser, line_length, coords[0], file_handle, fltr.value, end_index, fltr.operator, operator.lt, fltr.get_conversion_function())
-                    elif fltr.operator == operator.lt:
-                        positions = IndexHelper._find_positions_l(index_parser, line_length, coords[0], file_handle, fltr.value, end_index, fltr.operator, operator.ge, fltr.get_conversion_function())
-                    elif fltr.operator == operator.le:
-                        positions = IndexHelper._find_positions_l(index_parser, line_length, coords[0], file_handle, fltr.value, end_index, fltr.operator, operator.gt, fltr.get_conversion_function())
+                    if fltr.oper == operator.gt:
+                        positions = IndexHelper._find_positions_g(index_parser, line_length, coords[0], file_handle, fltr.value, end_index, fltr.oper, operator.le, fltr.get_conversion_function())
+                    elif fltr.oper == operator.ge:
+                        positions = IndexHelper._find_positions_g(index_parser, line_length, coords[0], file_handle, fltr.value, end_index, fltr.oper, operator.lt, fltr.get_conversion_function())
+                    elif fltr.oper == operator.lt:
+                        positions = IndexHelper._find_positions_l(index_parser, line_length, coords[0], file_handle, fltr.value, end_index, fltr.oper, operator.ge, fltr.get_conversion_function())
+                    elif fltr.oper == operator.le:
+                        positions = IndexHelper._find_positions_l(index_parser, line_length, coords[0], file_handle, fltr.value, end_index, fltr.oper, operator.gt, fltr.get_conversion_function())
 
                     return IndexHelper._retrieve_matching_row_indices(index_parser, coords[1], positions, num_processes)
 

@@ -1,17 +1,8 @@
-Rework/remove CategoricalIndexer.
-  Test speed and look at index file size on large files after these changes.
-  Remove/comment binary_search function and IdentifierIndexer.
-  Move IndexIdentifier.filter logic to IndexHelper.
-
-Remove column_coords_dict (and possibly column_type_dict and column_index_dict) from filter_indexed_column_values function signature?
-Change f4_file_path to data_file_path everywhere for consistency.
-Modify Builder._convert_delimited_file_in_chunks so that it only uses one thread of num_processes = 1.
+Why is it much slower on wide files than test files when indexing is used?
+  FunnelFilter might address this, but first troubleshoot to see where the slowness is.
 
 By nature, StartsWithFilter and EndsWithFilter are slow (indexing doesn't help much).
   Add a custom indexing process for these filters?
-Add some tests on better indexed columns with the "large" files to show how fast it is.
-
-Change Indexers to IndexBuilder?
 
 Implement composite ("sequential", "covering") index that supports multiple columns.
   Implement FunnelFilter.
@@ -20,6 +11,8 @@ Implement composite ("sequential", "covering") index that supports multiple colu
     Ideally would be generic so that StringRangeFilter and IntRangeFilter can be passed to it.
   In IndexHelper, allow user to specify a list of column names
     for an index rather than having to explicitly invoke save_funnel_index.
+
+
 
 
 CADD files:

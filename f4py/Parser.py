@@ -83,7 +83,7 @@ class Parser:
 
 #            if num_processes == 1 or len(sub_filters) == 1:
             #index_parser = f4py.Parser(self.index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"]) as index_parser:
-            keep_row_indices = sorted(fltr.filter_indexed_column_values(self.data_file_path, self.compression_level, column_index_dict, column_type_dict, column_coords_dict, self.get_num_rows(), num_processes))
+            keep_row_indices = sorted(fltr.filter_indexed_column_values(self.data_file_path, self.compression_level, self.get_num_rows(), num_processes))
 #            else:
 #                fltr_results_dict = {}
 

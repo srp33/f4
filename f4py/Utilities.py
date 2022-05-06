@@ -1,6 +1,7 @@
 import datetime
 import fastnumbers
 import mmap
+from operator import itemgetter
 
 def open_read_file(file_path, file_extension=""):
     the_file = open(file_path + file_extension, 'rb')
@@ -54,3 +55,6 @@ def decode_string(x):
 
 def do_nothing(x):
      return(x)
+
+def sort_first_column(list_of_lists):
+    list_of_lists.sort(key=itemgetter(0))

@@ -9,14 +9,13 @@ Implement composite ("sequential", "covering") index that supports multiple colu
   In IndexHelper, allow user to specify a list of column names
     for an index rather than having to explicitly invoke save_funnel_index.
 
+Develop compression scheme for string columns.
+
+Modify column names to be private except a few.
 
 
 
 CADD files:
-  Develop compression scheme for columns that have relatively few distinct values.
-    Modify the way categorical indices are stored.
-      Put all values on the first line.
-      Each subsequent line has the row indices.
   Rebuild these files.
   Parse
   Compare against tabix. We can also compare it in terms of size.

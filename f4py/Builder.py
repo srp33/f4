@@ -106,7 +106,7 @@ class Builder:
             # Build an index of the column names and save this to a file.
             sorted_column_names = sorted(column_names)
             values_positions = [[x.decode(), column_name_index_dict[x]] for x in sorted_column_names]
-            f4py.OneColumnIndexBuilder().build(f"{f4_file_path}.cn", values_positions, f4py.do_nothing)
+            f4py.IndexHelper._build_index(f"{f4_file_path}.cn", values_positions, [f4py.do_nothing], f4py.sort_first_column)
 
             if column_types:
                 # Build a map of the column types and save this to a file.

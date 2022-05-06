@@ -34,11 +34,11 @@ class IndexHelper:
 
             f4py.print_message(f"Building index file for {index_column} index for {f4_file_path}.", verbose)
             if index_column_type == "s":
-                f4py.OneColumnIndexBuilder().build(index_file_path, values_positions, f4py.decode_string)
+                IndexHelper._build_index(index_file_path, values_positions, [f4py.decode_string], f4py.sort_first_column)
             elif index_column_type == "f":
-                f4py.OneColumnIndexBuilder().build(index_file_path, values_positions, fastnumbers.fast_float)
+                IndexHelper._build_index(index_file_path, values_positions, [fastnumbers.fast_float], f4py.sort_first_column)
             else:
-                f4py.OneColumnIndexBuilder().build(index_file_path, values_positions, fastnumbers.fast_int)
+                IndexHelper._build_index(index_file_path, values_positions, [fastnumbers.fast_int], f4py.sort_first_column)
 
         f4py.print_message(f"Done building index file for {index_column} index for {f4_file_path}.", verbose)
 
@@ -46,45 +46,74 @@ class IndexHelper:
         for index_column in index_columns:
             IndexHelper.save_index(f4_file_path, index_column, compression_level=compression_level, verbose=verbose)
 
-    def save_funnel_index(f4_file_path, index_column_1, index_column_2, compression_level=None, verbose=False):
-        #TODO: Make sure index_column_1 and index_column_2 are valid.
+#    def save_funnel_index(f4_file_path, index_column_1, index_column_2, compression_level=None, verbose=False):
+#        #TODO: Make sure index_column_1 and index_column_2 are valid.
+#
+#        index_name = IndexHelper._get_index_name([index_column_1, index_column_2])
+#
+#        f4py.print_message(f"Saving index for {index_name} funnel index and {f4_file_path}.", verbose)
+#
+#        num_rows = f4py.read_int_from_file(f4_file_path, ".nrow")
+#
+#        with f4py.Parser(f4_file_path) as parser:
+#            # Get information about index columns.
+#            f4py.print_message(f"Getting column meta information for {index_name} funnel index and {f4_file_path}.", verbose)
+#            ignore, column_index_dict, column_type_dict, column_coords_dict = parser._get_column_meta(f4py.NoFilter(), [index_column_1, index_column_2])
+#
+#            data_file_handle = parser.get_file_handle("")
+#            line_length = parser.get_stat(".ll")
+#
+#            index_column_1_type = column_type_dict[column_index_dict[index_column_1.encode()]]
+#            index_column_2_type = column_type_dict[column_index_dict[index_column_2.encode()]]
+#            coords_1 = column_coords_dict[column_index_dict[index_column_1.encode()]]
+#            coords_2 = column_coords_dict[column_index_dict[index_column_2.encode()]]
+#
+#            values_positions = []
+#            f4py.print_message(f"Parsing values and positions for {index_name} funnel index and {f4_file_path}.", verbose)
+#            for row_index in range(parser.get_num_rows()):
+#                value_1 = parser._parse_row_value(row_index, coords_1, line_length, data_file_handle)
+#                value_2 = parser._parse_row_value(row_index, coords_2, line_length, data_file_handle)
+#                values_positions.append([value_1, value_2, row_index])
+#
+#            # This needs to be a combined file path.
+#            index_file_path = IndexHelper._get_index_file_path(parser.data_file_path, index_name)
+#
+#            f4py.print_message(f"Building funnel index file for {index_name} and {f4_file_path}.", verbose)
+#            if index_column_1_type == "s" and index_column_2_type == "i":
+#                f4py.FunnelIndexBuilder(index_file_path, compression_level).build(values_positions)
+#            else:
+#                raise Exception("Funnel indices are currently only supported for string + numeric columns.")
+#
+#        f4py.print_message(f"Done building funnel index file for {index_name} and {f4_file_path}.", verbose)
 
-        index_name = IndexHelper._get_index_name([index_column_1, index_column_2])
+    def _build_index(index_file_path, values_positions, conversion_functions, sort_function):
+        # Iterate through each "row" in the data.
+        for i in range(len(values_positions)):
+            # Iterate through each "column" except the last one (which has row_indices) and convert the data.
+            for j in range(len(conversion_functions)):
+                values_positions[i][j] = conversion_functions[j](values_positions[i][j])
 
-        f4py.print_message(f"Saving index for {index_name} funnel index and {f4_file_path}.", verbose)
+        # Sort the rows.
+        sort_function(values_positions)
 
-        num_rows = f4py.read_int_from_file(f4_file_path, ".nrow")
+        values = [str(x[0]).encode() for x in values_positions]
+        positions = [str(x[1]).encode() for x in values_positions]
 
-        with f4py.Parser(f4_file_path) as parser:
-            # Get information about index columns.
-            f4py.print_message(f"Getting column meta information for {index_name} funnel index and {f4_file_path}.", verbose)
-            ignore, column_index_dict, column_type_dict, column_coords_dict = parser._get_column_meta(f4py.NoFilter(), [index_column_1, index_column_2])
+        values_max_length = f4py.get_max_string_length(values)
+        positions_max_length = f4py.get_max_string_length(positions)
 
-            data_file_handle = parser.get_file_handle("")
-            line_length = parser.get_stat(".ll")
+        values_fixed_width = f4py.format_column_items(values, values_max_length)
+        positions_fixed_width = f4py.format_column_items(positions, positions_max_length)
 
-            index_column_1_type = column_type_dict[column_index_dict[index_column_1.encode()]]
-            index_column_2_type = column_type_dict[column_index_dict[index_column_2.encode()]]
-            coords_1 = column_coords_dict[column_index_dict[index_column_1.encode()]]
-            coords_2 = column_coords_dict[column_index_dict[index_column_2.encode()]]
+        rows = []
+        for i, value in enumerate(values_fixed_width):
+            position = positions_fixed_width[i]
+            rows.append(value + position)
 
-            values_positions = []
-            f4py.print_message(f"Parsing values and positions for {index_name} funnel index and {f4_file_path}.", verbose)
-            for row_index in range(parser.get_num_rows()):
-                value_1 = parser._parse_row_value(row_index, coords_1, line_length, data_file_handle)
-                value_2 = parser._parse_row_value(row_index, coords_2, line_length, data_file_handle)
-                values_positions.append([value_1, value_2, row_index])
+        column_coords_string, rows_max_length = f4py.build_string_map(rows)
 
-            # This needs to be a combined file path.
-            index_file_path = IndexHelper._get_index_file_path(parser.data_file_path, index_name)
-
-            f4py.print_message(f"Building funnel index file for {index_name} and {f4_file_path}.", verbose)
-            if index_column_1_type == "s" and index_column_2_type == "i":
-                f4py.FunnelIndexBuilder(index_file_path, compression_level).build(values_positions)
-            else:
-                raise Exception("Funnel indices are currently only supported for string + numeric columns.")
-
-        f4py.print_message(f"Done building funnel index file for {index_name} and {f4_file_path}.", verbose)
+        f4py.write_str_to_file(index_file_path, "", column_coords_string)
+        f4py.Builder()._save_meta_files(index_file_path, [values_max_length, positions_max_length], rows_max_length + 1)
 
     def _get_index_name(column_names):
         index_name = "____".join(column_names)

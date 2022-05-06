@@ -3,10 +3,10 @@ import fastnumbers
 from operator import itemgetter
 import pynumparser
 
-class StringIndexBuilder:
-    def build(self, index_file_path, values_positions):
+class OneColumnIndexBuilder:
+    def build(self, index_file_path, values_positions, conversion_function):
         for i in range(len(values_positions)):
-            values_positions[i][0] = self._get_conversion_function()(values_positions[i][0])
+            values_positions[i][0] = conversion_function(values_positions[i][0])
         values_positions.sort(key=itemgetter(0))
 
         values = [str(x[0]).encode() for x in values_positions]
@@ -28,22 +28,7 @@ class StringIndexBuilder:
         f4py.write_str_to_file(index_file_path, "", column_coords_string)
         f4py.Builder()._save_meta_files(index_file_path, [values_max_length, positions_max_length], rows_max_length + 1)
 
-    def _get_conversion_function(self):
-        return f4py.decode_string
-
-class IdentifierIndexBuilder(StringIndexBuilder):
-    def _get_conversion_function(self):
-        return f4py.do_nothing
-
-class FloatIndexBuilder(StringIndexBuilder):
-    def _get_conversion_function(self):
-        return fastnumbers.fast_float
-
-class IntIndexBuilder(StringIndexBuilder):
-    def _get_conversion_function(self):
-        return fastnumbers.fast_int
-
-#class FunnelIndexBuilder(BaseIndexBuilder):
+#class TwoColumnIndexBuilder(BaseIndexBuilder):
 #    def __init__(self, index_file_path, compression_level):
 #        super().__init__(index_file_path, compression_level)
 #

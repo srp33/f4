@@ -1,6 +1,3 @@
-Why is it much slower on wide files than test files when indexing is used?
-  FunnelFilter might address this, but first troubleshoot to see where the slowness is.
-
 By nature, StartsWithFilter and EndsWithFilter are slow (indexing doesn't help much).
   Add a custom indexing process for these filters?
 

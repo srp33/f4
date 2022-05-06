@@ -34,11 +34,11 @@ class IndexHelper:
 
             f4py.print_message(f"Building index file for {index_column} index for {f4_file_path}.", verbose)
             if index_column_type == "s":
-                f4py.StringIndexBuilder().build(index_file_path, values_positions)
+                f4py.OneColumnIndexBuilder().build(index_file_path, values_positions, f4py.decode_string)
             elif index_column_type == "f":
-                f4py.FloatIndexBuilder().build(index_file_path, values_positions)
+                f4py.OneColumnIndexBuilder().build(index_file_path, values_positions, fastnumbers.fast_float)
             else:
-                f4py.IntIndexBuilder().build(index_file_path, values_positions)
+                f4py.OneColumnIndexBuilder().build(index_file_path, values_positions, fastnumbers.fast_int)
 
         f4py.print_message(f"Done building index file for {index_column} index for {f4_file_path}.", verbose)
 

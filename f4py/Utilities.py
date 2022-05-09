@@ -56,5 +56,18 @@ def decode_string(x):
 def do_nothing(x):
      return(x)
 
+def get_conversion_function(column_type):
+    if column_type == "c": # column name
+        return do_nothing
+    elif column_type == "s":
+        return decode_string
+    elif column_type == "f":
+        return fastnumbers.fast_float
+    else:
+        return fastnumbers.fast_int
+
 def sort_first_column(list_of_lists):
     list_of_lists.sort(key=itemgetter(0))
+
+def sort_first_two_columns(list_of_lists):
+    list_of_lists.sort(key=itemgetter(0, 1))

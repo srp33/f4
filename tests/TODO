@@ -1,14 +1,6 @@
 By nature, StartsWithFilter and EndsWithFilter are slow (indexing doesn't help much).
   Add a custom indexing process for these filters?
 
-Implement composite ("sequential", "covering") index that supports multiple columns.
-  Implement FunnelFilter.
-    Only works on indexed columns.
-    Should this be part of AndFilter rather than its own thing?
-    Ideally would be generic so that StringRangeFilter and IntRangeFilter can be passed to it.
-  In IndexHelper, allow user to specify a list of column names
-    for an index rather than having to explicitly invoke save_funnel_index.
-
 Develop compression scheme for string columns.
 
 Modify column names to be private except a few.

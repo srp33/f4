@@ -6,17 +6,34 @@ import math
 import operator
 
 class IndexHelper:
-    def save_index(f4_file_path, index_column, compression_level=None, verbose=False):
-        #TODO: Make sure index_column is valid.
+    # index_columns should be a list. Elements within it can be two-element lists (referring to a "double index").
+    def build_indexes(f4_file_path, index_columns, compression_level=None, verbose=False):
+        if isinstance(index_columns, str):
+            IndexHelper._build_one_column_index(f4_file_path, index_columns, compression_level, verbose)
+        elif isinstance(index_columns, list):
+            for index_column in index_columns:
+                if isinstance(index_column, list):
+                    if len(index_column) != 2:
+                        raise Exception("If you pass a list as an index_column, it must have exactly two elements.")
 
+                    IndexHelper._build_two_column_index(f4_file_path, index_column[0], index_column[1], compression_level, verbose)
+                else:
+                    if not isinstance(index_column, str):
+                        raise Exception("When specifying an index column name, it must be a string.")
+
+                    IndexHelper._build_one_column_index(f4_file_path, index_column, compression_level, verbose)
+        else:
+            raise Exception("When specifying index_columns, it must either be a string or a list.")
+
+    def _build_one_column_index(f4_file_path, index_column, compression_level, verbose):
         f4py.print_message(f"Saving index for {f4_file_path} and {index_column}.", verbose)
 
         num_rows = f4py.read_int_from_file(f4_file_path, ".nrow")
 
         with f4py.Parser(f4_file_path) as parser:
-            # Get information about index columns.
             f4py.print_message(f"Getting column meta information for {index_column} index for {f4_file_path}.", verbose)
             ignore, column_index_dict, column_type_dict, column_coords_dict = parser._get_column_meta(f4py.NoFilter(), [index_column])
+            #TODO: Add logic to verify that index_column is valid.
 
             data_file_handle = parser.get_file_handle("")
             line_length = parser.get_stat(".ll")
@@ -30,93 +47,87 @@ class IndexHelper:
                 value = parser._parse_row_value(row_index, coords, line_length, data_file_handle)
                 values_positions.append([value, row_index])
 
-            index_file_path = IndexHelper._get_index_file_path(parser.data_file_path, index_column)
-
             f4py.print_message(f"Building index file for {index_column} index for {f4_file_path}.", verbose)
-            if index_column_type == "s":
-                IndexHelper._build_index(index_file_path, values_positions, [f4py.decode_string], f4py.sort_first_column)
-            elif index_column_type == "f":
-                IndexHelper._build_index(index_file_path, values_positions, [fastnumbers.fast_float], f4py.sort_first_column)
-            else:
-                IndexHelper._build_index(index_file_path, values_positions, [fastnumbers.fast_int], f4py.sort_first_column)
+            IndexHelper._customize_values_positions(values_positions, [index_column_type], f4py.sort_first_column)
+
+            index_file_path = IndexHelper._get_index_file_path(parser.data_file_path, index_column)
+            IndexHelper._save_index(values_positions, index_file_path)
 
         f4py.print_message(f"Done building index file for {index_column} index for {f4_file_path}.", verbose)
 
-    def save_indices(f4_file_path, index_columns, compression_level=None, verbose=False):
-        for index_column in index_columns:
-            IndexHelper.save_index(f4_file_path, index_column, compression_level=compression_level, verbose=verbose)
+    # TODO: Combine this function with the above one and make it generic enough to handle larger indexes.
+    def _build_two_column_index(f4_file_path, index_column_1, index_column_2, compression_level, verbose):
+        if not isinstance(index_column_1, str) or not isinstance(index_column_1, str):
+            raise Exception("When specifying an index column name, it must be a string.")
 
-#    def save_funnel_index(f4_file_path, index_column_1, index_column_2, compression_level=None, verbose=False):
-#        #TODO: Make sure index_column_1 and index_column_2 are valid.
-#
-#        index_name = IndexHelper._get_index_name([index_column_1, index_column_2])
-#
-#        f4py.print_message(f"Saving index for {index_name} funnel index and {f4_file_path}.", verbose)
-#
-#        num_rows = f4py.read_int_from_file(f4_file_path, ".nrow")
-#
-#        with f4py.Parser(f4_file_path) as parser:
-#            # Get information about index columns.
-#            f4py.print_message(f"Getting column meta information for {index_name} funnel index and {f4_file_path}.", verbose)
-#            ignore, column_index_dict, column_type_dict, column_coords_dict = parser._get_column_meta(f4py.NoFilter(), [index_column_1, index_column_2])
-#
-#            data_file_handle = parser.get_file_handle("")
-#            line_length = parser.get_stat(".ll")
-#
-#            index_column_1_type = column_type_dict[column_index_dict[index_column_1.encode()]]
-#            index_column_2_type = column_type_dict[column_index_dict[index_column_2.encode()]]
-#            coords_1 = column_coords_dict[column_index_dict[index_column_1.encode()]]
-#            coords_2 = column_coords_dict[column_index_dict[index_column_2.encode()]]
-#
-#            values_positions = []
-#            f4py.print_message(f"Parsing values and positions for {index_name} funnel index and {f4_file_path}.", verbose)
-#            for row_index in range(parser.get_num_rows()):
-#                value_1 = parser._parse_row_value(row_index, coords_1, line_length, data_file_handle)
-#                value_2 = parser._parse_row_value(row_index, coords_2, line_length, data_file_handle)
-#                values_positions.append([value_1, value_2, row_index])
-#
-#            # This needs to be a combined file path.
-#            index_file_path = IndexHelper._get_index_file_path(parser.data_file_path, index_name)
-#
-#            f4py.print_message(f"Building funnel index file for {index_name} and {f4_file_path}.", verbose)
-#            if index_column_1_type == "s" and index_column_2_type == "i":
-#                f4py.FunnelIndexBuilder(index_file_path, compression_level).build(values_positions)
-#            else:
-#                raise Exception("Funnel indices are currently only supported for string + numeric columns.")
-#
-#        f4py.print_message(f"Done building funnel index file for {index_name} and {f4_file_path}.", verbose)
+        f4py.print_message(f"Saving index for {index_column_1} and {index_column_2} for {f4_file_path}.", verbose)
 
-    def _build_index(index_file_path, values_positions, conversion_functions, sort_function):
-        # Iterate through each "row" in the data.
-        for i in range(len(values_positions)):
-            # Iterate through each "column" except the last one (which has row_indices) and convert the data.
-            for j in range(len(conversion_functions)):
-                values_positions[i][j] = conversion_functions[j](values_positions[i][j])
+        num_rows = f4py.read_int_from_file(f4_file_path, ".nrow")
+        index_name = "____".join([index_column_1, index_column_2])
+
+        with f4py.Parser(f4_file_path) as parser:
+            f4py.print_message(f"Getting column meta information for {index_name} index and {f4_file_path}.", verbose)
+            ignore, column_index_dict, column_type_dict, column_coords_dict = parser._get_column_meta(f4py.NoFilter(), [index_column_1, index_column_2])
+            #TODO: Add logic to verify that index_column is valid.
+
+            data_file_handle = parser.get_file_handle("")
+            line_length = parser.get_stat(".ll")
+
+            index_column_1_type = column_type_dict[column_index_dict[index_column_1.encode()]]
+            index_column_2_type = column_type_dict[column_index_dict[index_column_2.encode()]]
+            coords_1 = column_coords_dict[column_index_dict[index_column_1.encode()]]
+            coords_2 = column_coords_dict[column_index_dict[index_column_2.encode()]]
+
+            values_positions = []
+            f4py.print_message(f"Parsing values and positions for {index_name} index and {f4_file_path}.", verbose)
+            for row_index in range(parser.get_num_rows()):
+                value_1 = parser._parse_row_value(row_index, coords_1, line_length, data_file_handle)
+                value_2 = parser._parse_row_value(row_index, coords_2, line_length, data_file_handle)
+                values_positions.append([value_1, value_2, row_index])
+
+            f4py.print_message(f"Building index file for {index_name} and {f4_file_path}.", verbose)
+            IndexHelper._customize_values_positions(values_positions, [index_column_1_type, index_column_2_type], f4py.sort_first_two_columns)
+
+            index_file_path = IndexHelper._get_index_file_path(parser.data_file_path, index_name)
+            IndexHelper._save_index(values_positions, index_file_path)
+
+        f4py.print_message(f"Done building double index file for {index_name} and {f4_file_path}.", verbose)
+
+    def _customize_values_positions(values_positions, column_types, sort_function):
+        # Iterate through each "column" except the last one (which has row_indices) and convert the data.
+        for i in range(len(column_types)):
+            conversion_function = f4py.get_conversion_function(column_types[i])
+
+            # Iterate through each "row" in the data.
+            for j in range(len(values_positions)):
+                values_positions[j][i] = conversion_function(values_positions[j][i])
 
         # Sort the rows.
         sort_function(values_positions)
 
-        values = [str(x[0]).encode() for x in values_positions]
-        positions = [str(x[1]).encode() for x in values_positions]
+    def _save_index(values_positions, index_file_path):
+        column_dict = {}
+        for i in range(len(values_positions[0])):
+            column_dict[i] = [str(x[i]).encode() for x in values_positions]
 
-        values_max_length = f4py.get_max_string_length(values)
-        positions_max_length = f4py.get_max_string_length(positions)
+        max_lengths = []
+        for i in range(len(values_positions[0])):
+            max_lengths.append(f4py.get_max_string_length(column_dict[i]))
 
-        values_fixed_width = f4py.format_column_items(values, values_max_length)
-        positions_fixed_width = f4py.format_column_items(positions, positions_max_length)
+        for i in range(len(values_positions[0])):
+            column_dict[i] = f4py.format_column_items(column_dict[i], max_lengths[i])
 
         rows = []
-        for i, value in enumerate(values_fixed_width):
-            position = positions_fixed_width[i]
-            rows.append(value + position)
+        for row_num in range(len(column_dict[0])):
+            row_value = b""
+            for col_num in sorted(column_dict.keys()):
+                row_value += column_dict[col_num][row_num]
+            rows.append(row_value)
 
         column_coords_string, rows_max_length = f4py.build_string_map(rows)
-
         f4py.write_str_to_file(index_file_path, "", column_coords_string)
-        f4py.Builder()._save_meta_files(index_file_path, [values_max_length, positions_max_length], rows_max_length + 1)
 
-    def _get_index_name(column_names):
-        index_name = "____".join(column_names)
+        f4py.Builder()._save_meta_files(index_file_path, max_lengths, rows_max_length + 1)
 
     def _get_index_file_path(data_file_path, index_name):
         index_file_path_extension = f".idx_{index_name}"
@@ -184,53 +195,53 @@ class IndexHelper:
                     return lower_row_indices | upper_row_indices
                 else:
                     if fltr.oper == operator.gt:
-                        positions = IndexHelper._find_positions_g(index_parser, line_length, coords[0], file_handle, fltr.value, end_index, fltr.oper, operator.le, fltr.get_conversion_function())
+                        positions = IndexHelper._find_positions_g(index_parser, line_length, coords[0], file_handle, fltr.value, 0, end_index, fltr.oper, operator.le, fltr.get_conversion_function())
                     elif fltr.oper == operator.ge:
-                        positions = IndexHelper._find_positions_g(index_parser, line_length, coords[0], file_handle, fltr.value, end_index, fltr.oper, operator.lt, fltr.get_conversion_function())
+                        positions = IndexHelper._find_positions_g(index_parser, line_length, coords[0], file_handle, fltr.value, 0, end_index, fltr.oper, operator.lt, fltr.get_conversion_function())
                     elif fltr.oper == operator.lt:
-                        positions = IndexHelper._find_positions_l(index_parser, line_length, coords[0], file_handle, fltr.value, end_index, fltr.oper, operator.ge, fltr.get_conversion_function())
+                        positions = IndexHelper._find_positions_l(index_parser, line_length, coords[0], file_handle, fltr.value, 0, end_index, fltr.oper, operator.ge, fltr.get_conversion_function())
                     elif fltr.oper == operator.le:
-                        positions = IndexHelper._find_positions_l(index_parser, line_length, coords[0], file_handle, fltr.value, end_index, fltr.oper, operator.gt, fltr.get_conversion_function())
+                        positions = IndexHelper._find_positions_l(index_parser, line_length, coords[0], file_handle, fltr.value, 0, end_index, fltr.oper, operator.gt, fltr.get_conversion_function())
 
                     return IndexHelper._retrieve_matching_row_indices(index_parser, coords[1], positions, num_processes)
 
-    def _find_positions_g(index_parser, line_length, value_coords, data_file_handle, filter_value, end_index, all_true_operator, all_false_operator, conversion_function):
-        smallest_value = index_parser._parse_row_value(0, value_coords, line_length, data_file_handle)
+    def _find_positions_g(index_parser, line_length, value_coords, data_file_handle, filter_value, start_index, end_index, all_true_operator, all_false_operator, conversion_function):
+        smallest_value = index_parser._parse_row_value(start_index, value_coords, line_length, data_file_handle)
         if smallest_value == b"":
-            return 0, end_index
+            return start_index, end_index
 
         if all_true_operator(conversion_function(smallest_value), filter_value):
-            return 0, end_index
+            return start_index, end_index
 
         largest_value = index_parser._parse_row_value(end_index - 1, value_coords, line_length, data_file_handle)
         if largest_value == b"":
-            return 0, 0
+            return start_index, start_index
 
         if not all_true_operator(conversion_function(largest_value), filter_value):
-            return 0, 0
+            return start_index, start_index
 
         matching_position = IndexHelper._search(index_parser, line_length, value_coords, data_file_handle, filter_value, 0, end_index, all_false_operator, conversion_function)
 
         return matching_position + 1, end_index
 
-    def _find_positions_l(index_parser, line_length, value_coords, data_file_handle, filter_value, end_index, all_true_operator, all_false_operator, conversion_function):
-        smallest_value = index_parser._parse_row_value(0, value_coords, line_length, data_file_handle)
+    def _find_positions_l(index_parser, line_length, value_coords, data_file_handle, filter_value, start_index, end_index, all_true_operator, all_false_operator, conversion_function):
+        smallest_value = index_parser._parse_row_value(start_index, value_coords, line_length, data_file_handle)
         if smallest_value == b"":
-            return 0, 0
+            return start_index, start_index
 
         if not all_true_operator(conversion_function(smallest_value), filter_value):
-            return 0, 0
+            return start_index, start_index
 
         largest_value = index_parser._parse_row_value(end_index - 1, value_coords, line_length, data_file_handle)
         if largest_value == b"":
-            return 0, end_index
+            return start_index, end_index
 
         if all_true_operator(conversion_function(largest_value), filter_value):
-            return 0, end_index
+            return start_index, end_index
 
         matching_position = IndexHelper._search(index_parser, line_length, value_coords, data_file_handle, filter_value, 0, end_index, all_true_operator, conversion_function)
 
-        return 0, matching_position + 1
+        return start_index, matching_position + 1
 
     def _search(index_parser, line_length, value_coords, data_file_handle, value_to_find, l, r, search_operator, conversion_function):
         mid = l + (r - l) // 2
@@ -275,12 +286,12 @@ class IndexHelper:
 
             return set(chain.from_iterable(Parallel(n_jobs = num_processes)(delayed(IndexHelper._find_matching_row_indices)(index_parser.data_file_path, position_coords, position_chunk) for position_chunk in position_chunks)))
 
-    def _find_bounds_for_range(index_parser, compression_level, value_coords, filter1_value, filter2_value, conversion_function, end_index, num_processes):
+    def _find_bounds_for_range(index_parser, compression_level, value_coords, filter1_value, filter2_value, conversion_function, end_index, num_processes, start_index=0):
         line_length = index_parser.get_stat(".ll")
         data_file_handle = index_parser.get_file_handle("")
 
-        lower_positions = IndexHelper._find_positions_g(index_parser, line_length, value_coords, data_file_handle, filter1_value, end_index, operator.ge, operator.lt, conversion_function)
-        upper_positions = IndexHelper._find_positions_l(index_parser, line_length, value_coords, data_file_handle, filter2_value, end_index, operator.le, operator.gt, conversion_function)
+        lower_positions = IndexHelper._find_positions_g(index_parser, line_length, value_coords, data_file_handle, filter1_value, start_index, end_index, operator.ge, operator.lt, conversion_function)
+        upper_positions = IndexHelper._find_positions_l(index_parser, line_length, value_coords, data_file_handle, filter2_value, start_index, end_index, operator.le, operator.gt, conversion_function)
 
         lower_position = max(lower_positions[0], upper_positions[0])
         upper_position = min(lower_positions[1], upper_positions[1])

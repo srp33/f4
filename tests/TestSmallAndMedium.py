@@ -379,23 +379,17 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     parser.query_and_save(fltr, ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("Filter using two index columns", read_file_into_lists(out_file_path), [[b"FloatA"], [b"2.2"], [b"2.2"]])
 
-#    f4py.IndexHelper.save_funnel_index(f4_file_path, "OrdinalA", "IntA", compression_level=compression_level)
-#    fltr = f4py.StringIntRangeFunnelFilter("OrdinalA", "Low", "IntA", 5, 6)
-    #parser.query_and_save(fltr, ["FloatA"], out_file_path, num_processes=num_processes)
-    #check_results("Filter using basic funnel index - categorical + integer", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"], [b"1.1"]])
+    fltr = f4py.AndFilter(f4py.StringFilter("CategoricalB", operator.eq, "Yellow"), f4py.IntRangeFilter("IntB", 0, 50))
+    parser.query_and_save(fltr, ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("Filter using string/int-range double index", read_file_into_lists(out_file_path), [[b"FloatA"], [b"2.2"]])
 
-#    fltr = f4py.AndFilter(
-#             f4py.OrFilter(
-#               f4py.OrFilter(
-#                 f4py.StringEqualsFilter("ID", "A"),
-#                 f4py.StringEqualsFilter("ID", "B"),
-#               ),
-#               f4py.StringEqualsFilter("ID", "C"),
-#             ),
-#             f4py.FloatFilter("FloatA", operator.ge, 2)
-#           )
-#    parser.query_and_save(fltr, ["FloatA"], out_file_path, num_processes=num_processes)
-#    check_results("Filter using categorical-int sequential index", read_file_into_lists(out_file_path), [[b"FloatA"],[b"2.2"], [b"2.2"]])
+    fltr = f4py.AndFilter(f4py.StringFilter("CategoricalB", operator.eq, "Yellow"), f4py.IntRangeFilter("IntB", 0, 25))
+    parser.query_and_save(fltr, ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("Filter using string/int-range double index", read_file_into_lists(out_file_path), [[b"FloatA"]])
+
+    fltr = f4py.AndFilter(f4py.StringFilter("CategoricalB", operator.eq, "Brown"), f4py.IntRangeFilter("IntB", 50, 100))
+    parser.query_and_save(fltr, ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("Filter using string/int-range double index", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"2.2"]])
 
 def run_medium_tests(num_processes):
     in_file_path = "/data/medium.tsv"
@@ -424,7 +418,7 @@ def run_medium_tests(num_processes):
     print(f"Running all tests for {in_file_path} - with indexing")
     print("-------------------------------------------------------")
 
-    f4py.IndexHelper.save_indices(f4_file_path, ["ID", "Discrete1", "Numeric1"], compression_level=None)
+    f4py.IndexHelper.build_indexes(f4_file_path, ["ID", "Discrete1", "Numeric1"], compression_level=None)
 
     run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, medium_Numeric1, num_processes)
 
@@ -489,7 +483,7 @@ run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 
 # Small tests with indexing
 f4_file_path = "/data/small_indexing.f4"
 out_file_path = "/tmp/small_indexing_out.tsv"
-index_columns = ["ID", "CategoricalB", "FloatA", "FloatB", "IntA", "IntB", "OrdinalA"]
+index_columns = ["ID", "CategoricalB", "FloatA", "FloatB", "IntA", "IntB", "OrdinalA", ["CategoricalB", "IntB"]]
 run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1, index_columns = index_columns)
 run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2, index_columns = index_columns)
 

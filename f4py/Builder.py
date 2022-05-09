@@ -82,7 +82,7 @@ class Builder:
         self._print_message(f"Done converting {delimited_file_path} to {f4_file_path}")
 
         if index_columns:
-            f4py.IndexHelper.save_indices(f4_file_path, index_columns, compression_level=compression_level)
+            f4py.IndexHelper.build_indexes(f4_file_path, index_columns, compression_level=compression_level)
 
     #####################################################
     # Non-public functions
@@ -106,7 +106,8 @@ class Builder:
             # Build an index of the column names and save this to a file.
             sorted_column_names = sorted(column_names)
             values_positions = [[x.decode(), column_name_index_dict[x]] for x in sorted_column_names]
-            f4py.IndexHelper._build_index(f"{f4_file_path}.cn", values_positions, [f4py.do_nothing], f4py.sort_first_column)
+            f4py.IndexHelper._customize_values_positions(values_positions, ["c"], f4py.sort_first_column)
+            f4py.IndexHelper._save_index(values_positions, f"{f4_file_path}.cn")
 
             if column_types:
                 # Build a map of the column types and save this to a file.

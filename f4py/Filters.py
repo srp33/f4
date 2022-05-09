@@ -2,6 +2,7 @@ import f4py
 import fastnumbers
 from joblib import Parallel, delayed
 import operator
+import os
 import re
 
 """
@@ -222,6 +223,24 @@ class AndFilter(__CompositeFilter):
         return self.filter2.filter_column_values(data_file_path, row_indices_1, column_index_dict, column_type_dict, column_coords_dict)
 
     def filter_indexed_column_values(self, data_file_path, compression_level, end_index, num_processes):
+        # TODO: Currently, this combination of two-column filters is supported. Add more later.
+        if isinstance(self.filter1, StringFilter) and self.filter1.oper == operator.eq:
+            if isinstance(self.filter2, IntRangeFilter):
+                double_index_name = "____".join([self.filter1.column_name.decode(), self.filter2.filter1.column_name.decode()])
+                double_index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, double_index_name)
+
+                if os.path.exists(double_index_file_path):
+                    with f4py.IndexHelper._get_index_parser(double_index_file_path) as index_parser:
+                        coords = index_parser._parse_data_coords([0, 1, 2])
+
+                        # Find range for string column
+                        lower_position, upper_position = f4py.IndexHelper._find_bounds_for_range(index_parser, compression_level, coords[0], self.filter1.value, self.filter1.value, f4py.do_nothing, end_index, num_processes)
+                        # Find range for int column
+                        lower_position, upper_position = f4py.IndexHelper._find_bounds_for_range(index_parser, compression_level, coords[1], self.filter2.filter1.value, self.filter2.filter2.value, self.filter2.get_conversion_function(), upper_position, num_processes, lower_position)
+
+                        # Get row indices for the overlapping range
+                        return f4py.IndexHelper._retrieve_matching_row_indices(index_parser, coords[2], (lower_position, upper_position), num_processes)
+
         row_indices_1 = self.filter1.filter_indexed_column_values(data_file_path, compression_level, end_index, num_processes)
         row_indices_2 = self.filter2.filter_indexed_column_values(data_file_path, compression_level, end_index, num_processes)
 
@@ -305,46 +324,3 @@ class StringRangeFilter(__RangeFilter):
         filter2 = StringFilter(column_name, operator.le, upper_bound_value)
 
         super().__init__(filter1, filter2)
-
-#class FunnelFilter(__CompositeFilter):
-#    pass
-#
-#class StringIntRangeFunnelFilter(FunnelFilter):
-#    def __init__(self, string_column, string_value, int_column, lower_bound_value, upper_bound_value):
-#        if type(string_value) != str:
-#            raise Exception("The categorical value must be a string.")
-#        if type(lower_bound_value) != int:
-#            raise Exception("The lower_bound_value must be an integer.")
-#        if type(upper_bound_value) != int:
-#            raise Exception("The upper_bound_value must be an integer.")
-#
-#        filter1 = StringEqualsFilter(string_column, string_value)
-#        filter2 = IntFilter(int_column, lower_bound_value, upper_bound_value)
-#
-#        super().__init__(filter1, filter2)
-#
-#    def filter_column_values(self, data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict):
-#        raise Exception("Not implemented")
-#
-#    def filter_indexed_column_values(self, data_file_path, compression_level, end_index, num_processes):
-#        #funnel_indexer = f4py.IndexHelper._get_indexer(data_file_path, compression_level, b"", None, self)
-#        index_name = f4py.IndexHelper._get_index_name([self.filter1.column_name.decode(), self.filter2.column_name.decode()])
-#        index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, index_name)
-#        #funnel_indexer = f4py.FunnelIndexer(index_file_path, compression_level)
-#
-##        lower_index_column_type = column_type_dict[column_index_dict[self.filter1.column_name]]
-##        upper_index_column_type = column_type_dict[column_index_dict[self.filter2.column_name]]
-#
-##        lower_indexer = f4py.IndexHelper._get_indexer(data_file_path, compression_level, self.filter1.column_name, lower_index_column_type, self.filter1)
-##        upper_indexer = f4py.IndexHelper._get_indexer(data_file_path, compression_level, self.filter2.column_name, upper_index_column_type, self.filter2)
-#
-##        lower_positions = f4py.IndexHelper._find_positions(index_file_path, self.filter1, end_index, f4py.do_nothing)
-##        upper_positions = f4py.IndexHelper._find_positions(lower_indexer.index_file_path, self.filter2, end_index, fastnumbers.fast_float)
-#
-##        lower_position = max(lower_positions[0], upper_positions[0])
-##        upper_position = min(lower_positions[1], upper_positions[1])
-#
-##        return(f4py.IndexHelper._find_matching_row_indices(lower_indexer.index_file_path, (lower_position, upper_position)))
-#        print("got here")
-#        import sys
-#        sys.exit()

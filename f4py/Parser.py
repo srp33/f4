@@ -20,15 +20,15 @@ class Parser:
     def __init__(self, data_file_path, fixed_file_extensions=["", ".cc", ".ct"], stats_file_extensions=[".ll", ".mccl", ".nrow", ".ncol"]):
         self.data_file_path = data_file_path
 
-        self.compression_level = f4py.read_str_from_file(data_file_path, ".cmp")
-        self.__decompressor = None
-        if self.compression_level != b"None":
-            self.__decompressor = zstandard.ZstdDecompressor()
-
         # Cache file handles in a dictionary.
         self.__file_handles = {}
         for ext in fixed_file_extensions:
             self.__file_handles[ext] = self.set_file_handle(ext)
+
+        self.compression_level = f4py.read_str_from_file(data_file_path, ".cmp")
+        self.__decompressor = None
+        if self.compression_level != b"None":
+            self.__decompressor = zstandard.ZstdDecompressor()
 
         # Cache statistics in a dictionary.
         self.__stats = {}

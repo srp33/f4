@@ -71,3 +71,6 @@ def sort_first_column(list_of_lists):
 
 def sort_first_two_columns(list_of_lists):
     list_of_lists.sort(key=itemgetter(0, 1))
+
+def reverse_string(s):
+    return s[::-1]

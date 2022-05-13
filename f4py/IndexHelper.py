@@ -21,11 +21,15 @@ class IndexHelper:
                     if not isinstance(index_column, str):
                         raise Exception("When specifying an index column name, it must be a string.")
 
-                    IndexHelper._build_one_column_index(f4_file_path, index_column, compression_level, verbose)
+                    IndexHelper._build_one_column_index(f4_file_path, index_column, compression_level, verbose, f4py.do_nothing)
         else:
             raise Exception("When specifying index_columns, it must either be a string or a list.")
 
-    def _build_one_column_index(f4_file_path, index_column, compression_level, verbose):
+    # This function is specifically for the EndsWithFilter.
+    def build_endswith_index(f4_file_path, index_column, compression_level=None, verbose=False):
+        IndexHelper._build_one_column_index(f4_file_path, index_column, compression_level, verbose, f4py.reverse_string)
+
+    def _build_one_column_index(f4_file_path, index_column, compression_level, verbose, custom_index_function):
         f4py.print_message(f"Saving index for {f4_file_path} and {index_column}.", verbose)
 
         num_rows = f4py.read_int_from_file(f4_file_path, ".nrow")
@@ -48,9 +52,9 @@ class IndexHelper:
                 values_positions.append([value, row_index])
 
             f4py.print_message(f"Building index file for {index_column} index for {f4_file_path}.", verbose)
-            IndexHelper._customize_values_positions(values_positions, [index_column_type], f4py.sort_first_column)
+            IndexHelper._customize_values_positions(values_positions, [index_column_type], f4py.sort_first_column, custom_index_function)
 
-            index_file_path = IndexHelper._get_index_file_path(parser.data_file_path, index_column)
+            index_file_path = IndexHelper._get_index_file_path(parser.data_file_path, index_column, custom_index_function)
             IndexHelper._save_index(values_positions, index_file_path)
 
         f4py.print_message(f"Done building index file for {index_column} index for {f4_file_path}.", verbose)
@@ -86,14 +90,14 @@ class IndexHelper:
                 values_positions.append([value_1, value_2, row_index])
 
             f4py.print_message(f"Building index file for {index_name} and {f4_file_path}.", verbose)
-            IndexHelper._customize_values_positions(values_positions, [index_column_1_type, index_column_2_type], f4py.sort_first_two_columns)
+            IndexHelper._customize_values_positions(values_positions, [index_column_1_type, index_column_2_type], f4py.sort_first_two_columns, f4py.do_nothing)
 
             index_file_path = IndexHelper._get_index_file_path(parser.data_file_path, index_name)
             IndexHelper._save_index(values_positions, index_file_path)
 
         f4py.print_message(f"Done building double index file for {index_name} and {f4_file_path}.", verbose)
 
-    def _customize_values_positions(values_positions, column_types, sort_function):
+    def _customize_values_positions(values_positions, column_types, sort_function, custom_index_function):
         # Iterate through each "column" except the last one (which has row_indices) and convert the data.
         for i in range(len(column_types)):
             conversion_function = f4py.get_conversion_function(column_types[i])
@@ -101,6 +105,7 @@ class IndexHelper:
             # Iterate through each "row" in the data.
             for j in range(len(values_positions)):
                 values_positions[j][i] = conversion_function(values_positions[j][i])
+                values_positions[j][i] = custom_index_function(values_positions[j][i])
 
         # Sort the rows.
         sort_function(values_positions)
@@ -129,8 +134,15 @@ class IndexHelper:
 
         f4py.Builder()._save_meta_files(index_file_path, max_lengths, rows_max_length + 1)
 
-    def _get_index_file_path(data_file_path, index_name):
+    def _get_double_index_name(filter1, filter2):
+        return "____".join([filter1.column_name.decode(), filter2.column_name.decode()])
+
+    def _get_index_file_path(data_file_path, index_name, custom_index_function=f4py.do_nothing):
         index_file_path_extension = f".idx_{index_name}"
+
+        if custom_index_function != f4py.do_nothing:
+            index_file_path_extension = f"{index_file_path_extension}_{custom_index_function.__name__}"
+
         return f"{data_file_path}{index_file_path_extension}"
 
     def _get_index_parser(index_file_path):
@@ -222,6 +234,12 @@ class IndexHelper:
 
         matching_position = IndexHelper._search(index_parser, line_length, value_coords, data_file_handle, filter_value, 0, end_index, all_false_operator, conversion_function)
 
+#        print("TODO")
+#        print(filter_value)
+#        print(matching_position)
+#        print(index_parser.data_file_path)
+#        print(all_false_operator)
+
         return matching_position + 1, end_index
 
     def _find_positions_l(index_parser, line_length, value_coords, data_file_handle, filter_value, start_index, end_index, all_true_operator, all_false_operator, conversion_function):
@@ -240,6 +258,12 @@ class IndexHelper:
             return start_index, end_index
 
         matching_position = IndexHelper._search(index_parser, line_length, value_coords, data_file_handle, filter_value, 0, end_index, all_true_operator, conversion_function)
+
+#        print("TODO2")
+#        print(filter_value)
+#        print(matching_position)
+#        print(index_parser.data_file_path)
+#        print(all_true_operator)
 
         return start_index, matching_position + 1
 
@@ -291,6 +315,7 @@ class IndexHelper:
         data_file_handle = index_parser.get_file_handle("")
 
         lower_positions = IndexHelper._find_positions_g(index_parser, line_length, value_coords, data_file_handle, filter1_value, start_index, end_index, operator.ge, operator.lt, conversion_function)
+        #TODO: Probably can modify this so that the start_index is based on what you get with lower_positions
         upper_positions = IndexHelper._find_positions_l(index_parser, line_length, value_coords, data_file_handle, filter2_value, start_index, end_index, operator.le, operator.gt, conversion_function)
 
         lower_position = max(lower_positions[0], upper_positions[0])
@@ -302,3 +327,25 @@ class IndexHelper:
         lower_position, upper_position = IndexHelper._find_bounds_for_range(index_parser, compression_level, value_coords, filter1_value, filter2_value, conversion_function, end_index, num_processes)
 
         return IndexHelper._retrieve_matching_row_indices(index_parser, position_coords, (lower_position, upper_position), num_processes)
+
+    def _get_passing_row_indices(fltr, index_parser, line_length, coords_value, coords_position, file_handle, start_index, end_index):
+        passing_row_indices = set()
+
+        for i in range(start_index, end_index):
+            if fltr.passes(index_parser._parse_row_value(i, coords_value, line_length, file_handle)):
+                passing_row_indices.add(fastnumbers.fast_int(index_parser._parse_row_value(i, coords_position, line_length, file_handle)))
+
+        return passing_row_indices
+
+    def _get_passing_row_indices_for_with_filter(index_file_path, fltr, end_index):
+        with f4py.IndexHelper._get_index_parser(index_file_path) as index_parser:
+            line_length = index_parser.get_stat(".ll")
+            coords = index_parser._parse_data_coords([0, 1])
+            file_handle = index_parser.get_file_handle("")
+
+            positions = f4py.IndexHelper._find_positions_g(index_parser, line_length, coords[0], file_handle, fltr.value, 0, end_index, operator.ge, operator.lt, f4py.do_nothing)
+
+            #TODO: This could be optimized more. You could use a binary search to look forward
+            #      from the first position until you find a location where one value passes the
+            #      filter but the next one does not.
+            return f4py.IndexHelper._get_passing_row_indices(fltr, index_parser, line_length, coords[0], coords[1], file_handle, positions[0], positions[1])

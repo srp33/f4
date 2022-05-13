@@ -1,6 +1,8 @@
 By nature, StartsWithFilter and EndsWithFilter are slow (indexing doesn't help much).
   Add a custom indexing process for these filters?
 
+Change "double_index" to "two_column_index" throughout.
+
 Develop compression scheme for string columns.
 
 Modify column names to be private except a few.

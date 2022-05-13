@@ -164,7 +164,6 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
                f4py.StringFilter("IntB", operator.eq, "77")
              )
            )
-    #TODO: The following filter is just for debugging.
     or_1 = f4py.OrFilter(
        f4py.StringFilter("OrdinalA", operator.eq, "Med"),
        f4py.StringFilter("OrdinalA", operator.eq, "High")
@@ -200,10 +199,25 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     check_results("NotLike filter on categorical column", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"],[b"2.2"],[b"4.4"]])
 
     parser.query_and_save(f4py.StartsWithFilter("CategoricalB", "Yell"), ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("StartsWith filter on categorical column", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"],[b"2.2"]])
+    check_results("StartsWith - CategoricalB - Yell", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"],[b"2.2"]])
+
+    parser.query_and_save(f4py.StartsWithFilter("CategoricalB", "B"), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("StartsWith - CategoricalB - B", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"],[b"2.2"]])
+
+    parser.query_and_save(f4py.StartsWithFilter("CategoricalB", "Or"), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("StartsWith - CategoricalB - Or", read_file_into_lists(out_file_path), [[b"FloatA"],[b"4.4"]])
+
+    parser.query_and_save(f4py.StartsWithFilter("CategoricalB", "Gr"), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("StartsWith - CategoricalB - Gr", read_file_into_lists(out_file_path), [[b"FloatA"]])
 
     parser.query_and_save(f4py.EndsWithFilter("CategoricalB", "ow"), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("EndsWith filter on categorical column", read_file_into_lists(out_file_path), [[b"FloatA"],[b"1.1"],[b"2.2"]])
+
+    parser.query_and_save(f4py.EndsWithFilter("CategoricalB", "own"), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("EndsWith filter on categorical column", read_file_into_lists(out_file_path), [[b"FloatA"],[b"9.9"],[b"2.2"]])
+
+    parser.query_and_save(f4py.EndsWithFilter("CategoricalB", "x"), ["FloatA"], out_file_path, num_processes=num_processes)
+    check_results("EndsWith filter on categorical column", read_file_into_lists(out_file_path), [[b"FloatA"]])
 
     parser.query_and_save(f4py.FloatRangeFilter("FloatA", -9.9, 4.4), ["FloatA"], out_file_path, num_processes=num_processes)
     check_results("FloatA within -9.9 and 4.4", read_file_into_lists(out_file_path), [[b"FloatA"], [b"1.1"], [b"2.2"], [b"2.2"], [b"4.4"]])
@@ -422,6 +436,14 @@ def run_medium_tests(num_processes):
 
     run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, medium_Numeric1, num_processes)
 
+    print("-------------------------------------------------------")
+    print(f"Running all tests for {in_file_path} - custom indexing")
+    print("-------------------------------------------------------")
+
+    f4py.IndexHelper.build_endswith_index(f4_file_path, "Discrete1", compression_level=None)
+
+    run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, medium_Numeric1, num_processes)
+
 def run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, medium_Numeric1, num_processes):
     parser = f4py.Parser(f4_file_path)
 
@@ -465,6 +487,12 @@ def run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, 
     check_results("Filter Discrete1 = row 99", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[99]])
     parser.query_and_save(f4py.StringFilter("Discrete1", operator.eq, medium_Discrete1[100][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
     check_results("Filter Discrete1 = row 100", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[100]])
+
+    parser.query_and_save(f4py.EndsWithFilter("Discrete1", "M"), ["ID"], out_file_path, num_processes=num_processes)
+    check_results("EndsWith filter - M", read_file_into_lists(out_file_path), [[b"ID"], [b"Row3"], [b"Row29"], [b"Row80"]])
+
+    parser.query_and_save(f4py.EndsWithFilter("Discrete1", "PM"), ["ID"], out_file_path, num_processes=num_processes)
+    check_results("EndsWith filter - PM", read_file_into_lists(out_file_path), [[b"ID"], [b"Row3"]])
 
 # Basic small tests
 f4_file_path = "/data/small.f4"

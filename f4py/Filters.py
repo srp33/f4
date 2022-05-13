@@ -38,6 +38,7 @@ class __SimpleBaseFilter(NoFilter):
         return set([self.column_name])
 
     def filter_column_values(self, data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict):
+        #TODO: Use IndexHelper._get_passing_row_indices
         with f4py.Parser(data_file_path, fixed_file_extensions=[""], stats_file_extensions=[".ll"]) as parser:
             line_length = parser.get_stat(".ll")
             coords = column_coords_dict[column_index_dict[self.column_name]]
@@ -53,6 +54,15 @@ class __SimpleBaseFilter(NoFilter):
 
     def get_conversion_function(self):
         return f4py.do_nothing
+
+#    def _get_passing_row_indices(self, index_parser, line_length, coords_value, coords_position, file_handle, start_index, end_index):
+#        passing_row_indices = set()
+#
+#        for i in range(start_index, end_index):
+#            if self.passes(index_parser._parse_row_value(i, coords_value, line_length, file_handle)):
+#                passing_row_indices.add(fastnumbers.fast_int(index_parser._parse_row_value(i, coords_position, line_length, file_handle)))
+#
+#        return passing_row_indices
 
 #    def __str__(self):
 #        return f"{type(self).__name__}____{self.column_name.decode()}____{self.value}"
@@ -108,7 +118,7 @@ class IntFilter(__OperatorFilter):
     def get_conversion_function(self):
         return fastnumbers.fast_int
 
-class __NonOperatorStringFilter(__SimpleBaseFilter):
+class StartsWithFilter(__SimpleBaseFilter):
     def __init__(self, column_name, value):
         self.check_argument(value, "value", str)
         super().__init__(column_name, value.encode())
@@ -116,6 +126,44 @@ class __NonOperatorStringFilter(__SimpleBaseFilter):
     def filter_indexed_column_values(self, data_file_path, compression_level, end_index, num_processes):
         index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.column_name.decode())
 
+        return f4py.IndexHelper._get_passing_row_indices_for_with_filter(index_file_path, self, end_index)
+
+    def passes(self, value):
+        return value.startswith(self.value)
+
+class EndsWithFilter(StartsWithFilter):
+    def passes(self, value):
+        return value.endswith(self.value)
+
+    def filter_indexed_column_values(self, data_file_path, compression_level, end_index, num_processes):
+        custom_index_function = f4py.reverse_string
+        custom_index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.column_name.decode(), custom_index_function)
+
+        if os.path.exists(custom_index_file_path):
+            custom_fltr = f4py.StartsWithFilter(self.column_name.decode(), custom_index_function(self.value).decode())
+
+            return f4py.IndexHelper._get_passing_row_indices_for_with_filter(custom_index_file_path, custom_fltr, end_index)
+        else:
+            index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.column_name.decode())
+
+            with f4py.IndexHelper._get_index_parser(index_file_path) as index_parser:
+                line_length = index_parser.get_stat(".ll")
+                coords = index_parser._parse_data_coords([0, 1])
+                file_handle = index_parser.get_file_handle("")
+
+                return f4py.IndexHelper._get_passing_row_indices(self, index_parser, line_length, coords[0], coords[1], file_handle, 0, end_index)
+
+class LikeFilter(__SimpleBaseFilter):
+    def __init__(self, column_name, regular_expression):
+        super().__init__(column_name, regular_expression)
+
+        self.check_argument(regular_expression, "regular_expression", str)
+        self.value = re.compile(self.value)
+
+    def filter_indexed_column_values(self, data_file_path, compression_level, end_index, num_processes):
+        index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.column_name.decode())
+
+        #TODO: Use f4py.IndexHelper._get_passing_row_indices() here.
         with f4py.IndexHelper._get_index_parser(index_file_path) as index_parser:
             line_length = index_parser.get_stat(".ll")
             coords = index_parser._parse_data_coords([0, 1])
@@ -123,25 +171,12 @@ class __NonOperatorStringFilter(__SimpleBaseFilter):
 
             passing_row_indices = set()
 
+            # We have to check every row.
             for i in range(end_index):
                 if self.passes(index_parser._parse_row_value(i, coords[0], line_length, data_file_handle)):
                     passing_row_indices.add(fastnumbers.fast_int(index_parser._parse_row_value(i, coords[1], line_length, data_file_handle)))
 
             return passing_row_indices
-
-class StartsWithFilter(__NonOperatorStringFilter):
-    def passes(self, value):
-        return value.startswith(self.value)
-
-class EndsWithFilter(__NonOperatorStringFilter):
-    def passes(self, value):
-        return value.endswith(self.value)
-
-class LikeFilter(__NonOperatorStringFilter):
-    def __init__(self, column_name, regular_expression):
-        super().__init__(column_name, regular_expression)
-
-        self.value = re.compile(self.value.decode())
 
     def passes(self, value):
         return self.value.search(value.decode())
@@ -226,7 +261,8 @@ class AndFilter(__CompositeFilter):
         # TODO: Currently, this combination of two-column filters is supported. Add more later.
         if isinstance(self.filter1, StringFilter) and self.filter1.oper == operator.eq:
             if isinstance(self.filter2, IntRangeFilter):
-                double_index_name = "____".join([self.filter1.column_name.decode(), self.filter2.filter1.column_name.decode()])
+                #double_index_name = "____".join([self.filter1.column_name.decode(), self.filter2.filter1.column_name.decode()])
+                double_index_name = f4py.IndexHelper._get_double_index_name(self.filter1, self.filter2.filter1)
                 double_index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, double_index_name)
 
                 if os.path.exists(double_index_file_path):

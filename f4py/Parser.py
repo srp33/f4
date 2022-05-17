@@ -83,6 +83,8 @@ class Parser:
 
 #            if num_processes == 1 or len(sub_filters) == 1:
             keep_row_indices = sorted(fltr.filter_indexed_column_values(self.data_file_path, self.compression_level, self.get_num_rows(), num_processes))
+            #TODO
+            #print(f"{len(keep_row_indices)} rows matched")
 #            else:
 #                fltr_results_dict = {}
 

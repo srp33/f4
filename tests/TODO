@@ -1,11 +1,12 @@
-By nature, StartsWithFilter and EndsWithFilter are slow (indexing doesn't help much).
-  Add a custom indexing process for these filters?
-
 Change "double_index" to "two_column_index" throughout.
+Modify column names to be private except a few.
 
 Develop compression scheme for string columns.
 
-Modify column names to be private except a few.
+Look at this and decide whether it might be useful for F4.
+  https://www.textualize.io/?s=03
+  If so, add it to the TODO list.
+
 
 
 
@@ -45,6 +46,9 @@ Modify name? Put Parallel(ize) in it?
 Raise a friendly exception if the user tries to do an indexed query when the index has not been created.
 
 Allow user to specify missing values in Builder.convert() function. There is a function called is_missing_value in Utilities.py that should be removed.
+
+Implement interpolation search in place of binary search?
+  https://softwareengineering.stackexchange.com/questions/119703/interpolation-search-vs-binary-search#119736
 
 Support the following scenarios (make sure the tests reflect them):
   1) uncompressed data + no index

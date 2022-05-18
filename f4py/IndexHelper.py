@@ -6,7 +6,7 @@ import math
 import operator
 
 class IndexHelper:
-    # index_columns should be a list. Elements within it can be two-element lists (referring to a "double index").
+    # index_columns should be a list. Elements within it can be two-element lists.
     def build_indexes(f4_file_path, index_columns, compression_level=None, verbose=False):
         if isinstance(index_columns, str):
             IndexHelper._build_one_column_index(f4_file_path, index_columns, compression_level, verbose)
@@ -95,7 +95,7 @@ class IndexHelper:
             index_file_path = IndexHelper._get_index_file_path(parser.data_file_path, index_name)
             IndexHelper._save_index(values_positions, index_file_path)
 
-        f4py.print_message(f"Done building double index file for {index_name} and {f4_file_path}.", verbose)
+        f4py.print_message(f"Done building two-column index file for {index_name} and {f4_file_path}.", verbose)
 
     def _customize_values_positions(values_positions, column_types, sort_function, custom_index_function):
         # Iterate through each "column" except the last one (which has row_indices) and convert the data.
@@ -134,7 +134,7 @@ class IndexHelper:
 
         f4py.Builder()._save_meta_files(index_file_path, max_lengths, rows_max_length + 1)
 
-    def _get_double_index_name(filter1, filter2):
+    def _get_two_column_index_name(filter1, filter2):
         return "____".join([filter1.column_name.decode(), filter2.column_name.decode()])
 
     def _get_index_file_path(data_file_path, index_name, custom_index_function=f4py.do_nothing):

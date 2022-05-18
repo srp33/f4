@@ -1,4 +1,3 @@
-Change "double_index" to "two_column_index" throughout.
 Modify column names to be private except a few.
 
 Develop compression scheme for string columns.

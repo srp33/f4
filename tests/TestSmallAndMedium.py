@@ -395,15 +395,15 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
 
     fltr = f4py.AndFilter(f4py.StringFilter("CategoricalB", operator.eq, "Yellow"), f4py.IntRangeFilter("IntB", 0, 50))
     parser.query_and_save(fltr, ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Filter using string/int-range double index", read_file_into_lists(out_file_path), [[b"FloatA"], [b"2.2"]])
+    check_results("Filter using string/int-range two-column index", read_file_into_lists(out_file_path), [[b"FloatA"], [b"2.2"]])
 
     fltr = f4py.AndFilter(f4py.StringFilter("CategoricalB", operator.eq, "Yellow"), f4py.IntRangeFilter("IntB", 0, 25))
     parser.query_and_save(fltr, ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Filter using string/int-range double index", read_file_into_lists(out_file_path), [[b"FloatA"]])
+    check_results("Filter using string/int-range two-column index", read_file_into_lists(out_file_path), [[b"FloatA"]])
 
     fltr = f4py.AndFilter(f4py.StringFilter("CategoricalB", operator.eq, "Brown"), f4py.IntRangeFilter("IntB", 50, 100))
     parser.query_and_save(fltr, ["FloatA"], out_file_path, num_processes=num_processes)
-    check_results("Filter using string/int-range double index", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"2.2"]])
+    check_results("Filter using string/int-range two-column index", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"2.2"]])
 
 def run_medium_tests(num_processes):
     in_file_path = "/data/medium.tsv"

@@ -243,12 +243,11 @@ class AndFilter(__CompositeFilter):
         # Currently, this combination of two-column filters is supported. Add more later.
         if isinstance(self.filter1, StringFilter) and self.filter1.oper == operator.eq:
             if isinstance(self.filter2, IntRangeFilter):
-                #double_index_name = "____".join([self.filter1.column_name.decode(), self.filter2.filter1.column_name.decode()])
-                double_index_name = f4py.IndexHelper._get_double_index_name(self.filter1, self.filter2.filter1)
-                double_index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, double_index_name)
+                two_column_index_name = f4py.IndexHelper._get_two_column_index_name(self.filter1, self.filter2.filter1)
+                two_column_index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, two_column_index_name)
 
-                if os.path.exists(double_index_file_path):
-                    with f4py.IndexHelper._get_index_parser(double_index_file_path) as index_parser:
+                if os.path.exists(two_column_index_file_path):
+                    with f4py.IndexHelper._get_index_parser(two_column_index_file_path) as index_parser:
                         coords = index_parser._parse_data_coords([0, 1, 2])
 
                         # Find range for string column

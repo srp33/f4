@@ -7,7 +7,6 @@ import os
 import pickle
 import shutil
 import tempfile
-import zstandard
 
 class Builder:
     def __init__(self, verbose=False):
@@ -113,7 +112,6 @@ class Builder:
                 # Build a map of the column types and save this to a file.
                 column_types_string, max_col_type_length = f4py.build_string_map(column_types)
                 f4py.write_str_to_file(f4_file_path, ".ct", column_types_string)
-                #f4py.write_str_to_file(f4_file_path, ".mctl", str(max_col_type_length).encode())
 
         # Indicate compression level.
         f4py.write_str_to_file(f4_file_path, ".cmp", str(compression_level).encode())
@@ -208,10 +206,7 @@ class Builder:
 
     def _save_rows_chunk(self, delimited_file_path, delimiter, compression_level, column_sizes, chunk_number, start_index, end_index, num_rows_per_save, tmp_dir_path):
         max_line_size = 0
-
-        compressor = None
-        if compression_level:
-            compressor = zstandard.ZstdCompressor(level=compression_level)
+        compressor = f4py.get_compressor(compression_level)
 
         # Save the data to output file. Ignore the header line.
         in_file = _get_delimited_file_handle(delimited_file_path)
@@ -238,7 +233,7 @@ class Builder:
                     out_items = [_format_string_as_fixed_width(line_items[i], size) for i, size in enumerate(column_sizes)]
                     out_line = b"".join(out_items)
 
-                    if compression_level:
+                    if compressor:
                         out_line = compressor.compress(out_line)
                     else:
                         # We add a newline character when the data are not compressed.

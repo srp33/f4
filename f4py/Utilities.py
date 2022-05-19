@@ -2,6 +2,7 @@ import datetime
 import fastnumbers
 import mmap
 from operator import itemgetter
+import zstandard
 
 def open_read_file(file_path, file_extension=""):
     the_file = open(file_path + file_extension, 'rb')
@@ -74,3 +75,13 @@ def sort_first_two_columns(list_of_lists):
 
 def reverse_string(s):
     return s[::-1]
+
+def get_compressor(compression_level):
+    if compression_level == None:
+        return None
+
+    if isinstance(compression_level, int):
+        if compression_level >= 1 and compression_level <= 22:
+            return zstandard.ZstdCompressor(level=compression_level)
+    else:
+        raise Exception(f"Invalid compression level: {compression_level}.")

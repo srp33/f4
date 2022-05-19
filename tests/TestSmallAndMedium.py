@@ -502,7 +502,7 @@ run_small_tests("/data/small.tsv.gz", f4_file_path, out_file_path, num_processes
 run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
 run_small_tests("/data/small.tsv.gz", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
 
-# Small tests with compression
+# Small tests with z-standard compression
 f4_file_path = "/data/small_compressed.f4"
 out_file_path = "/tmp/small_compressed_out.tsv"
 run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1, compression_level = 22)

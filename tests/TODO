@@ -1,15 +1,9 @@
-Modify column names to be private except a few.
-
 Develop compression scheme for string columns.
-
-Look at this and decide whether it might be useful for F4.
-  https://www.textualize.io/?s=03
-  If so, add it to the TODO list.
-
 
 
 
 CADD files:
+  Update the code that uses F4.
   Rebuild these files.
   Parse
   Compare against tabix. We can also compare it in terms of size.
@@ -56,6 +50,10 @@ Support the following scenarios (make sure the tests reflect them):
     # See tests in TestSmallAndMedium.py
     # Update TestBuildLarge.py and TestParseLarge.py
   4) compressed data + compressed index (when they want to be able to query any column).
+
+Modify some function names to be private.
+
+Consider using this: https://github.com/textualize/rich-cli
 
 Bring back the filters that I commented out in Filters.py.
   Make sure we have tests for them in TestSmall.py.

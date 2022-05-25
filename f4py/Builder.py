@@ -78,10 +78,11 @@ class Builder:
             raise Exception(f"A header row but no data rows were detected in {delimited_file_path}")
 
         # Check whether we have enough data to train a compression dictionary.
-        if total_num_chars > 100000 and len(compression_training_set) > 0:
-            f4py.CompressionHelper._save_training_dict(compression_training_set, f4_file_path, compression_level, num_processes)
+        if compression_level != None:
+            if total_num_chars > 100000 and len(compression_training_set) > 0:
+                f4py.CompressionHelper._save_training_dict(compression_training_set, f4_file_path, compression_level, num_processes)
 
-        f4py.CompressionHelper._save_level_file(f4_file_path, compression_level)
+            f4py.CompressionHelper._save_level_file(f4_file_path, compression_level)
 
         line_length = self._create_output_file(delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, num_rows, num_processes, total_num_chars, num_rows_per_save, tmp_dir_path2)
 
@@ -155,6 +156,8 @@ class Builder:
                 pass
 
     def _parse_columns_chunk(self, delimited_file_path, delimiter, start_index, end_index, need_compression):
+        compression_training_set = set()
+
         with f4py.get_delimited_file_handle(delimited_file_path) as in_file:
             # Ignore the header line because we don't need column names here.
             in_file.readline()
@@ -179,11 +182,12 @@ class Builder:
                     column_sizes_dict[i] = max([column_sizes_dict[i], len(line_items[i])])
 
                     inferred_type = _infer_type(line_items[i])
-                    if inferred_type:
-                        #if inferred_type == b"s":
-                        #    column_types_dict[i]["unique_s"].add(line_items[i])
 
-                        column_types_dict[i][inferred_type] += 1
+                    if inferred_type == b"s":
+                    #    column_types_dict[i]["unique_s"].add(line_items[i])
+                        compression_training_set.add(line_items[i])
+
+                    column_types_dict[i][inferred_type] += 1
 
                 num_rows += 1
 
@@ -192,18 +196,6 @@ class Builder:
 
         for i in range(start_index, end_index):
             column_types_dict[i] = _infer_type_for_column(column_types_dict[i], num_rows)
-
-        compression_training_set = set()
-        if need_compression:
-            with f4py.get_delimited_file_handle(delimited_file_path) as in_file:
-                in_file.readline()
-
-                for line in in_file:
-                    line_items = line.rstrip(b"\n").split(delimiter)
-
-                    for i in range(start_index, end_index):
-                        if column_types_dict[i] == b"s":
-                            compression_training_set.add(line_items[i])
 
         return column_sizes_dict, column_types_dict, num_rows, num_chars, compression_training_set
 

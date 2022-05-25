@@ -1,6 +1,5 @@
 Develop compression scheme for string columns.
-
-
+  How does the data size compare with and without training dict and for level 1 vs. 22?
 
 CADD files:
   Update the code that uses F4.

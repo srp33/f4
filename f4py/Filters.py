@@ -18,7 +18,7 @@ class NoFilter:
     def filter_column_values(self, data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict):
         return row_indices
 
-    def filter_indexed_column_values(self, data_file_path, compression_level, end_index, num_processes):
+    def filter_indexed_column_values(self, data_file_path, end_index, num_processes):
         return set(range(end_index))
 
 class __SimpleBaseFilter(NoFilter):
@@ -63,10 +63,10 @@ class __OperatorFilter(__SimpleBaseFilter):
 
         self.oper = oper
 
-    def filter_indexed_column_values(self, data_file_path, compression_level, end_index, num_processes):
+    def filter_indexed_column_values(self, data_file_path, end_index, num_processes):
         index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.column_name.decode())
 
-        return f4py.IndexHelper._filter_using_operator(index_file_path, compression_level, self, end_index, num_processes)
+        return f4py.IndexHelper._filter_using_operator(index_file_path, self, end_index, num_processes)
 
     def check_column_types(self, column_index_dict, column_type_dict, expected_column_type, expected_column_type_description):
         if column_type_dict[column_index_dict[self.column_name]] != expected_column_type:
@@ -113,7 +113,7 @@ class StartsWithFilter(__SimpleBaseFilter):
         self.check_argument(value, "value", str)
         super().__init__(column_name, value.encode())
 
-    def filter_indexed_column_values(self, data_file_path, compression_level, end_index, num_processes):
+    def filter_indexed_column_values(self, data_file_path, end_index, num_processes):
         index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.column_name.decode())
 
         return f4py.IndexHelper._get_passing_row_indices_for_with_filter(index_file_path, self, end_index, num_processes)
@@ -125,7 +125,7 @@ class EndsWithFilter(StartsWithFilter):
     def passes(self, value):
         return value.endswith(self.value)
 
-    def filter_indexed_column_values(self, data_file_path, compression_level, end_index, num_processes):
+    def filter_indexed_column_values(self, data_file_path, end_index, num_processes):
         custom_index_function = f4py.reverse_string
         custom_index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.column_name.decode(), custom_index_function)
 
@@ -150,7 +150,7 @@ class LikeFilter(__SimpleBaseFilter):
         self.check_argument(regular_expression, "regular_expression", str)
         self.value = re.compile(self.value)
 
-    def filter_indexed_column_values(self, data_file_path, compression_level, end_index, num_processes):
+    def filter_indexed_column_values(self, data_file_path, end_index, num_processes):
         index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.column_name.decode())
 
         with f4py.IndexHelper._get_index_parser(index_file_path) as index_parser:
@@ -182,7 +182,7 @@ class HeadFilter(NoFilter):
     def filter_column_values(self, data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict):
         return set(range(min(self._get_num_rows(data_file_path), self.n))) & row_indices
 
-    def filter_indexed_column_values(self, data_file_path, compression_level, end_index, num_processes):
+    def filter_indexed_column_values(self, data_file_path, end_index, num_processes):
         return set(range(min(self._get_num_rows(data_file_path), self.n)))
 
 class TailFilter(HeadFilter):
@@ -190,7 +190,7 @@ class TailFilter(HeadFilter):
         num_rows = self._get_num_rows(data_file_path)
         return set(range(num_rows - self.n, num_rows)) & row_indices
 
-    def filter_indexed_column_values(self, data_file_path, compression_level, end_index, num_processes):
+    def filter_indexed_column_values(self, data_file_path, end_index, num_processes):
         num_rows = self._get_num_rows(data_file_path)
         return set(range(num_rows - self.n, num_rows))
 
@@ -239,7 +239,7 @@ class AndFilter(__CompositeFilter):
         row_indices_1 = self.filter1.filter_column_values(data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict)
         return self.filter2.filter_column_values(data_file_path, row_indices_1, column_index_dict, column_type_dict, column_coords_dict)
 
-    def filter_indexed_column_values(self, data_file_path, compression_level, end_index, num_processes):
+    def filter_indexed_column_values(self, data_file_path, end_index, num_processes):
         # Currently, this combination of two-column filters is supported. Add more later.
         if isinstance(self.filter1, StringFilter) and self.filter1.oper == operator.eq:
             if isinstance(self.filter2, IntRangeFilter):
@@ -251,16 +251,16 @@ class AndFilter(__CompositeFilter):
                         coords = index_parser._parse_data_coords([0, 1, 2])
 
                         # Find range for string column
-                        lower_position, upper_position = f4py.IndexHelper._find_bounds_for_range(index_parser, compression_level, coords[0], self.filter1, self.filter1, end_index, num_processes)
+                        lower_position, upper_position = f4py.IndexHelper._find_bounds_for_range(index_parser, coords[0], self.filter1, self.filter1, end_index, num_processes)
 
                         # Find range for int column
-                        lower_position, upper_position = f4py.IndexHelper._find_bounds_for_range(index_parser, compression_level, coords[1], self.filter2.filter1, self.filter2.filter2, upper_position, num_processes, lower_position)
+                        lower_position, upper_position = f4py.IndexHelper._find_bounds_for_range(index_parser, coords[1], self.filter2.filter1, self.filter2.filter2, upper_position, num_processes, lower_position)
 
                         # Get row indices for the overlapping range
                         return f4py.IndexHelper._retrieve_matching_row_indices(index_parser, coords[2], (lower_position, upper_position), num_processes)
 
-        row_indices_1 = self.filter1.filter_indexed_column_values(data_file_path, compression_level, end_index, num_processes)
-        row_indices_2 = self.filter2.filter_indexed_column_values(data_file_path, compression_level, end_index, num_processes)
+        row_indices_1 = self.filter1.filter_indexed_column_values(data_file_path, end_index, num_processes)
+        row_indices_2 = self.filter2.filter_indexed_column_values(data_file_path, end_index, num_processes)
 
         return row_indices_1 & row_indices_2
 
@@ -286,9 +286,9 @@ class OrFilter(__CompositeFilter):
 
         return row_indices_1 | row_indices_2
 
-    def filter_indexed_column_values(self, data_file_path, compression_level, end_index, num_processes):
-        row_indices_1 = self.filter1.filter_indexed_column_values(data_file_path, compression_level, end_index, num_processes)
-        row_indices_2 = self.filter2.filter_indexed_column_values(data_file_path, compression_level, end_index, num_processes)
+    def filter_indexed_column_values(self, data_file_path, end_index, num_processes):
+        row_indices_1 = self.filter1.filter_indexed_column_values(data_file_path, end_index, num_processes)
+        row_indices_2 = self.filter2.filter_indexed_column_values(data_file_path, end_index, num_processes)
 
         return row_indices_1 | row_indices_2
 
@@ -306,13 +306,13 @@ class __RangeFilter(__CompositeFilter):
     def filter_column_values(self, data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict):
         return AndFilter(self.filter1, self.filter2).filter_column_values(data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict)
 
-    def filter_indexed_column_values(self, data_file_path, compression_level, end_index, num_processes):
+    def filter_indexed_column_values(self, data_file_path, end_index, num_processes):
         index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.filter1.column_name.decode())
 
         with f4py.IndexHelper._get_index_parser(index_file_path) as index_parser:
             coords = index_parser._parse_data_coords([0, 1])
 
-            return f4py.IndexHelper._find_row_indices_for_range(index_parser, compression_level, coords[0], coords[1], self.filter1, self.filter2, end_index, num_processes)
+            return f4py.IndexHelper._find_row_indices_for_range(index_parser, coords[0], coords[1], self.filter1, self.filter2, end_index, num_processes)
 
     def get_conversion_function(self):
         return f4py.do_nothing

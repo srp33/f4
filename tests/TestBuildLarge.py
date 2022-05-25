@@ -31,7 +31,7 @@ def build(in_file_path, tall_or_wide, num_processes, num_cols_per_chunk, num_row
     f4py.Builder(verbose=verbose).convert_delimited_file(in_file_path, f4_file_path, index_columns, delimiter="\t", compression_level=compression_level, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk, num_rows_per_save=num_rows_per_save, tmp_dir_path=f"/tmp/{out_file_prefix}", cache_dir_path=f"/tmp/{out_file_prefix}")
 
     if index_columns != None:
-        f4py.IndexHelper.build_endswith_index(f4_file_path, index_columns[0], compression_level=compression_level, verbose=verbose)
+        f4py.IndexHelper.build_endswith_index(f4_file_path, index_columns[0], verbose=verbose)
 
     end = time.time()
     elapsed = f"{round(end - start, 3)}"
@@ -60,5 +60,5 @@ for num_processes in [30]:
     build("data/tall.tsv", "tall", num_processes, 51, 10001, index_columns=["Discrete100", "Numeric900"], compression_level=None)
     build("data/wide.tsv", "wide", num_processes, 50001, 51, index_columns=["Discrete100000", "Numeric900000"], compression_level=None)
 
-    build("data/tall.tsv", "tall", num_processes, 51, 10001, index_columns=["Discrete100", "Numeric900"], compression_level=22)
-    build("data/wide.tsv", "wide", num_processes, 50001, 51, index_columns=["Discrete100000", "Numeric900000"], compression_level=22)
+    build("data/tall.tsv", "tall", num_processes, 51, 10001, index_columns=["Discrete100", "Numeric900"], compression_level=1)
+    build("data/wide.tsv", "wide", num_processes, 50001, 51, index_columns=["Discrete100000", "Numeric900000"], compression_level=1)

@@ -25,10 +25,7 @@ class Parser:
         for ext in fixed_file_extensions:
             self.__file_handles[ext] = self.set_file_handle(ext)
 
-        self.compression_level = f4py.read_str_from_file(data_file_path, ".cmp")
-        self.__decompressor = None
-        if self.compression_level != b"None":
-            self.__decompressor = zstandard.ZstdDecompressor()
+        self.__decompressor = f4py.CompressionHelper._get_decompressor(data_file_path)
 
         # Cache statistics in a dictionary.
         self.__stats = {}
@@ -82,7 +79,7 @@ class Parser:
 #            sub_filters = fltr.get_sub_filters()
 
 #            if num_processes == 1 or len(sub_filters) == 1:
-            keep_row_indices = sorted(fltr.filter_indexed_column_values(self.data_file_path, self.compression_level, self.get_num_rows(), num_processes))
+            keep_row_indices = sorted(fltr.filter_indexed_column_values(self.data_file_path, self.get_num_rows(), num_processes))
             #TODO
             #print(f"{len(keep_row_indices)} rows matched")
 #            else:

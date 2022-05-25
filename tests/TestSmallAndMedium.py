@@ -432,7 +432,7 @@ def run_medium_tests(num_processes):
     print(f"Running all tests for {in_file_path} - with indexing")
     print("-------------------------------------------------------")
 
-    f4py.IndexHelper.build_indexes(f4_file_path, ["ID", "Discrete1", "Numeric1"], compression_level=None)
+    f4py.IndexHelper.build_indexes(f4_file_path, ["ID", "Discrete1", "Numeric1"])
 
     run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, medium_Numeric1, num_processes)
 
@@ -440,7 +440,7 @@ def run_medium_tests(num_processes):
     print(f"Running all tests for {in_file_path} - custom indexing")
     print("-------------------------------------------------------")
 
-    f4py.IndexHelper.build_endswith_index(f4_file_path, "Discrete1", compression_level=None)
+    f4py.IndexHelper.build_endswith_index(f4_file_path, "Discrete1")
 
     run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, medium_Numeric1, num_processes)
 
@@ -505,8 +505,8 @@ run_small_tests("/data/small.tsv.gz", f4_file_path, out_file_path, num_processes
 # Small tests with z-standard compression
 f4_file_path = "/data/small_compressed.f4"
 out_file_path = "/tmp/small_compressed_out.tsv"
-run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1, compression_level = 22)
-run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2, compression_level = 22)
+run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1, compression_level = 1)
+run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2, compression_level = 1)
 
 # Small tests with indexing
 f4_file_path = "/data/small_indexing.f4"

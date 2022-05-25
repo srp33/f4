@@ -7,29 +7,29 @@ import operator
 
 class IndexHelper:
     # index_columns should be a list. Elements within it can be two-element lists.
-    def build_indexes(f4_file_path, index_columns, compression_level=None, verbose=False):
+    def build_indexes(f4_file_path, index_columns, verbose=False):
         if isinstance(index_columns, str):
-            IndexHelper._build_one_column_index(f4_file_path, index_columns, compression_level, verbose)
+            IndexHelper._build_one_column_index(f4_file_path, index_columns, verbose)
         elif isinstance(index_columns, list):
             for index_column in index_columns:
                 if isinstance(index_column, list):
                     if len(index_column) != 2:
                         raise Exception("If you pass a list as an index_column, it must have exactly two elements.")
 
-                    IndexHelper._build_two_column_index(f4_file_path, index_column[0], index_column[1], compression_level, verbose)
+                    IndexHelper._build_two_column_index(f4_file_path, index_column[0], index_column[1], verbose)
                 else:
                     if not isinstance(index_column, str):
                         raise Exception("When specifying an index column name, it must be a string.")
 
-                    IndexHelper._build_one_column_index(f4_file_path, index_column, compression_level, verbose, f4py.do_nothing)
+                    IndexHelper._build_one_column_index(f4_file_path, index_column, verbose, f4py.do_nothing)
         else:
             raise Exception("When specifying index_columns, it must either be a string or a list.")
 
     # This function is specifically for the EndsWithFilter.
-    def build_endswith_index(f4_file_path, index_column, compression_level=None, verbose=False):
-        IndexHelper._build_one_column_index(f4_file_path, index_column, compression_level, verbose, f4py.reverse_string)
+    def build_endswith_index(f4_file_path, index_column, verbose=False):
+        IndexHelper._build_one_column_index(f4_file_path, index_column, verbose, f4py.reverse_string)
 
-    def _build_one_column_index(f4_file_path, index_column, compression_level, verbose, custom_index_function):
+    def _build_one_column_index(f4_file_path, index_column, verbose, custom_index_function):
         f4py.print_message(f"Saving index for {f4_file_path} and {index_column}.", verbose)
 
         num_rows = f4py.read_int_from_file(f4_file_path, ".nrow")
@@ -60,7 +60,7 @@ class IndexHelper:
         f4py.print_message(f"Done building index file for {index_column} index for {f4_file_path}.", verbose)
 
     # TODO: Combine this function with the above one and make it generic enough to handle indexes with more columns.
-    def _build_two_column_index(f4_file_path, index_column_1, index_column_2, compression_level, verbose):
+    def _build_two_column_index(f4_file_path, index_column_1, index_column_2, verbose):
         if not isinstance(index_column_1, str) or not isinstance(index_column_1, str):
             raise Exception("When specifying an index column name, it must be a string.")
 
@@ -130,7 +130,7 @@ class IndexHelper:
             rows.append(row_value)
 
         column_coords_string, rows_max_length = f4py.build_string_map(rows)
-        f4py.write_str_to_file(index_file_path, "", column_coords_string)
+        f4py.write_str_to_file(index_file_path, column_coords_string)
 
         f4py.Builder()._save_meta_files(index_file_path, max_lengths, rows_max_length + 1)
 
@@ -183,7 +183,7 @@ class IndexHelper:
             # Else the element can only be present in right subarray
             return IndexHelper._binary_identifier_search(parser, line_length, value_coords, file_handle, value_to_find, mid+1, r)
 
-    def _filter_using_operator(index_file_path, compression_level, fltr, end_index, num_processes):
+    def _filter_using_operator(index_file_path, fltr, end_index, num_processes):
         if end_index == 0:
             return set()
 
@@ -193,10 +193,10 @@ class IndexHelper:
             file_handle = index_parser.get_file_handle("")
 
             if fltr.oper == operator.eq:
-                return IndexHelper._find_row_indices_for_range(index_parser, compression_level, coords[0], coords[1], fltr, fltr, end_index, num_processes)
+                return IndexHelper._find_row_indices_for_range(index_parser, coords[0], coords[1], fltr, fltr, end_index, num_processes)
             else:
                 if fltr.oper == operator.ne:
-                    lower_position, upper_position = IndexHelper._find_bounds_for_range(index_parser, compression_level, coords[0], fltr, fltr, end_index, num_processes)
+                    lower_position, upper_position = IndexHelper._find_bounds_for_range(index_parser, coords[0], fltr, fltr, end_index, num_processes)
 
                     lower_positions = (0, lower_position)
                     upper_positions = (upper_position, end_index)
@@ -329,7 +329,7 @@ class IndexHelper:
 
             return set(chain.from_iterable(Parallel(n_jobs = num_processes)(delayed(IndexHelper._find_matching_row_indices)(index_parser.data_file_path, position_coords, position_chunk) for position_chunk in position_chunks)))
 
-    def _find_bounds_for_range(index_parser, compression_level, value_coords, filter1, filter2, end_index, num_processes, start_index=0):
+    def _find_bounds_for_range(index_parser, value_coords, filter1, filter2, end_index, num_processes, start_index=0):
         line_length = index_parser.get_stat(".ll")
         file_handle = index_parser.get_file_handle("")
 
@@ -341,8 +341,8 @@ class IndexHelper:
 
         return lower_position, upper_position
 
-    def _find_row_indices_for_range(index_parser, compression_level, value_coords, position_coords, filter1, filter2, end_index, num_processes):
-        lower_position, upper_position = IndexHelper._find_bounds_for_range(index_parser, compression_level, value_coords, filter1, filter2, end_index, num_processes)
+    def _find_row_indices_for_range(index_parser, value_coords, position_coords, filter1, filter2, end_index, num_processes):
+        lower_position, upper_position = IndexHelper._find_bounds_for_range(index_parser, value_coords, filter1, filter2, end_index, num_processes)
 
         return IndexHelper._retrieve_matching_row_indices(index_parser, position_coords, (lower_position, upper_position), num_processes)
 

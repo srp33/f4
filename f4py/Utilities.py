@@ -1,4 +1,5 @@
 import datetime
+import gzip
 import fastnumbers
 import mmap
 from operator import itemgetter
@@ -15,8 +16,8 @@ def read_str_from_file(file_path, file_extension=""):
 def read_int_from_file(file_path, file_extension=""):
     return fastnumbers.fast_int(read_str_from_file(file_path, file_extension))
 
-def write_str_to_file(file_path, file_extension, the_string):
-    with open(file_path + file_extension, 'wb') as the_file:
+def write_str_to_file(file_path, the_string):
+    with open(file_path, 'wb') as the_file:
         the_file.write(the_string)
 
 #def is_missing_value(value):
@@ -47,7 +48,7 @@ def format_column_items(the_list, max_value_length, suffix=""):
     formatter = "{:<" + str(max_value_length) + "}" + suffix
     return [formatter.format(value.decode()).encode() for value in the_list]
 
-def print_message(message, verbose):
+def print_message(message, verbose=False):
     if verbose:
         print(f"{message} - {datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f')}")
 
@@ -76,12 +77,8 @@ def sort_first_two_columns(list_of_lists):
 def reverse_string(s):
     return s[::-1]
 
-def get_compressor(compression_level):
-    if compression_level == None:
-        return None
-
-    if isinstance(compression_level, int):
-        if compression_level >= 1 and compression_level <= 22:
-            return zstandard.ZstdCompressor(level=compression_level)
+def get_delimited_file_handle(file_path):
+    if file_path.endswith(".gz"):
+        return gzip.open(file_path)
     else:
-        raise Exception(f"Invalid compression level: {compression_level}.")
+        return open(file_path, 'rb')

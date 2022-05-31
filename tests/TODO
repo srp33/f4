@@ -1,5 +1,4 @@
-Develop compression scheme for string columns.
-  How does the data size compare with and without training dict and for level 1 vs. 22?
+How does the data size compare with and without training dict and for level 1 vs. 22?
 
 CADD files:
   Update the code that uses F4.
@@ -34,6 +33,8 @@ Modify name? Put Parallel(ize) in it?
 #####################################################
 # After benchmark paper (for software packages)
 #####################################################
+
+Allow user to specify a number of decimal places in brackets or maybe just a string formatting text that will say how an indexed column should be formatted. This way you could have a float column that only needs one decimal point. Precision in this saves a lot of space.
 
 Raise a friendly exception if the user tries to do an indexed query when the index has not been created.
 

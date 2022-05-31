@@ -1,7 +1,3 @@
-Shape	Indexed	Compressed	Num_Processes	Elapsed_Seconds
-tall	No	No	30	33.617
-wide	No	No	30	157.926
-tall	Yes	No	30	154.752
-wide	Yes	No	30	156.813
-tall	Yes	Yes	30	191.544
-wide	Yes	Yes	30	186.672
+Shape	Indexed	Compression_Level	Use_Training_Dict	Overall_Size	Num_Processes	Elapsed_Seconds
+tall	No	None	No	9211023052	30	131.967
+tall	Yes	1	Yes	4480055855	30	194.386

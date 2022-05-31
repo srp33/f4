@@ -6,18 +6,24 @@ import pstats
 from pstats import SortKey
 import time
 
-def build(in_file_path, tall_or_wide, num_processes, num_cols_per_chunk, num_rows_per_save, index_columns, compression_level):
+def build(in_file_path, tall_or_wide, num_processes, num_cols_per_chunk, num_rows_per_save, index_columns, compression_level, use_training_dict):
     out_file_prefix = tall_or_wide + "_"
+    print2(tall_or_wide)
 
     if index_columns:
         out_file_prefix += "indexed_"
+        print2("Yes")
     else:
         out_file_prefix += "notindexed_"
+        print2("No")
 
-    if compression_level:
-        out_file_prefix += "compressed"
+    out_file_prefix += f"{compression_level}"
+    print2(f"{compression_level}")
+
+    if use_training_dict:
+        print2("Yes")
     else:
-        out_file_prefix += "notcompressed"
+        print2("No")
 
     f4_file_path = f"data/{out_file_prefix}.f4"
 
@@ -28,7 +34,7 @@ def build(in_file_path, tall_or_wide, num_processes, num_cols_per_chunk, num_row
     start = time.time()
 
     verbose = False
-    f4py.Builder(verbose=verbose).convert_delimited_file(in_file_path, f4_file_path, index_columns, delimiter="\t", compression_level=compression_level, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk, num_rows_per_save=num_rows_per_save, tmp_dir_path=f"/tmp/{out_file_prefix}", cache_dir_path=f"/tmp/{out_file_prefix}")
+    f4py.Builder(verbose=verbose).convert_delimited_file(in_file_path, f4_file_path, index_columns, delimiter="\t", compression_level=compression_level, build_compression_dictionary=use_training_dict, num_processes=num_processes, num_cols_per_chunk=num_cols_per_chunk, num_rows_per_save=num_rows_per_save, tmp_dir_path=f"/tmp/{out_file_prefix}", cache_dir_path=f"/tmp/{out_file_prefix}")
 
     if index_columns != None:
         f4py.IndexHelper.build_endswith_index(f4_file_path, index_columns[0], verbose=verbose)
@@ -36,29 +42,30 @@ def build(in_file_path, tall_or_wide, num_processes, num_cols_per_chunk, num_row
     end = time.time()
     elapsed = f"{round(end - start, 3)}"
 
-    output = f"{tall_or_wide}\t"
-    if index_columns:
-        output += "Yes\t"
-    else:
-        output += "No\t"
-    if compression_level:
-        output += "Yes\t"
-    else:
-        output += "No\t"
+    print2(f"{get_output_size(f4_file_path)}")
+    print2(f"{num_processes}")
+    print2(f"{elapsed}", end="\n")
 
-    output += f"{num_processes}\t{elapsed}"
+def print2(output, end="\t"):
+    print(output, end=end)
 
-    print(output)
+def get_output_size(f4_file_path):
+    total_size = 0
+    for file_path in glob.glob(f"{f4_file_path}*"):
+        total_size += os.path.getsize(file_path)
+    return total_size
 
-print(f"Shape\tIndexed\tCompressed\tNum_Processes\tElapsed_Seconds")
+print(f"Shape\tIndexed\tCompression_Level\tUse_Training_Dict\tOverall_Size\tNum_Processes\tElapsed_Seconds")
 
-#for num_processes in [1, 2, 4, 8, 16, 32]:
-for num_processes in [30]:
-    build("data/tall.tsv", "tall", num_processes, 51, 10001, index_columns=None, compression_level=None)
-    build("data/wide.tsv", "wide", num_processes, 50001, 51, index_columns=None, compression_level=None)
+for num_processes in [1, 2, 4, 8, 16, 32]:
+#for num_processes in [30]:
+    build("data/tall.tsv", "tall", num_processes, 51, 10001, index_columns=None, compression_level=None, use_training_dict=False)
+    build("data/wide.tsv", "wide", num_processes, 50001, 51, index_columns=None, compression_level=None, use_training_dict=False)
 
-    build("data/tall.tsv", "tall", num_processes, 51, 10001, index_columns=["Discrete100", "Numeric900"], compression_level=None)
-    build("data/wide.tsv", "wide", num_processes, 50001, 51, index_columns=["Discrete100000", "Numeric900000"], compression_level=None)
+    build("data/tall.tsv", "tall", num_processes, 51, 10001, index_columns=["Discrete100", "Numeric900"], compression_level=None, use_training_dict=False)
+    build("data/wide.tsv", "wide", num_processes, 50001, 51, index_columns=["Discrete100000", "Numeric900000"], compression_level=None, use_training_dict=False)
 
-    build("data/tall.tsv", "tall", num_processes, 51, 10001, index_columns=["Discrete100", "Numeric900"], compression_level=1)
-    build("data/wide.tsv", "wide", num_processes, 50001, 51, index_columns=["Discrete100000", "Numeric900000"], compression_level=1)
+    for compression_level in [1, 22]:
+        for use_training_dict in [False, True]:
+            build("data/tall.tsv", "tall", num_processes, 51, 10001, index_columns=["Discrete100", "Numeric900"], compression_level=compression_level, use_training_dict=use_training_dict)
+            build("data/wide.tsv", "wide", num_processes, 50001, 51, index_columns=["Discrete100000", "Numeric900000"], compression_level=compression_level, use_training_dict=use_training_dict)

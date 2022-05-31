@@ -101,7 +101,8 @@ wide_select_columns = ["ID"] + [f"Discrete{i}" for i in range(100, 100001, 100)]
 
 print(f"Description\tShape\tIndexed\tCompressed\tNum_Processes\tElapsed_Seconds")
 
-for num_processes in [1, 2, 4, 8, 16, 32]:
+#for num_processes in [1, 2, 4, 8, 16, 32]:
+for num_processes in [1, 4, 8]:
 #for num_processes in [8]:
     tall_discrete_filter1 = f4py.StartsWithFilter("Discrete100", "A")
     wide_discrete_filter1 = f4py.StartsWithFilter("Discrete100000", "A")

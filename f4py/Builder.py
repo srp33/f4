@@ -12,7 +12,7 @@ class Builder:
     def __init__(self, verbose=False):
         self.__verbose = verbose
 
-    def convert_delimited_file(self, delimited_file_path, f4_file_path, index_columns=[], delimiter="\t", compression_level=1, num_processes=1, num_cols_per_chunk=None, num_rows_per_save=100, tmp_dir_path=None, cache_dir_path=None):
+    def convert_delimited_file(self, delimited_file_path, f4_file_path, index_columns=[], delimiter="\t", compression_level=1, build_compression_dictionary=True, num_processes=1, num_cols_per_chunk=None, num_rows_per_save=100, tmp_dir_path=None, cache_dir_path=None):
         if type(delimiter) != str:
             raise Exception("The delimiter value must be a string.")
 
@@ -51,7 +51,7 @@ class Builder:
 
             # Iterate through the lines to summarize each column.
             self._print_message(f"Summarizing each column in {delimited_file_path}")
-            chunk_results = Parallel(n_jobs=num_processes)(delayed(self._parse_columns_chunk)(delimited_file_path, delimiter, column_chunk[0], column_chunk[1], compression_level != None) for column_chunk in column_chunk_indices)
+            chunk_results = Parallel(n_jobs=num_processes)(delayed(self._parse_columns_chunk)(delimited_file_path, delimiter, column_chunk[0], column_chunk[1], build_compression_dictionary) for column_chunk in column_chunk_indices)
 
             if tmp_chunk_results_file_path:
                 self._print_message(f"Saving cached chunk results to {tmp_chunk_results_file_path}")
@@ -155,7 +155,7 @@ class Builder:
                 print(e)
                 pass
 
-    def _parse_columns_chunk(self, delimited_file_path, delimiter, start_index, end_index, need_compression):
+    def _parse_columns_chunk(self, delimited_file_path, delimiter, start_index, end_index, build_compression_dictionary):
         compression_training_set = set()
 
         with f4py.get_delimited_file_handle(delimited_file_path) as in_file:
@@ -183,7 +183,7 @@ class Builder:
 
                     inferred_type = _infer_type(line_items[i])
 
-                    if inferred_type == b"s":
+                    if build_compression_dictionary and inferred_type == b"s":
                     #    column_types_dict[i]["unique_s"].add(line_items[i])
                         compression_training_set.add(line_items[i])
 

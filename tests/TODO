@@ -1,22 +1,22 @@
-How does the data size compare with and without training dict and for level 1 vs. 22?
+Re-run TestBuildLarge.py overnight.
 
-CADD files:
-  Update the code that uses F4.
-  Rebuild these files.
-  Parse
-  Compare against tabix. We can also compare it in terms of size.
-    https://www.htslib.org/doc/tabix.html
-    tabix sorted.gff.gz chr1:10,000,000-20,000,000
-  Try CSI index files https://github.com/enasequence/schema/issues/18
+Huge benchmarks:
+  CADD files:
+    Update the code that uses F4.
+    Compare against tabix. We can also compare it in terms of size.
+      https://www.htslib.org/doc/tabix.html
+      tabix sorted.gff.gz chr1:10,000,000-20,000,000
+      Try CSI index files https://github.com/enasequence/schema/issues/18
+  Gene-expression data:
+    refine.bio - Normalized (not RNA-Seq) compendia - Homo sapiens (43 GB) - https://www.refine.bio/compendia?c=normalized
+    LINCS (see WishBuilder)
+    recount3 (must write code to download individual studies and then combine them)
   Generate formal statistics on results.
+    How does the data size compare with and without training dict and for level 1 vs. 22?
   If we need to go faster to beat tabix:
     Try Nuitka. https://nuitka.net (compiles your Python code to C, is supposed to achieve speedups of 3x or greater).
     Parallelize the process of generating the output file (save to temp file)?
       This *might* help when doing a lot of decompression.
-
-Test LINCS data (see WishBuilder).
-
-Test refine.bio compendia.
 
 Remove unnecessary comments and address TODO items in ../f4py/*.
 

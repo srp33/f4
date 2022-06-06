@@ -28,7 +28,7 @@ class CompressionHelper:
     def _get_decompressor(f4_file_path):
         level = CompressionHelper._get_level(f4_file_path)
 
-        if level:
+        if level != None:
             training_dict_file_path = CompressionHelper._get_training_dict_file_path(f4_file_path)
 
             if os.path.exists(training_dict_file_path):

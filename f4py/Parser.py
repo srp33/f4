@@ -18,6 +18,10 @@ class Parser:
         data_file_path (str): The path to an existing F4 file.
     """
     def __init__(self, data_file_path, fixed_file_extensions=["", ".cc", ".ct"], stats_file_extensions=[".ll", ".mccl", ".nrow", ".ncol"]):
+        #TODO: expand this out for the other parameters.
+        if not isinstance(data_file_path, str):
+            raise Exception("You must specify data_file_path as an str value.")
+
         self.data_file_path = data_file_path
 
         # Cache file handles in a dictionary.
@@ -76,12 +80,11 @@ class Parser:
         has_index = len(glob.glob(self.data_file_path + ".idx_*")) > 0
 
         if has_index:
+#TODO: Remove this stuff if we don't need it after testing on huge files.
 #            sub_filters = fltr.get_sub_filters()
 
 #            if num_processes == 1 or len(sub_filters) == 1:
             keep_row_indices = sorted(fltr.filter_indexed_column_values(self.data_file_path, self.get_num_rows(), num_processes))
-            #TODO
-            #print(f"{len(keep_row_indices)} rows matched")
 #            else:
 #                fltr_results_dict = {}
 

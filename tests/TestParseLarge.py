@@ -8,16 +8,23 @@ from pstats import SortKey
 import sys
 import time
 
-def run_test(description, tall_or_wide, select_columns, discrete_filter1, discrete_filter2, float_filter, indexed, compressed, num_processes, lines_per_chunk, expected_size):
+def run_test(description, tall_or_wide, select_columns, discrete_filter1, discrete_filter2, float_filter, indexed, compression_level, use_training_dict, num_processes, lines_per_chunk, expected_size):
+    if not indexed and compression_level != None:
+        return
+
     f4_file_path = f"data/{tall_or_wide}_"
+
     if indexed:
         f4_file_path += "indexed_"
     else:
         f4_file_path += "notindexed_"
-    if compressed:
-        f4_file_path += "compressed.f4"
+
+    f4_file_path += f"{compression_level}_"
+
+    if use_training_dict:
+        f4_file_path += "cmpd.f4"
     else:
-        f4_file_path += "notcompressed.f4"
+        f4_file_path += "nocmpd.f4"
 
     out_file_path = f"/tmp/{os.path.basename(f4_file_path)}"
 
@@ -41,7 +48,10 @@ def run_test(description, tall_or_wide, select_columns, discrete_filter1, discre
         output += "Yes\t"
     else:
         output += "No\t"
-    if compressed:
+
+    output += f"{compression_level}\t"
+
+    if use_training_dict:
         output += "Yes\t"
     else:
         output += "No\t"
@@ -50,15 +60,35 @@ def run_test(description, tall_or_wide, select_columns, discrete_filter1, discre
 
     print(output)
 
-def run_tests(description, tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, num_processes, tall_expected_size, wide_expected_size):
-    run_test(description, "tall", tall_select_columns, tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, False, False, num_processes, 10000, tall_expected_size)
-    run_test(description, "wide", wide_select_columns, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, False, False, num_processes, 10, wide_expected_size)
+def run_tests(description, tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, compression_level, use_training_dict, num_processes, tall_expected_size, wide_expected_size):
+    run_test(description, "tall", tall_select_columns, tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, False, compression_level, use_training_dict, num_processes, 10000, tall_expected_size)
+    run_test(description, "wide", wide_select_columns, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, False, compression_level, use_training_dict, num_processes, 10, wide_expected_size)
 
-    run_test(description, "tall", tall_select_columns, tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, True, False, num_processes, 10000, tall_expected_size)
-    run_test(description, "wide", wide_select_columns, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, True, False, num_processes, 10, wide_expected_size)
+    run_test(description, "tall", tall_select_columns, tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, True, compression_level, use_training_dict, num_processes, 10000, tall_expected_size)
+    run_test(description, "wide", wide_select_columns, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, True, compression_level, use_training_dict, num_processes, 10, wide_expected_size)
 
-    run_test(description, "tall", tall_select_columns, tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, True, True, num_processes, 10000, tall_expected_size)
-    run_test(description, "wide", wide_select_columns, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, True, True, num_processes, 10, wide_expected_size)
+    run_test(description, "tall", tall_select_columns, tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, True, compression_level, use_training_dict, num_processes, 10000, tall_expected_size)
+    run_test(description, "wide", wide_select_columns, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, True, compression_level, use_training_dict, num_processes, 10, wide_expected_size)
+
+def run_all_tests(num_processes, compression_level, use_training_dict):
+    tall_discrete_filter1 = f4py.StartsWithFilter("Discrete100", "A")
+    wide_discrete_filter1 = f4py.StartsWithFilter("Discrete100000", "A")
+
+    tall_discrete_filter2 = f4py.EndsWithFilter("Discrete100", "Z")
+    wide_discrete_filter2 = f4py.EndsWithFilter("Discrete100000", "Z")
+
+    tall_float_filter = f4py.FloatFilter("Numeric900", operator.ge, 0.1)
+    wide_float_filter = f4py.FloatFilter("Numeric900000", operator.ge, 0.1)
+
+    run_tests("EndsStartsWith", tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, compression_level, use_training_dict, num_processes, 7613257, 7177264)
+
+    tall_discrete_filter1 = f4py.StringFilter("Discrete100", operator.eq, "AA")
+    wide_discrete_filter1 = f4py.StringFilter("Discrete100000", operator.eq, "AA")
+
+    tall_discrete_filter2 = f4py.StringFilter("Discrete100", operator.eq, "ZZ")
+    wide_discrete_filter2 = f4py.StringFilter("Discrete100000", operator.eq, "ZZ")
+
+    run_tests("AA_ZZ", tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, compression_level, use_training_dict, num_processes, 289122, 342803)
 
 tall_select_columns = ["ID", "Discrete100", "Numeric100", "Numeric200", "Numeric300", "Numeric400", "Numeric500", "Numeric600", "Numeric700", "Numeric800", "Numeric900"]
 wide_select_columns = ["ID"] + [f"Discrete{i}" for i in range(100, 100001, 100)] + [f"Numeric{i}" for i in range(100, 900001, 100)]
@@ -99,26 +129,32 @@ wide_select_columns = ["ID"] + [f"Discrete{i}" for i in range(100, 100001, 100)]
 #ps = pstats.Stats(profile)
 #ps.print_stats()
 
-print(f"Description\tShape\tIndexed\tCompressed\tNum_Processes\tElapsed_Seconds")
+print(f"Description\tShape\tIndexed\tCompression_Level\tUse_Training_Dict\tNum_Processes\tElapsed_Seconds")
 
 #for num_processes in [1, 2, 4, 8, 16, 32]:
-for num_processes in [1, 4, 8]:
-#for num_processes in [8]:
-    tall_discrete_filter1 = f4py.StartsWithFilter("Discrete100", "A")
-    wide_discrete_filter1 = f4py.StartsWithFilter("Discrete100000", "A")
+#for num_processes in [1, 4, 8]:
+for num_processes in [8]:
+    run_all_tests(num_processes, compression_level=None, use_training_dict=False)
 
-    tall_discrete_filter2 = f4py.EndsWithFilter("Discrete100", "Z")
-    wide_discrete_filter2 = f4py.EndsWithFilter("Discrete100000", "Z")
+    for compression_level in [1, 22]:
+        for use_training_dict in [False, True]:
+            run_all_tests(num_processes, compression_level=compression_level, use_training_dict=use_training_dict)
 
-    tall_float_filter = f4py.FloatFilter("Numeric900", operator.ge, 0.1)
-    wide_float_filter = f4py.FloatFilter("Numeric900000", operator.ge, 0.1)
+            #tall_discrete_filter1 = f4py.StartsWithFilter("Discrete100", "A")
+            #wide_discrete_filter1 = f4py.StartsWithFilter("Discrete100000", "A")
 
-    run_tests("EndsStartsWith", tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, num_processes, 7613257, 7177264)
+            #tall_discrete_filter2 = f4py.EndsWithFilter("Discrete100", "Z")
+            #wide_discrete_filter2 = f4py.EndsWithFilter("Discrete100000", "Z")
 
-    tall_discrete_filter1 = f4py.StringFilter("Discrete100", operator.eq, "AA")
-    wide_discrete_filter1 = f4py.StringFilter("Discrete100000", operator.eq, "AA")
+            #tall_float_filter = f4py.FloatFilter("Numeric900", operator.ge, 0.1)
+            #wide_float_filter = f4py.FloatFilter("Numeric900000", operator.ge, 0.1)
 
-    tall_discrete_filter2 = f4py.StringFilter("Discrete100", operator.eq, "ZZ")
-    wide_discrete_filter2 = f4py.StringFilter("Discrete100000", operator.eq, "ZZ")
+            #run_tests("EndsStartsWith", tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, compression_level, use_training_dict, num_processes, 7613257, 7177264)
 
-    run_tests("AA_ZZ", tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, num_processes, 289122, 342803)
+            #tall_discrete_filter1 = f4py.StringFilter("Discrete100", operator.eq, "AA")
+            #wide_discrete_filter1 = f4py.StringFilter("Discrete100000", operator.eq, "AA")
+
+            #tall_discrete_filter2 = f4py.StringFilter("Discrete100", operator.eq, "ZZ")
+            #wide_discrete_filter2 = f4py.StringFilter("Discrete100000", operator.eq, "ZZ")
+
+            #run_tests("AA_ZZ", tall_discrete_filter1, tall_discrete_filter2, tall_float_filter, wide_discrete_filter1, wide_discrete_filter2, wide_float_filter, compression_level, use_training_dict, num_processes, 289122, 342803)

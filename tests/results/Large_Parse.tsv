@@ -1,37 +1,61 @@
-Description	Shape	Indexed	Compressed	Num_Processes	Elapsed_Seconds
-EndsStartsWith	tall	No	No	1	3.144
-EndsStartsWith	wide	No	No	1	0.529
-EndsStartsWith	tall	Yes	No	1	1.294
-EndsStartsWith	wide	Yes	No	1	0.522
-EndsStartsWith	tall	Yes	Yes	1	2.015
-EndsStartsWith	wide	Yes	Yes	1	1.232
-AA_ZZ	tall	No	No	1	2.73
-AA_ZZ	wide	No	No	1	0.29
-AA_ZZ	tall	Yes	No	1	0.729
-AA_ZZ	wide	Yes	No	1	0.28
-AA_ZZ	tall	Yes	Yes	1	0.763
-AA_ZZ	wide	Yes	Yes	1	0.303
-EndsStartsWith	tall	No	No	4	1.521
-EndsStartsWith	wide	No	No	4	0.554
-EndsStartsWith	tall	Yes	No	4	0.86
-EndsStartsWith	wide	Yes	No	4	0.579
-EndsStartsWith	tall	Yes	Yes	4	1.596
-EndsStartsWith	wide	Yes	Yes	4	1.281
-AA_ZZ	tall	No	No	4	0.88
-AA_ZZ	wide	No	No	4	0.306
-AA_ZZ	tall	Yes	No	4	0.338
-AA_ZZ	wide	Yes	No	4	0.321
-AA_ZZ	tall	Yes	Yes	4	0.358
-AA_ZZ	wide	Yes	Yes	4	0.358
-EndsStartsWith	tall	No	No	8	1.165
-EndsStartsWith	wide	No	No	8	0.568
-EndsStartsWith	tall	Yes	No	8	0.766
-EndsStartsWith	wide	Yes	No	8	0.569
-EndsStartsWith	tall	Yes	Yes	8	1.483
-EndsStartsWith	wide	Yes	Yes	8	1.282
-AA_ZZ	tall	No	No	8	0.547
-AA_ZZ	wide	No	No	8	0.327
-AA_ZZ	tall	Yes	No	8	0.241
-AA_ZZ	wide	Yes	No	8	0.327
-AA_ZZ	tall	Yes	Yes	8	0.266
-AA_ZZ	wide	Yes	Yes	8	0.358
+Description	Shape	Indexed	Compression_Level	Use_Training_Dict	Num_Processes	Elapsed_Seconds
+EndsStartsWith	tall	No	None	No	8	1.172
+EndsStartsWith	wide	No	None	No	8	0.566
+EndsStartsWith	tall	Yes	None	No	8	0.76
+EndsStartsWith	wide	Yes	None	No	8	0.566
+EndsStartsWith	tall	Yes	None	No	8	0.767
+EndsStartsWith	wide	Yes	None	No	8	0.581
+AA_ZZ	tall	No	None	No	8	0.537
+AA_ZZ	wide	No	None	No	8	0.315
+AA_ZZ	tall	Yes	None	No	8	0.243
+AA_ZZ	wide	Yes	None	No	8	0.32
+AA_ZZ	tall	Yes	None	No	8	0.236
+AA_ZZ	wide	Yes	None	No	8	0.318
+EndsStartsWith	tall	Yes	1	No	8	1.744
+EndsStartsWith	wide	Yes	1	No	8	1.071
+EndsStartsWith	tall	Yes	1	No	8	1.732
+EndsStartsWith	wide	Yes	1	No	8	1.071
+AA_ZZ	tall	Yes	1	No	8	0.278
+AA_ZZ	wide	Yes	1	No	8	0.333
+AA_ZZ	tall	Yes	1	No	8	0.274
+AA_ZZ	wide	Yes	1	No	8	0.333
+Using training_dict for decompression...
+EndsStartsWith	tall	Yes	1	Yes	8	1.473
+Using training_dict for decompression...
+EndsStartsWith	wide	Yes	1	Yes	8	1.286
+Using training_dict for decompression...
+EndsStartsWith	tall	Yes	1	Yes	8	1.472
+Using training_dict for decompression...
+EndsStartsWith	wide	Yes	1	Yes	8	1.276
+Using training_dict for decompression...
+AA_ZZ	tall	Yes	1	Yes	8	0.269
+Using training_dict for decompression...
+AA_ZZ	wide	Yes	1	Yes	8	0.358
+Using training_dict for decompression...
+AA_ZZ	tall	Yes	1	Yes	8	0.264
+Using training_dict for decompression...
+AA_ZZ	wide	Yes	1	Yes	8	0.354
+EndsStartsWith	tall	Yes	22	No	8	2.298
+EndsStartsWith	wide	Yes	22	No	8	1.603
+EndsStartsWith	tall	Yes	22	No	8	2.291
+EndsStartsWith	wide	Yes	22	No	8	1.602
+AA_ZZ	tall	Yes	22	No	8	0.304
+AA_ZZ	wide	Yes	22	No	8	0.359
+AA_ZZ	tall	Yes	22	No	8	0.297
+AA_ZZ	wide	Yes	22	No	8	0.369
+Using training_dict for decompression...
+EndsStartsWith	tall	Yes	22	Yes	8	2.306
+Using training_dict for decompression...
+EndsStartsWith	wide	Yes	22	Yes	8	2.22
+Using training_dict for decompression...
+EndsStartsWith	tall	Yes	22	Yes	8	2.311
+Using training_dict for decompression...
+EndsStartsWith	wide	Yes	22	Yes	8	2.207
+Using training_dict for decompression...
+AA_ZZ	tall	Yes	22	Yes	8	0.302
+Using training_dict for decompression...
+AA_ZZ	wide	Yes	22	Yes	8	0.366
+Using training_dict for decompression...
+AA_ZZ	tall	Yes	22	Yes	8	0.297
+Using training_dict for decompression...
+AA_ZZ	wide	Yes	22	Yes	8	0.373

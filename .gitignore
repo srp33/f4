@@ -3,5 +3,6 @@ __pycache__
 tests/data/small.f4*
 tests/data/tall*
 tests/data/wide*
+tests/data/cadd*
 nohup*
 tests/nohup*

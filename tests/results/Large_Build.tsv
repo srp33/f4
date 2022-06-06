@@ -1,3 +1,2 @@
-Shape	Indexed	Compression_Level	Use_Training_Dict	Overall_Size	Num_Processes	Elapsed_Seconds
-tall	No	None	No	9211023052	30	131.967
-tall	Yes	1	Yes	4480055855	30	194.386
+Shape	Indexed	Compression_Level	Use_Compression_Dict	Overall_Size	Num_Processes	Elapsed_Seconds
+tall	Yes	None	No	9257023074	32	146.818

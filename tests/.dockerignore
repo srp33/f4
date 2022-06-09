@@ -1,3 +1,4 @@
 data/*.f4*
 data/tall.tsv*
 data/wide.tsv*
+data/cadd*.tsv*

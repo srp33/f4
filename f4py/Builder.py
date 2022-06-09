@@ -33,29 +33,29 @@ class Builder:
         if num_cols == 0:
             raise Exception(f"No data was detected in {delimited_file_path}.")
 
-        tmp_chunk_results_file_path = None
-        if cache_dir_path:
-            # Make sure there is a backslash at the end
-            cache_dir_path = cache_dir_path.rstrip("/") + "/"
-            os.makedirs(cache_dir_path, exist_ok=True)
-            tmp_chunk_results_file_path = f"{cache_dir_path}chunk_results"
+        #tmp_chunk_results_file_path = None
+        #if cache_dir_path:
+        #    # Make sure there is a backslash at the end
+        #    cache_dir_path = cache_dir_path.rstrip("/") + "/"
+        #    os.makedirs(cache_dir_path, exist_ok=True)
+        #    tmp_chunk_results_file_path = f"{cache_dir_path}chunk_results"
 
-        if tmp_dir_path and cache_dir_path and tmp_dir_path == cache_dir_path:
-            raise Exception("tmp_dir_path and cache_dir_path cannot point to the same location.")
+        #if tmp_dir_path and cache_dir_path and tmp_dir_path == cache_dir_path:
+        #    raise Exception("tmp_dir_path and cache_dir_path cannot point to the same location.")
 
-        if tmp_chunk_results_file_path and os.path.exists(tmp_chunk_results_file_path):
-            self._print_message(f"Retrieving cached chunk results from {tmp_chunk_results_file_path}")
-            chunk_results = pickle.loads(f4py.read_str_from_file(tmp_chunk_results_file_path))
-        else:
-            column_chunk_indices = _generate_chunk_ranges(num_cols, num_cols_per_chunk)
+        #if tmp_chunk_results_file_path and os.path.exists(tmp_chunk_results_file_path):
+        #    self._print_message(f"Retrieving cached chunk results from {tmp_chunk_results_file_path}")
+        #    chunk_results = pickle.loads(f4py.read_str_from_file(tmp_chunk_results_file_path))
+        #else:
+        column_chunk_indices = _generate_chunk_ranges(num_cols, num_cols_per_chunk)
 
-            # Iterate through the lines to summarize each column.
-            self._print_message(f"Summarizing each column in {delimited_file_path}")
-            chunk_results = Parallel(n_jobs=num_processes)(delayed(self._parse_columns_chunk)(delimited_file_path, delimiter, column_chunk[0], column_chunk[1], build_compression_dictionary) for column_chunk in column_chunk_indices)
+        # Iterate through the lines to summarize each column.
+        self._print_message(f"Summarizing each column in {delimited_file_path}")
+        chunk_results = Parallel(n_jobs=num_processes)(delayed(self._parse_columns_chunk)(delimited_file_path, delimiter, column_chunk[0], column_chunk[1], build_compression_dictionary) for column_chunk in column_chunk_indices)
 
-            if tmp_chunk_results_file_path:
-                self._print_message(f"Saving cached chunk results to {tmp_chunk_results_file_path}")
-                f4py.write_str_to_file(tmp_chunk_results_file_path, pickle.dumps(chunk_results))
+        #    if tmp_chunk_results_file_path:
+        #        self._print_message(f"Saving cached chunk results to {tmp_chunk_results_file_path}")
+        #        f4py.write_str_to_file(tmp_chunk_results_file_path, pickle.dumps(chunk_results))
 
         # Summarize the column sizes and types across the chunks.
         column_sizes = []

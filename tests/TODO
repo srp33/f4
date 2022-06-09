@@ -1,13 +1,24 @@
+Remove tmp_chunk_results_file_path logic from Builder.py (and function signature).
+Remove the compression_level and build_compression_dict arguments?
 Re-run TestBuildLarge.py overnight.
 
 Huge benchmarks:
   CADD files:
-    Update the code that uses F4.
+    Figure out why compression is so poor.
+      Does specifying too large a number matter for the training dict size?
+      Does it make sense to build the training dictionary twice (once to determine size, then using that size).
+      How much does compression_level matter?
     Compare against tabix. We can also compare it in terms of size.
       https://www.htslib.org/doc/tabix.html
       tabix sorted.gff.gz chr1:10,000,000-20,000,000
       Try CSI index files https://github.com/enasequence/schema/issues/18
+    Pad every value with a space or a tab so the files are more readable?
+      With compression this might not matter much?
   Gene-expression data:
+    GSE62944
+    ARCHS4 - https://maayanlab.cloud/archs4/download.html
+      Human - TPM (transcript level) - 101 GB - HDF5 format
+    ------------------------------------
     refine.bio - Normalized (not RNA-Seq) compendia - Homo sapiens (43 GB) - https://www.refine.bio/compendia?c=normalized
     LINCS (see WishBuilder)
     recount3 (must write code to download individual studies and then combine them)
@@ -17,6 +28,7 @@ Huge benchmarks:
     Try Nuitka. https://nuitka.net (compiles your Python code to C, is supposed to achieve speedups of 3x or greater).
     Parallelize the process of generating the output file (save to temp file)?
       This *might* help when doing a lot of decompression.
+    Python 3.11. beta version already available. Production release in October 22. At least 20% speedup.
 
 Remove unnecessary comments and address TODO items in ../f4py/*.
 
@@ -76,7 +88,9 @@ Store discrete data in separate table from numeric? The first column is a JSON d
 Make sure all arguments to public functions are fully validated in tests.
 If possible, move functions out of Helper.py. If you keep any, document them.
 Make all code consistent with PEP8 spec (using PyCharm).
+
 Rework the format so that everything is stored in a single file.
+  Use this spec? https://tools.ietf.org/id/draft-kunze-bagit-16.html
 
 Look at pandas for other functionality that might make sense to support? Add to TODO list.
 Support joins?

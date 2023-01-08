@@ -1,6 +1,35 @@
+CSV/TSV compression project:
+  Build an index file that indicates start position of each line and compression dictionary.
+    Make it JSON or msgpack so it is language agnostic.
+  Compare different compression algorithms.
+    gzip
+    zstandard (with training dictionary or without)
+    lz4
+    etc.
+    bgzip?
+  Read up on bgzip. Why do they use 64 kb blocks?
+  Fine tune my method:
+    We get poor performance when using n-grams only on cadd_head_medium. What is the optimal threshold for the proportion of unique values in a given column before you use n-grams?
+      There seems to be a slight benefit when using lookup table with large integers. But how different is that from using n-grams on those?
+    Evaluate best n size for n-grams. Automatically determine whether to use n-grams or dictionary lookup.
+    Compare against encoding method.
+    Describe scenarios (columns) where you get high vs. low compression ratios.
+    Describe the benefits you get from bit packing.
+    When converting bit arrays, can you ever get better compression ratios with zstandard than bitarray?
+  What benefit do you get from gzipping the whole file in addition to a line-by-line scheme?
+  Try different types of biology files.
+  Python code/module?
+  R code/package?
+  Lossy compression of numerical datasets using n-grams (see notes). (Or should that be a separate paper?)
+
 Remove tmp_chunk_results_file_path logic from Builder.py (and function signature).
 Remove the compression_level and build_compression_dict arguments?
+Remove CompressionHelper.py?
 Re-run TestBuildLarge.py overnight.
+Try changing from pickle to msgpack (because it is language agnostic).
+Add logic to only compress if the compressed version of a column will be smaller.
+
+Remove unnecessary comments and address TODO items in ../f4py/*.
 
 Huge benchmarks:
   CADD files:

@@ -132,7 +132,15 @@ class IndexHelper:
         column_coords_string, rows_max_length = f4py.build_string_map(rows)
         f4py.write_str_to_file(index_file_path, column_coords_string)
 
-        f4py.Builder()._save_meta_files(index_file_path, max_lengths, rows_max_length + 1)
+        #TODO: Remove this line?
+        #f4py.Builder()._save_meta_files(index_file_path, max_lengths, rows_max_length + 1)
+        column_start_coords = f4py.get_column_start_coords(max_lengths)
+        column_coords_string, max_column_coord_length = f4py.build_string_map(column_start_coords)
+        f4py.write_str_to_file(index_file_path + ".cc", column_coords_string)
+        f4py.write_str_to_file(index_file_path + ".mccl", str(max_column_coord_length).encode())
+
+        # Find and save the line length.
+        f4py.write_str_to_file(index_file_path + ".ll", str(rows_max_length + 1).encode())
 
     def _get_two_column_index_name(filter1, filter2):
         return "____".join([filter1.column_name.decode(), filter2.column_name.decode()])

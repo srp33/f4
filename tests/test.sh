@@ -22,7 +22,7 @@ dockerCommand="docker run -i -t --rm --user $(id -u):$(id -g) -v $(pwd):/sandbox
 
 #$dockerCommand bash -c "time python3 BuildTsv.py 1 1 100 data/medium.tsv"
 
-$dockerCommand python3 TestSmallAndMedium.py
+#$dockerCommand python3 TestSmallAndMedium.py
 
 #######################################################
 # Create large test files and do tests
@@ -42,7 +42,7 @@ mkdir -p results
 # Test CADD files.
 ############################################################
 
-#wget -O data/whole_genome_SNVs_inclAnno.tsv.gz https://krishna.gs.washington.edu/download/CADD/v1.6/GRCh38/whole_genome_SNVs_inclAnno.tsv.gz
+wget -O data/whole_genome_SNVs_inclAnno.tsv.gz https://krishna.gs.washington.edu/download/CADD/v1.6/GRCh38/whole_genome_SNVs_inclAnno.tsv.gz
 #wget -O data/whole_genome_SNVs_inclAnno.tsv.gz.tbi https://krishna.gs.washington.edu/download/CADD/v1.6/GRCh38/whole_genome_SNVs_inclAnno.tsv.gz.tbi
 
 #zcat data/whole_genome_SNVs_inclAnno.tsv.gz | head -n 2 | tail -n +2 | cut -c2- | gzip > data/cadd.tsv.gz
@@ -66,6 +66,7 @@ mkdir -p results
 #gzip data/cadd_head_medium.tsv
 
 ##$dockerCommand bash -c "python3 ConvertCADD.py 'data/cadd_head_small.tsv.gz' 'data/cadd_head_small' 32 5 100 Chrom,Pos,Consequence,ConsScore 1 False /tmp/cadd_small ''"
+#$dockerCommand bash -c "python3 ConvertCADD.py 'data/cadd_head_small.tsv.gz' 'data/cadd_head_small' 1 5 100 Chrom,Pos,Consequence,ConsScore 1 True /tmp/cadd_small ''"
 #$dockerCommand bash -c "python3 ConvertCADD.py 'data/cadd_head_small.tsv.gz' 'data/cadd_head_small' 32 5 100 Chrom,Pos,Consequence,ConsScore 1 True /tmp/cadd_small ''"
 ##$dockerCommand bash -c "python3 ConvertCADD.py 'data/cadd_head_medium.tsv.gz' 'data/cadd_head_medium' 32 5 100 Chrom,Pos,Consequence,ConsScore 1 False /tmp/cadd_medium ''"
 #$dockerCommand bash -c "python3 ConvertCADD.py 'data/cadd_head_medium.tsv.gz' 'data/cadd_head_medium' 32 5 100 Chrom,Pos,Consequence,ConsScore 1 True /tmp/cadd_medium ''"

@@ -82,3 +82,6 @@ def get_delimited_file_handle(file_path):
         return gzip.open(file_path)
     else:
         return open(file_path, 'rb')
+
+def _format_string_as_fixed_width(x, size):
+    return x + b" " * (size - len(x))

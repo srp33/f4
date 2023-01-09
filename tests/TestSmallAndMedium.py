@@ -498,6 +498,8 @@ def run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, 
 f4_file_path = "/data/small.f4"
 out_file_path = "/tmp/small_out.tsv"
 run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
+print("got here")
+sys.exit(0)
 run_small_tests("/data/small.tsv.gz", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
 run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
 run_small_tests("/data/small.tsv.gz", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)

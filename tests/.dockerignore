@@ -2,3 +2,4 @@ data/*.f4*
 data/tall.tsv*
 data/wide.tsv*
 data/cadd*.tsv*
+data/whole_genome_SNVs_*

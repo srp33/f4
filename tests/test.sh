@@ -22,7 +22,7 @@ dockerCommand="docker run -i -t --rm --user $(id -u):$(id -g) -v $(pwd):/sandbox
 
 #$dockerCommand bash -c "time python3 BuildTsv.py 1 1 100 data/medium.tsv"
 
-#$dockerCommand python3 TestSmallAndMedium.py
+$dockerCommand python3 TestSmallAndMedium.py
 
 #######################################################
 # Create large test files and do tests
@@ -42,7 +42,7 @@ mkdir -p results
 # Test CADD files.
 ############################################################
 
-wget -O data/whole_genome_SNVs_inclAnno.tsv.gz https://krishna.gs.washington.edu/download/CADD/v1.6/GRCh38/whole_genome_SNVs_inclAnno.tsv.gz
+#wget -O data/whole_genome_SNVs_inclAnno.tsv.gz https://krishna.gs.washington.edu/download/CADD/v1.6/GRCh38/whole_genome_SNVs_inclAnno.tsv.gz
 #wget -O data/whole_genome_SNVs_inclAnno.tsv.gz.tbi https://krishna.gs.washington.edu/download/CADD/v1.6/GRCh38/whole_genome_SNVs_inclAnno.tsv.gz.tbi
 
 #zcat data/whole_genome_SNVs_inclAnno.tsv.gz | head -n 2 | tail -n +2 | cut -c2- | gzip > data/cadd.tsv.gz
@@ -86,6 +86,5 @@ wget -O data/whole_genome_SNVs_inclAnno.tsv.gz https://krishna.gs.washington.edu
 
 # 12,221,577,960 rows in CADD file (excluding header).
 # 134 columns
-
 
 rm -rf f4py

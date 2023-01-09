@@ -33,21 +33,6 @@ class Builder:
         if num_cols == 0:
             raise Exception(f"No data was detected in {delimited_file_path}.")
 
-        #tmp_chunk_results_file_path = None
-        #if cache_dir_path:
-        #    # Make sure there is a backslash at the end
-        #    cache_dir_path = cache_dir_path.rstrip("/") + "/"
-        #    os.makedirs(cache_dir_path, exist_ok=True)
-        #    tmp_chunk_results_file_path = f"{cache_dir_path}chunk_results"
-
-        #if tmp_dir_path and cache_dir_path and tmp_dir_path == cache_dir_path:
-        #    raise Exception("tmp_dir_path and cache_dir_path cannot point to the same location.")
-
-        #if tmp_chunk_results_file_path and os.path.exists(tmp_chunk_results_file_path):
-        #    self._print_message(f"Retrieving cached chunk results from {tmp_chunk_results_file_path}")
-        #    chunk_results = pickle.loads(f4py.read_str_from_file(tmp_chunk_results_file_path))
-        #else:
-
         # Iterate through the lines to summarize each column.
         self._print_message(f"Summarizing each column in {delimited_file_path}")
         if num_processes == 1:
@@ -56,11 +41,7 @@ class Builder:
             column_chunk_indices = _generate_chunk_ranges(num_cols, num_cols_per_chunk)
             chunk_results = Parallel(n_jobs=num_processes)(delayed(self._parse_columns_chunk)(delimited_file_path, delimiter, column_chunk[0], column_chunk[1], build_compression_dictionary) for column_chunk in column_chunk_indices)
 
-        #    if tmp_chunk_results_file_path:
-        #        self._print_message(f"Saving cached chunk results to {tmp_chunk_results_file_path}")
-        #        f4py.write_str_to_file(tmp_chunk_results_file_path, pickle.dumps(chunk_results))
-
-        ## Summarize the column sizes and types across the chunks.
+        # Summarize the column sizes and types across the chunks.
         column_sizes = []
         column_types = []
         compression_dicts = {}
@@ -76,9 +57,8 @@ class Builder:
                 # This merges the dictionaries
                 compression_dicts = {**compression_dicts, **chunk_tuple[2]}
 
-        # When each chunk was processed, we went through all rows, so we can get these numbers from one chunk.
+        # When each chunk was processed, we went through all rows, so we can get these numbers from just the first chunk.
         num_rows = chunk_results[0][3]
-        #total_num_chars = chunk_results[0][4]
 
         if num_rows == 0:
             raise Exception(f"A header row but no data rows were detected in {delimited_file_path}")
@@ -89,6 +69,10 @@ class Builder:
         #        f4py.CompressionHelper._save_training_dict(compression_training_set, f4_file_path, compression_level, num_processes)
 
         #    f4py.CompressionHelper._save_level_file(f4_file_path, compression_level)
+
+        print(compression_dicts)
+        import sys
+        sys.exit(0)
 
         nocomp_total_bits = 0
         encode_total_bits = 0
@@ -313,10 +297,8 @@ class Builder:
 
             # Loop through the file for the specified columns.
             num_rows = 0
-            #num_chars = 0
             for line in in_file:
                 line = line.rstrip(b"\n")
-                #num_chars += len(line)
 
                 line_items = line.split(delimiter)
                 for i in range(start_index, end_index):
@@ -340,7 +322,6 @@ class Builder:
             column_type = _infer_type_for_column(column_types_values_dict[i])
 
             unique_values = column_types_values_dict[i][b"s"] | column_types_values_dict[i][b"f"] | column_types_values_dict[i][b"i"]
-            # TODO: Not sure if we should sort these. Might have to get fancy.
             unique_values = list(unique_values)
 
             compression_characters = f4py.CompressionHelper.get_compression_characters(len(unique_values))
@@ -351,9 +332,7 @@ class Builder:
             # Not sure if this is helpful, but intended to reduce memory usage.
             column_types_values_dict[i] = None
 
-        #TODO
-        return column_sizes_dict, column_types_dict, compression_dict, num_rows#, num_chars
-        #return column_types_dict, compression_dict, num_rows#, num_chars
+        return column_sizes_dict, column_types_dict, compression_dict, num_rows
 
     #def _create_output_file(self, delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path):
     def _create_output_file(self, delimited_file_path, f4_file_path, delimiter, compression_level, column_types, compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path):

@@ -29,7 +29,8 @@ class Parser:
         for ext in fixed_file_extensions:
             self.__file_handles[ext] = self.set_file_handle(ext)
 
-        self.__decompressor = f4py.CompressionHelper._get_decompressor(data_file_path)
+        self.__decompressor = None
+        #self.__decompressor = f4py.CompressionHelper._get_decompressor(data_file_path)
 
         # Cache statistics in a dictionary.
         self.__stats = {}

@@ -1,6 +1,7 @@
+In Builder.py, add a setting to ignore lines starting with a specified comment character (default = "#").
 CSV/TSV compression project:
   Build an index file that indicates start position of each line and compression dictionary.
-    Make it JSON or msgpack so it is language agnostic.
+    Make it JSON or msgpack so it is language agnostic?
   Compare different compression algorithms.
     gzip
     zstandard (with training dictionary or without)
@@ -17,7 +18,6 @@ CSV/TSV compression project:
     Describe the benefits you get from bit packing.
     When converting bit arrays, can you ever get better compression ratios with zstandard than bitarray?
   What benefit do you get from gzipping the whole file in addition to a line-by-line scheme?
-  Try different types of biology files.
   Python code/module?
   R code/package?
   Lossy compression of numerical datasets using n-grams (see notes). (Or should that be a separate paper?)

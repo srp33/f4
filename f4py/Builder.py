@@ -1,3 +1,5 @@
+#TODO: Keep this import?
+from bitarray import frozenbitarray
 import f4py
 import fastnumbers
 from joblib import Parallel, delayed
@@ -70,137 +72,137 @@ class Builder:
 
         #    f4py.CompressionHelper._save_level_file(f4_file_path, compression_level)
 
-        print(compression_dicts)
-        import sys
-        sys.exit(0)
+#        #print(compression_dicts)
+#        #import sys
+#        #sys.exit(0)
+#
+#        nocomp_total_bits = 0
+#        encode_total_bits = 0
+#        new_total_bits = 0
+#
+#        for col_index in range(len(column_sizes)):
+#        #for col_index in range(1, 2):
+#            column_size = column_sizes[col_index]
+#            #print("column size:")
+#            #print(column_size)
+#
+#            column_type = column_types[col_index]
+#            #print("column type:")
+#            #print(column_type)
+#
+#            #column_type_values = column_types_values[col_index]
+#
+#            num_unique = len(compression_dicts[col_index])
+#            #print("num_unique:")
+#            #print(num_unique)
+#
+#            nocomp_num_bits = column_sizes[col_index] * 8
+#            nocomp_total_bits += nocomp_num_bits
+#            #print("nocomp_num_bits")
+#            #print(nocomp_num_bits)
+#
+#            if num_unique <= 256:
+#                encode_num_bits = 8
+#            elif num_unique <= 65536:
+#                encode_num_bits = 16
+#            elif num_unique <= 16777216:
+#                encode_num_bits = 24
+#            else:
+#                encode_num_bits = 32
+#            #print("encode_num_bits")
+#            #print(encode_num_bits)
+#            encode_total_bits += encode_num_bits
+#
+#            # TODO: Try 2-grams and 4-grams.
+#            ngram_size = 3
+#            ngrams = set()
+#            max_value_length = 0
+#
+#            for value in compression_dicts[col_index]:
+#                if len(value) > max_value_length:
+#                    max_value_length = len(value)
+#                for i in range(0, len(value), ngram_size):
+#                    ngrams.add(value[i:(i+ngram_size)])
+#
+#            ngrams = sorted(list(ngrams))
+#
+#            # TODO: Try using n-grams with b"i"
+#
+#            if num_unique <= 2:
+#                new_num_bits = 1
+#            # This is a rough estimate for now.
+#            elif num_unique < (num_rows * 0.05) or max_value_length <= ngram_size:
+#                new_num_bits = math.ceil(math.log2(num_unique))
+#            elif column_type == b"i":
+#                #1000000 = 56 bits
+#                #10 + 00 + 00 + 00 = 4 x 7 = 28 bits
+#                #100 + 000 + 000 = 3 x 10 = 30 bits
+#                #1000 + 0000 = 2 x 14 = 28 bits
+#                #int2ba = 24
+#
+#                #10000000 = 64 bits
+#                #10 + 00 + 00 + 00 = 4 x 7 = 28 bits
+#                #100 + 000 + 000 = 3 x 10 = 30 bits
+#                #1000 + 0000 = 2 x 14 = 28 bits
+#                #int2ba = 27
+#
+#                #100000000 = 72 bits
+#                #10 + 00 + 00 + 00 + 00 = 5 x 7 = 35 bits
+#                #100 + 000 + 000 = 3 x 10 = 30 bits
+#                #1000 + 0000 + 0000 = 3 x 14 = 42 bits
+#                #int2ba = 30
+#
+#                # This is a conservative approximation
+#                max_int = int("9" * column_size)
+#                from bitarray.util import int2ba
+#                new_num_bits = len(int2ba(max_int))
+#                #print("new_num_bits")
+#                #print(new_num_bits)
+#            else:
+## Before this change:
+##14040000000.0
+##4100000000.0
+##2960000000
+#                from bitarray.util import int2ba
+#
+#                max_ngram_index_length = len(int2ba(len(ngrams) - 1))
+#
+#                #ngram_bitarray_index_dict = {}
+#                #for i, ngram in enumerate(ngrams):
+#                #    ngram_bitarray_index_dict[ngram] = f"{int2ba(i).to01():0>{max_ngram_index_length}}"
+#
+#                max_num_ngrams = math.ceil(max_value_length / ngram_size)
+#                new_num_bits = max_num_ngrams * max_ngram_index_length
+#
+##                print(ngrams)
+##                print(len(ngrams))
+##                print(max_ngram_index_length)
+##                print(max_num_ngrams)
+#
+#                #print(col_index)
+#                #print(ngrams)
+#                #print(len(ngrams))
+#                #print(max_value_length)
+#                #print(max_ngram_index_length)
+#                #print(ngram_bitarray_index_dict)
+#                #print(max_num_ngrams)
+#                #print(new_num_bits)
+#
+#            new_total_bits += new_num_bits
+#
+#        print(num_rows * nocomp_total_bits / 8)
+#        print(num_rows * encode_total_bits / 8)
+#        print(num_rows * math.ceil(new_total_bits / 8))
+#        import sys
+#        sys.exit()
 
-        nocomp_total_bits = 0
-        encode_total_bits = 0
-        new_total_bits = 0
 
-        for col_index in range(len(column_sizes)):
-        #for col_index in range(1, 2):
-            column_size = column_sizes[col_index]
-            #print("column size:")
-            #print(column_size)
-
-            column_type = column_types[col_index]
-            #print("column type:")
-            #print(column_type)
-
-            #column_type_values = column_types_values[col_index]
-
-            num_unique = len(compression_dicts[col_index])
-            #print("num_unique:")
-            #print(num_unique)
-
-            nocomp_num_bits = column_sizes[col_index] * 8
-            nocomp_total_bits += nocomp_num_bits
-            #print("nocomp_num_bits")
-            #print(nocomp_num_bits)
-
-            if num_unique <= 256:
-                encode_num_bits = 8
-            elif num_unique <= 65536:
-                encode_num_bits = 16
-            elif num_unique <= 16777216:
-                encode_num_bits = 24
-            else:
-                encode_num_bits = 32
-            #print("encode_num_bits")
-            #print(encode_num_bits)
-            encode_total_bits += encode_num_bits
-
-            # TODO: Try 2-grams and 4-grams.
-            ngram_size = 3
-            ngrams = set()
-            max_value_length = 0
-
-            for value in compression_dicts[col_index]:
-                if len(value) > max_value_length:
-                    max_value_length = len(value)
-                for i in range(0, len(value), ngram_size):
-                    ngrams.add(value[i:(i+ngram_size)])
-
-            ngrams = sorted(list(ngrams))
-
-            # TODO: Try using n-grams with b"i"
-
-            if num_unique <= 2:
-                new_num_bits = 1
-            # This is a rough estimate for now.
-            elif num_unique < (num_rows * 0.05) or max_value_length <= ngram_size:
-                new_num_bits = math.ceil(math.log2(num_unique))
-            elif column_type == b"i":
-                #1000000 = 56 bits
-                #10 + 00 + 00 + 00 = 4 x 7 = 28 bits
-                #100 + 000 + 000 = 3 x 10 = 30 bits
-                #1000 + 0000 = 2 x 14 = 28 bits
-                #int2ba = 24
-
-                #10000000 = 64 bits
-                #10 + 00 + 00 + 00 = 4 x 7 = 28 bits
-                #100 + 000 + 000 = 3 x 10 = 30 bits
-                #1000 + 0000 = 2 x 14 = 28 bits
-                #int2ba = 27
-
-                #100000000 = 72 bits
-                #10 + 00 + 00 + 00 + 00 = 5 x 7 = 35 bits
-                #100 + 000 + 000 = 3 x 10 = 30 bits
-                #1000 + 0000 + 0000 = 3 x 14 = 42 bits
-                #int2ba = 30
-
-                # This is a conservative approximation
-                max_int = int("9" * column_size)
-                from bitarray.util import int2ba
-                new_num_bits = len(int2ba(max_int))
-                #print("new_num_bits")
-                #print(new_num_bits)
-            else:
-# Before this change:
-#14040000000.0
-#4100000000.0
-#2960000000
-                from bitarray.util import int2ba
-
-                max_ngram_index_length = len(int2ba(len(ngrams) - 1))
-
-                #ngram_bitarray_index_dict = {}
-                #for i, ngram in enumerate(ngrams):
-                #    ngram_bitarray_index_dict[ngram] = f"{int2ba(i).to01():0>{max_ngram_index_length}}"
-
-                max_num_ngrams = math.ceil(max_value_length / ngram_size)
-                new_num_bits = max_num_ngrams * max_ngram_index_length
-
-#                print(ngrams)
-#                print(len(ngrams))
-#                print(max_ngram_index_length)
-#                print(max_num_ngrams)
-
-                #print(col_index)
-                #print(ngrams)
-                #print(len(ngrams))
-                #print(max_value_length)
-                #print(max_ngram_index_length)
-                #print(ngram_bitarray_index_dict)
-                #print(max_num_ngrams)
-                #print(new_num_bits)
-
-            new_total_bits += new_num_bits
-
-        print(num_rows * nocomp_total_bits / 8)
-        print(num_rows * encode_total_bits / 8)
-        print(num_rows * math.ceil(new_total_bits / 8))
-        import sys
-        sys.exit()
-
-
-        #line_length = self._create_output_file(delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path2)
-        self._create_output_file(delimited_file_path, f4_file_path, delimiter, compression_level, column_types, compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path2)
+        line_length = self._create_output_file(delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path2)
+        #self._create_output_file(delimited_file_path, f4_file_path, delimiter, compression_level, column_types, compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path2)
 
         self._print_message(f"Saving meta files for {f4_file_path}")
-        #self._save_meta_files(f4_file_path, column_sizes, line_length, column_names, column_types, compression_dicts, num_rows)
-        self._save_meta_files(f4_file_path, column_names, column_types, compression_dicts, num_rows)
+        self._save_meta_files(f4_file_path, column_sizes, line_length, column_names, column_types, compression_dicts, num_rows)
+        #self._save_meta_files(f4_file_path, column_names, column_types, compression_dicts, num_rows)
 
         self._remove_tmp_dir(tmp_dir_path2)
         self._print_message(f"Done converting {delimited_file_path} to {f4_file_path}")
@@ -213,11 +215,12 @@ class Builder:
     #####################################################
 
     #TODO: Currently, this function is used in IndexHelper as well. Consider splitting it out.
-    #def _save_meta_files(self, f4_file_path, column_sizes, line_length, column_names=None, column_types=None, compression_dicts=None, num_rows=None):
-    def _save_meta_files(self, f4_file_path, column_names, column_types, compression_dicts, num_rows):
-        column_sizes = []
-        for column_index, compression_dict in sorted(compression_dicts.items()):
-            column_sizes.append(len(list(compression_dict.values())[0])) # All values should have the same length
+    #def _save_meta_files(self, f4_file_path, column_sizes, column_names=None, column_types=None, compression_dicts=None, num_rows=None):
+    def _save_meta_files(self, f4_file_path, column_sizes, line_length, column_names=None, column_types=None, compression_dicts=None, num_rows=None):
+    #def _save_meta_files(self, f4_file_path, column_names, column_types, compression_dicts, num_rows):
+        #column_sizes = []
+        #for column_index, compression_dict in sorted(compression_dicts.items()):
+        #    column_sizes.append(len(list(compression_dict.values())[0])) # All values should have the same length
 
         # Calculate and save the column coordinates and max length of these coordinates.
         column_start_coords = f4py.get_column_start_coords(column_sizes)
@@ -226,7 +229,7 @@ class Builder:
         f4py.write_str_to_file(f4_file_path + ".mccl", str(max_column_coord_length).encode())
 
         # Find and save the line length.
-        line_length = sum(column_sizes) + 1
+        #line_length = sum(column_sizes) + 1
         f4py.write_str_to_file(f4_file_path + ".ll", str(line_length).encode())
 
         column_name_index_dict = {}
@@ -245,8 +248,8 @@ class Builder:
             f4py.write_str_to_file(f4_file_path + ".ct", column_types_string)
 
         #TODO: switch keys and values and save as 3-column f4 file...
-        import pickle
-        f4py.write_str_to_file(f4_file_path + ".cmpd", pickle.dumps(compression_dicts))
+        #import pickle
+        #f4py.write_str_to_file(f4_file_path + ".cmpd", pickle.dumps(compression_dicts))
         #TODO
         #f4py.write_str_to_file(f4_file_path + ".cmpd", f4py.CompressionHelper.build_table(compression_dicts))
         #f4py.CompressionHelper._build_table(compression_dicts)
@@ -289,7 +292,7 @@ class Builder:
 
             # Initialize the column sizes and types.
             column_sizes_dict = {}
-            column_types_values_dict = {}
+            column_types_values_dict = {} # TODO: This dictionary could get really large. Could modify the code to use sqlitedict.
             column_types_dict = {}
             for i in range(start_index, end_index):
                 column_sizes_dict[i] = 0
@@ -317,36 +320,97 @@ class Builder:
                     self._print_message(f"Processed line {num_rows} of {delimited_file_path} for columns {start_index} - {end_index - 1}")
 
         compression_dict = {}
+#        column_compression_dicts = {}
+#        int_compression_dict = _build_int_compression_dict()
 
         for i in range(start_index, end_index):
-            column_type = _infer_type_for_column(column_types_values_dict[i])
+            column_types_dict[i] = _infer_type_for_column(column_types_values_dict[i])
 
-            unique_values = column_types_values_dict[i][b"s"] | column_types_values_dict[i][b"f"] | column_types_values_dict[i][b"i"]
-            unique_values = list(unique_values)
+            # categorical [(num unique values / total values) <= 0.1]:
+            #   Save all unique values in a dictionary.
+            # string:
+            #   Identify unique 2-grams.
+            #   Create bitstring for each 2-gram.
+            #   Determine and store max bitstring length.
+            #   Store a dictionary of bitstrings to 2-grams.
+            # ints:
+            #   Use static set of 2-grams: max = digits^2 + digits = 110.
+            #     Without base-256 encoding, each 2-gram (2 bytes) is collapsed to 1 byte = 50% compression when there is an even number of digits (for the maximum-width value). It's worse when there is an odd number of digits.
+            #     Small additional benefit is gained from base-256 encoding. About an additional 12.5%.
+            #       2^7 = 128 = 85.9% bit utilization (with base-256 encoding).
+            #   In memory, build a dictionary of bitstrings to 2-grams.
+            #   If you have 8-digit integers (max size), that would require 64 bits using no compression. With compression, they would require 28 bits (43.75%) [or less if there was a lot of repetition].
+            #   If you have 7-digit integers (max size), that would require 56 bits using no compression. With compression, they would require 28 bits (50.0%) [or less if there was a lot of repetition].
+            # floats:
+            #   Use static set of 2-grams: max = digits^2 + digits = 110.
+            #                                  + "." + digits = 11
+            #                                  + digits + "." = 11
+            #                                  + digits + "e" = 11
+            #                                  + "e-" + "e+" = 2
+            #                                  + "-" + digits = 11
+            #                                  + "+" + digits = 11
+            #                                  = 167 = 2^8 (256) = 65.2% bit utilization
+            #     If you have 8-digit floats (max size), that would require 64 bits using no compression. With compression, they would require 32 bits (50.0%) [or less if there was a lot of repetition].
+            #     If you have 7-digit floats (max size), that would require 56 bits using no compression. With compression, they would require 32 bits (57.1%) [or less if there was a lot of repetition].
+            #   Use static set of 3-grams: max = digits^3 + digits^2 + digits = 1110
+            #                                  + other = 57 (actually, I think it's higher than that)
+            #                                  = 1167 = 2^11 (2048) = 56.9% bit utilization
+            #   Use static set of 4-grams: max = digits^4 + digits^3 + digits^2 + digits = 11110.
+            #                                  + other = 57 (actually, I think it's higher than that)
+            #                                  = 11167 = 2^14 (16384) = 68.2% bit utilization
+            #   Use static set of 5-grams: max = 111167 = 2^17 (131072) = 84.8% bit utilization
+            #   TODO: Should we use static sets? Or should we calculate them from the data? Benefit of static is that we don't need to store the compression dictionary. Benefit of dynamic is that when we have floats that are shorter than n or when we have repetitive patterns, we can store less for the actual data than we would with a static dict.
+            #   In memory, build a dictionary of bitstrings to 2-grams.
+            #   For strings that are not max length, pad the end with zero(es).
+            unique_values = list(column_types_values_dict[i][b"s"] | column_types_values_dict[i][b"i"] | column_types_values_dict[i][b"f"])
+            use_categorical_compression = (len(unique_values) / num_rows) <= 0.1
 
-            compression_characters = f4py.CompressionHelper.get_compression_characters(len(unique_values))
-            compression_dict[i] = {value: compression_characters[i] for i, value in enumerate(unique_values)}
+#            if use_categorical_compression:
+#                compression_type = "c"
+#
+#                compression_dict = {}
+#                for i, value in enumerate(range(len(unique_values))):
+#                    #TODO: Add leading/trailing zeroes.
+#                    bits = frozenbitarray(str(i)).tobytes()
+#                    compression_dict[value] = bits
+#            else:
+#                compression_type = column_types_dict[i]
+#
+#                compression_dict = {}
+#                if compression_type == "s":
+#                    grams = _find_2_grams(unique_values)
+#
+#                    for i, value in enumerate(range(len(grams))):
+#                        #TODO: Add leading/trailing zeroes.
+#                        bits = frozenbitarray(str(i)).tobytes()
+#                        compression_dict[value] = bits
+#                elif compression_type == "i":
+#                    for x in
 
-            column_types_dict[i] = column_type
 
-            # Not sure if this is helpful, but intended to reduce memory usage.
-            column_types_values_dict[i] = None
+
+
+            #TODO: temp placeholder
+            compression_dict[i] = {}
+
+            #compression_characters = f4py.CompressionHelper.get_compression_characters(len(unique_values))
+            #compression_dict[i] = {value: compression_characters[i] for i, value in enumerate(unique_values)}
 
         return column_sizes_dict, column_types_dict, compression_dict, num_rows
 
-    #def _create_output_file(self, delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path):
-    def _create_output_file(self, delimited_file_path, f4_file_path, delimiter, compression_level, column_types, compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path):
+    def _create_output_file(self, delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path):
+    #def _create_output_file(self, delimited_file_path, f4_file_path, delimiter, compression_level, column_types, compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path):
         self._print_message(f"Parsing chunks of {delimited_file_path} and saving to temp directory ({tmp_dir_path})")
 
         if num_processes == 1:
-            #line_length = self._save_rows_chunk(delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, compression_dicts, 0, 0, num_rows, num_rows_per_save, tmp_dir_path)
-            self._save_rows_chunk(delimited_file_path, f4_file_path, delimiter, compression_level, column_types, compression_dicts, 0, 0, num_rows, num_rows_per_save, tmp_dir_path)
+            line_length = self._save_rows_chunk(delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, compression_dicts, 0, 0, num_rows, num_rows_per_save, tmp_dir_path)
+            #self._save_rows_chunk(delimited_file_path, f4_file_path, delimiter, compression_level, column_types, compression_dicts, 0, 0, num_rows, num_rows_per_save, tmp_dir_path)
         else:
             row_chunk_indices = _generate_chunk_ranges(num_rows, math.ceil(num_rows / num_processes) + 1)
 
             # Find the line length.
-            #max_line_sizes = Parallel(n_jobs=num_processes)(delayed(self._save_rows_chunk)(delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, compression_dicts, i, row_chunk[0], row_chunk[1], num_rows_per_save, tmp_dir_path) for i, row_chunk in enumerate(row_chunk_indices))
-            #line_length = max(max_line_sizes)
+            max_line_sizes = Parallel(n_jobs=num_processes)(delayed(self._save_rows_chunk)(delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, compression_dicts, i, row_chunk[0], row_chunk[1], num_rows_per_save, tmp_dir_path) for i, row_chunk in enumerate(row_chunk_indices))
+            line_length = max(max_line_sizes)
             Parallel(n_jobs=num_processes)(delayed(self._save_rows_chunk)(delimited_file_path, f4_file_path, delimiter, compression_level, column_types, compression_dicts, i, row_chunk[0], row_chunk[1], num_rows_per_save, tmp_dir_path) for i, row_chunk in enumerate(row_chunk_indices))
 
         # Merge the file chunks. This dictionary enables us to sort them properly.
@@ -354,11 +418,11 @@ class Builder:
         #self._merge_chunk_files(f4_file_path, num_processes, line_length, num_rows_per_save, tmp_dir_path)
         self._merge_chunk_files(f4_file_path, num_processes, num_rows_per_save, tmp_dir_path)
 
-#        return line_length
+        return line_length
 
-    #def _save_rows_chunk(self, delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, compression_dicts, chunk_number, start_index, end_index, num_rows_per_save, tmp_dir_path):
-    def _save_rows_chunk(self, delimited_file_path, f4_file_path, delimiter, compression_level, column_types, compression_dicts, chunk_number, start_index, end_index, num_rows_per_save, tmp_dir_path):
-        #max_line_size = 0
+    def _save_rows_chunk(self, delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, compression_dicts, chunk_number, start_index, end_index, num_rows_per_save, tmp_dir_path):
+    #def _save_rows_chunk(self, delimited_file_path, f4_file_path, delimiter, compression_level, column_types, compression_dicts, chunk_number, start_index, end_index, num_rows_per_save, tmp_dir_path):
+        max_line_size = 0
         #column_sizes = []
         compressor = f4py.CompressionHelper._get_compressor(f4_file_path, compression_level)
 
@@ -384,14 +448,14 @@ class Builder:
                     line_items = line.rstrip(b"\n").split(delimiter)
 
                     # Replace values with compressed versions and update column sizes.
-                    for column_index, compression_dict in compression_dicts.items():
-                        line_items[column_index] = compression_dict[line_items[column_index]]
+#                    for column_index, compression_dict in compression_dicts.items():
+#                        line_items[column_index] = compression_dict[line_items[column_index]]
                         #column_sizes[column_index] = len(line_items[column_index])
 
                     # Format the column sizes using fixed widths.
-                    #out_items = [f4py._format_string_as_fixed_width(line_items[i], size) for i, size in enumerate(column_sizes)]
-                    #out_line = b"".join(out_items)
-                    out_line = (b"".join(line_items))
+                    out_items = [f4py.format_string_as_fixed_width(line_items[i], size) for i, size in enumerate(column_sizes)]
+                    out_line = b"".join(out_items)
+                    #out_line = (b"".join(line_items))
 
                     #TODO
                     #if compressor:
@@ -403,10 +467,9 @@ class Builder:
 
                     #TODO: Does it work if we not include a newline character after the last line?
                     out_line += b"\n"
-                    #line_size = len(out_line)
+                    line_size = len(out_line)
 
-                    #line_size = len(out_line)
-                    #max_line_size = max([max_line_size, line_size])
+                    max_line_size = max([max_line_size, line_size])
                     #if line_index == 307 or line_index == 306:
                     #    print(out_line)
                     #    print(line_size)
@@ -425,7 +488,7 @@ class Builder:
                     chunk_file.write(b"".join(out_lines))
                     #size_file.write(b"".join(out_line_sizes))
 
-        #return max_line_size
+        return max_line_size
 
     #def _merge_chunk_files(self, f4_file_path, num_processes, line_length, num_rows_per_save, tmp_dir_path):
     def _merge_chunk_files(self, f4_file_path, num_processes, num_rows_per_save, tmp_dir_path):
@@ -503,8 +566,6 @@ def _infer_type(value):
 def _infer_type_for_column(types_dict):
     if len(types_dict) == 0:
         return None
-    #if len(types_dict) == 1:
-    #    return list(types_dict.keys())[0]
 
     if len(types_dict[b"s"]) > 0:
         return b"s"
@@ -512,3 +573,38 @@ def _infer_type_for_column(types_dict):
         return b"f"
 
     return b"i"
+
+def _find_2_grams(values):
+    grams = set()
+
+    for value in values:
+        for start_i in range(0, len(value), 2):
+            end_i = (start_i + 2)
+            grams.add(value[start_i:end_i].encode())
+
+    return list(grams)
+
+def _build_int_compression_dict():
+    compression_dict = {}
+    numbers = [i for i in range(10)]
+
+    for i in numbers:
+        for j in numbers:
+            value = (f"{i}{j}").encode()
+
+            #TODO: Does frozenbitarray start at 0 or 1 when converting into to bitstring?
+            #      If 1, then don't subtract 1 in the calculation below.
+            value = str((i + 1) * (j + 1) - 1).encode()
+            bits = frozenbitarray(str(i)).tobytes()
+            compression_dict[value] = bits
+
+        #TODO: Does frozenbitarray start at 0 or 1 when converting into to bitstring?
+        value = str(i).encode()
+        bits = frozenbitarray(str(i)).tobytes()
+        compression_dict[value] = bits
+
+    return compression_dict
+
+def _build_float_compression_dict():
+    compression_dict = _build_int_compression_dict()
+

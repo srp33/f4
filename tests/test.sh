@@ -6,7 +6,7 @@ set -o errexit
 # Build the Docker image
 #######################################################
 
-docker build -t srp33/f4_test .
+docker build --platform linux/x86_64 -t srp33/f4_test .
 
 #######################################################
 # Run detailed functional tests on small file
@@ -17,12 +17,13 @@ mkdir -p data
 rm -rf f4py
 cp -r ../f4py .
 
-dockerCommand="docker run -i -t --rm --user $(id -u):$(id -g) -v $(pwd):/sandbox -v $(pwd)/data:/data -v /tmp:/tmp --workdir=/sandbox srp33/f4_test"
+dockerCommand="docker run -i -t --rm --platform linux/x86_64 --user $(id -u):$(id -g) -v $(pwd):/sandbox -v $(pwd)/data:/data -v /tmp:/tmp --workdir=/sandbox srp33/f4_test"
 #dockerCommand="docker run --rm --user $(id -u):$(id -g) -v $(pwd):/sandbox -v $(pwd)/data:/data -v /tmp:/tmp --workdir=/sandbox srp33/f4_test"
 
 #$dockerCommand bash -c "time python3 BuildTsv.py 1 1 100 data/medium.tsv"
 
 $dockerCommand python3 TestSmallAndMedium.py
+#$dockerCommand python3
 
 #######################################################
 # Create large test files and do tests
@@ -41,6 +42,8 @@ mkdir -p results
 ############################################################
 # Test CADD files.
 ############################################################
+
+#TODO: Remove this stuff? Run this stuff within the container.
 
 #wget -O data/whole_genome_SNVs_inclAnno.tsv.gz https://krishna.gs.washington.edu/download/CADD/v1.6/GRCh38/whole_genome_SNVs_inclAnno.tsv.gz
 #wget -O data/whole_genome_SNVs_inclAnno.tsv.gz.tbi https://krishna.gs.washington.edu/download/CADD/v1.6/GRCh38/whole_genome_SNVs_inclAnno.tsv.gz.tbi

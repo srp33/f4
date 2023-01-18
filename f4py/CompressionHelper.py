@@ -63,40 +63,40 @@ class CompressionHelper:
 #    def _get_training_dict_file_path(f4_file_path):
 #        return f"{f4_file_path}.cmpd"
 
-    def get_compression_characters(num_unique_values):
-        #single_characters = [x.encode() for x in list(string.digits + string.ascii_lowercase + string.ascii_uppercase)]
-        # First 255 UTF-8 characters, exclude newline character
-        #single_characters = [bytes((i,)) for i in range(256) if i != 10]
-        single_characters = [bytes((i,)) for i in range(256)]
-
-        compression_characters = []
-
-        for i in single_characters:
-            compression_characters.append(i)
-
-            if len(compression_characters) == num_unique_values:
-                return compression_characters
-
-        for i in single_characters:
-            for j in single_characters:
-                compression_characters.append(i + j)
-
-                if len(compression_characters) == num_unique_values:
-                    return compression_characters
-
-        for i in single_characters:
-            for j in single_characters:
-                for k in single_characters:
-                    compression_characters.append(i + j + k)
-
-                    if len(compression_characters) == num_unique_values:
-                        return compression_characters
-
-        for i in single_characters:
-            for j in single_characters:
-                for k in single_characters:
-                    for l in single_characters:
-                        compression_characters.append(i + j + k + l)
-
-                        if len(compression_characters) == num_unique_values:
-                            return compression_characters
+#    def get_compression_characters(num_unique_values):
+#        #single_characters = [x.encode() for x in list(string.digits + string.ascii_lowercase + string.ascii_uppercase)]
+#        # First 255 UTF-8 characters, exclude newline character
+#        #single_characters = [bytes((i,)) for i in range(256) if i != 10]
+#        single_characters = [bytes((i,)) for i in range(256)]
+#
+#        compression_characters = []
+#
+#        for i in single_characters:
+#            compression_characters.append(i)
+#
+#            if len(compression_characters) == num_unique_values:
+#                return compression_characters
+#
+#        for i in single_characters:
+#            for j in single_characters:
+#                compression_characters.append(i + j)
+#
+#                if len(compression_characters) == num_unique_values:
+#                    return compression_characters
+#
+#        for i in single_characters:
+#            for j in single_characters:
+#                for k in single_characters:
+#                    compression_characters.append(i + j + k)
+#
+#                    if len(compression_characters) == num_unique_values:
+#                        return compression_characters
+#
+#        for i in single_characters:
+#            for j in single_characters:
+#                for k in single_characters:
+#                    for l in single_characters:
+#                        compression_characters.append(i + j + k + l)
+#
+#                        if len(compression_characters) == num_unique_values:
+#                            return compression_characters

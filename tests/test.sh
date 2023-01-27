@@ -20,12 +20,20 @@ cp -r ../f4py .
 dockerCommand="docker run -i -t --rm --platform linux/x86_64 --user $(id -u):$(id -g) -v $(pwd):/sandbox -v $(pwd)/data:/data -v /tmp:/tmp --workdir=/sandbox srp33/f4_test"
 #dockerCommand="docker run --rm --user $(id -u):$(id -g) -v $(pwd):/sandbox -v $(pwd)/data:/data -v /tmp:/tmp --workdir=/sandbox srp33/f4_test"
 
-#$dockerCommand bash -c "time python3 BuildTsv.py 1 1 1 1000 data/medium.tsv"
+$dockerCommand bash -c "time python3 BuildTsv.py 10 10 10 10000 data/medium.tsv"
+exit
 
-#TODO: Integer f4py into the analysis paper tests.
-#TODO: See how much storage space it takes for compression with tall/wide files. Try using cmprtype as a key rather than column name and make the dictionary generic across columns. See how much that helps with storage.
-#TODO: Uncomment tests that use zstandard compression and make sure those pass
+#TODO: Filters.py - Can we filter without decompressing by converting self.value?
+#TODO: Go away from bitarray and make sure tests pass.
+#      https://wiki.python.org/moin/BitManipulation
+#      int.from_bytes
+#TODO: Use more options for compression type and only store compression dictionary when more than 256 combinations (?).
+#TODO: Clean up the code a bit and identify tasks to complete.
+#TODO: Add conditional logic in Builder on which type of compression to do.
 #TODO: Uncomment tests that use indexes and make sure those pass
+#TODO: Uncomment tests that use zstandard compression and make sure those pass
+#TODO: Integer f4py into the analysis paper tests.
+#TODO: Do compression at the bigram level. Save for separate paper?
 python3 TestSmallAndMedium.py
 #$dockerCommand python3 TestSmallAndMedium.py
 #$dockerCommand python3

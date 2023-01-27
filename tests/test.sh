@@ -20,8 +20,7 @@ cp -r ../f4py .
 dockerCommand="docker run -i -t --rm --platform linux/x86_64 --user $(id -u):$(id -g) -v $(pwd):/sandbox -v $(pwd)/data:/data -v /tmp:/tmp --workdir=/sandbox srp33/f4_test"
 #dockerCommand="docker run --rm --user $(id -u):$(id -g) -v $(pwd):/sandbox -v $(pwd)/data:/data -v /tmp:/tmp --workdir=/sandbox srp33/f4_test"
 
-$dockerCommand bash -c "time python3 BuildTsv.py 10 10 10 10000 data/medium.tsv"
-exit
+#$dockerCommand bash -c "time python3 BuildTsv.py 10 10 10 10000 data/medium.tsv"
 
 #TODO: Filters.py - Can we filter without decompressing by converting self.value?
 #TODO: Go away from bitarray and make sure tests pass.

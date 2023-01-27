@@ -417,8 +417,8 @@ def run_medium_tests(num_processes):
         medium_lines = [line for line in medium_file.read().rstrip("\n").split("\n")]
         medium_ID = [[line.split("\t")[0].encode()] for line in medium_lines]
         medium_Categorical1 = [[line.split("\t")[1].encode()] for line in medium_lines]
-        medium_Discrete1 = [[line.split("\t")[2].encode()] for line in medium_lines]
-        medium_Numeric1 = [[line.split("\t")[3]] for line in medium_lines]
+        medium_Discrete1 = [[line.split("\t")[11].encode()] for line in medium_lines]
+        medium_Numeric1 = [[line.split("\t")[21]] for line in medium_lines]
 
         for i in range(1, len(medium_Numeric1)):
             medium_Numeric1[i][0] = float(medium_Numeric1[i][0])

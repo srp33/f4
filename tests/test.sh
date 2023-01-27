@@ -22,13 +22,16 @@ dockerCommand="docker run -i -t --rm --platform linux/x86_64 --user $(id -u):$(i
 
 #$dockerCommand bash -c "time python3 BuildTsv.py 10 10 10 10000 data/medium.tsv"
 
+#TODO: Fix the sys.stdout.buffer lines in Parser.py.
 #TODO: Use more options for compression type and only store compression dictionary when more than 256 combinations (?).
-#TODO: Clean up the code a bit and identify tasks to complete.
-#TODO: Add conditional logic in Builder on which type of compression to do.
 #TODO: Filters.py - Can we filter without decompressing by converting self.value in constructor?
 #      Probably have to store the compression dict in F4 format. But think of a better way to do it.
 #TODO: Uncomment tests that use indexes and make sure those pass
+#TODO: Add conditional logic in Builder on which type of compression, if any, to do.
 #TODO: Uncomment tests that use zstandard compression and make sure those pass
+#TODO: Does it work if we do not include a newline character after the last line?
+#TODO: Address remaining TODO items in the code.
+#        Remove CompressionHelper.py?
 #TODO: Integer f4py into the analysis paper tests.
 #TODO: Save for separate paper?
 #        Do compression at the bigram level.

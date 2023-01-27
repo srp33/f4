@@ -7,7 +7,7 @@ import math
 import os
 import sys
 #TODO
-import zstandard
+#import zstandard
 
 class Parser:
     """
@@ -130,16 +130,6 @@ class Parser:
                 out_lines = []
                 for row_index in keep_row_indices:
                     values = self.__parse_row_values(row_index, select_column_coords)
-                    # print(values[0])
-                    # print(values[0][0:1])
-                    # print(values[0][0:2])
-                    # print(values[0][0])
-                    # print(values[0][1])
-                    # print(column_compression_dict[select_columns[0]]["map"])
-                    # print(column_compression_dict[select_columns[0]]["map"][values[0][0]])
-                    # print(column_compression_dict[select_columns[0]]["map"][values[0][1]])
-                    # import sys
-                    # sys.exit()
                     out_values = [f4py.decompress(values.pop(0), column_compression_dict[name], bigram_size_dict[name]) for name in select_columns]
 
                     out_lines.append(b"\t".join(out_values))
@@ -213,8 +203,6 @@ class Parser:
         column_index_name_dict = {}
 
         if len(select_columns) == 0:
-            #select_columns = []
-
             with f4py.Parser(self.data_file_path + ".cn", fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"]) as cn_parser:
                 coords = cn_parser._parse_data_coords([0, 1])
 
@@ -224,7 +212,6 @@ class Parser:
                     column_index = fastnumbers.fast_int(values[1])
 
                     column_index_name_dict[column_index] = column_name
-                    #select_columns.append([row_index, column_name])
 
                     if column_name in filter_column_set:
                         column_type_dict[column_name] = row_index
@@ -233,8 +220,6 @@ class Parser:
                 for row_index in range(self.get_num_cols()):
                     column_coords_dict[column_index_name_dict[row_index]] = all_coords[row_index]
 
-            # The columns are sorted by name in the file, so we must sort them by index here.
-            #select_columns = [x[1] for x in f4py.sort_first_column(select_columns)]
             select_columns = [x[1] for x in sorted(column_index_name_dict.items())]
         else:
             with f4py.IndexHelper._get_index_parser(f"{self.data_file_path}.cn") as index_parser:
@@ -255,19 +240,6 @@ class Parser:
 
             for i, column_name in enumerate(all_columns):
                 column_coords_dict[column_name] = all_coords[i]
-
-        # We will only need to check the types of columns used for filtering
-        # with f4py.IndexHelper._get_index_parser(f"{self.data_file_path}.cn") as index_parser:
-
-        #     for column_name in filter_column_set:
-        #         #column_type_dict[column_name] = self.get_column_type(column_index_dict[column_name])
-        #         column_type_dict[column_name] = self._get_column_index_from_name(index_parser, column_name.decode())
-
-        # column_indices = [column_index_dict[name] for name in all_columns]
-        # column_coords = self._parse_data_coords(column_indices)
-        # column_coords_dict = {}
-        # for i, column_name in enumerate(all_columns):
-        #     column_coords_dict[column_name] = column_coords[i]
 
         return select_columns, column_type_dict, column_coords_dict, self.__get_compression_dict(column_index_name_dict)
 

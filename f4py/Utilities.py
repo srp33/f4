@@ -7,7 +7,8 @@ import mmap
 #import msgpack
 import msgspec
 from operator import itemgetter
-import zstandard
+#TODO
+#import zstandard
 
 def open_read_file(file_path, file_extension=""):
     the_file = open(file_path + file_extension, 'rb')
@@ -114,9 +115,6 @@ def decompress(compressed_value, compression_dict, bigram_size):
 
 def convert_bytes_to_int(b):
     return int.from_bytes(b, byteorder="big")
-    # ba = bitarray()
-    # ba.frombytes(b)
-    # return ba2int(ba)
 
 def serialize(obj):
     #https://github.com/TkTech/json_benchmark

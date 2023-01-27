@@ -53,9 +53,6 @@ class __SimpleBaseFilter(NoFilter):
                 if self.passes(f4py.decompress(value, column_compression_dict, bigram_size)):
                     passing_row_indices.add(i)
 
-            # import sys
-            # sys.exit()
-
             return passing_row_indices
 
     def get_conversion_function(self):

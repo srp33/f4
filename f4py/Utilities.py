@@ -1,6 +1,3 @@
-#TODO
-from bitarray import bitarray
-from bitarray.util import ba2int
 import datetime
 import gzip
 import fastnumbers
@@ -107,34 +104,19 @@ def decompress(compressed_value, compression_dict, bigram_size):
     if compression_dict["compression_type"] == b"c":
         return compression_dict["map"][convert_bytes_to_int(compressed_value)]
 
-    #print(compressed_value)
-    #print(type(compressed_value))
-    #print(compression_dict["map"][b'\xde'])
-    # print(compression_dict["map"][222])
-    # print(sorted(list(compression_dict["map"].keys())))
-    # import sys
-    # sys.exit()
-    #print(sorted(list(compression_dict["map"].values())))
-    #print(len(compressed_value))
-    #print(compressed_value[0])
     value = b""
-    #for int_char in compressed_value:
     for start_pos in range(0, len(compressed_value), bigram_size):
         end_pos = start_pos + bigram_size
         compressed_piece = convert_bytes_to_int(compressed_value[start_pos:end_pos])
-        #print(compressed_piece)
-        #print(int_char)
         value += compression_dict["map"][compressed_piece]
-    #print(value)
-    # import sys
-    # sys.exit()
+
     return value
 
-#TODO: Change to int.from_bytes()
 def convert_bytes_to_int(b):
-    ba = bitarray()
-    ba.frombytes(b)
-    return ba2int(ba)
+    return int.from_bytes(b, byteorder="big")
+    # ba = bitarray()
+    # ba.frombytes(b)
+    # return ba2int(ba)
 
 def serialize(obj):
     #https://github.com/TkTech/json_benchmark

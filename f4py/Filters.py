@@ -48,22 +48,7 @@ class __SimpleBaseFilter(NoFilter):
             bigram_size = f4py.get_bigram_size(len(column_compression_dict["map"]))
 
             for i in row_indices:
-                #print(i)
-                #value = int.from_bytes(parser._parse_row_value(i, coords, line_length, data_file_handle), byteorder="little")
-                #value = int.from_bytes(parser._parse_row_value(i, coords, line_length, data_file_handle), byteorder="little")
-                #value = f4py.convert_bytes_to_int(parser._parse_row_value(i, coords, line_length, data_file_handle))
                 value = parser._parse_row_value(i, coords, line_length, data_file_handle)
-                #print(value)
-                decompressed_value = f4py.decompress(value, column_compression_dict, bigram_size)
-                # if (self.value == b'FA' and i > 300 and i < 320):
-                #     print(i, decompressed_value, self.passes(decompressed_value))
-                # if self.passes(decompressed_value):
-                #     print(i)
-                #     print(self.column_name)
-                #     print(coords)
-                #     print(value)
-                #     print(decompressed_value)
-                #     print(self.value)
 
                 if self.passes(f4py.decompress(value, column_compression_dict, bigram_size)):
                     passing_row_indices.add(i)

@@ -1,6 +1,3 @@
-#TODO: Keep this import?
-from bitarray import frozenbitarray
-from bitarray.util import int2ba
 import f4py
 import fastnumbers
 from joblib import Parallel, delayed
@@ -370,31 +367,20 @@ class Builder:
                 for j, value in _enumerate_for_compression(unique_values):
                     #length = math.ceil(math.log(j + 1, 2) / 8) * 8 if j > 0 else 8
                     #column_compression_dicts[i]["map"][value] = int2ba(j, length = length).to01()
-                    column_compression_dicts[i]["map"][value] = int2ba(j, length = num_bytes * 8).tobytes()
-                    #column_compression_dicts[i]["map"][value] = int2ba(j).tobytes()
-
-                    #column_compression_dicts[i]["map"][value] = j.to_bytes(length, byteorder="little")
+                    #column_compression_dicts[i]["map"][value] = int2ba(j, length = num_bytes * 8).tobytes()
+                    column_compression_dicts[i]["map"][value] = j.to_bytes(length = num_bytes, byteorder = "big")
 
                 #column_sizes_dict[i] = f4py.get_max_string_length(unique_values)
                 column_sizes_dict[i] = num_bytes
             else:
                 column_compression_dicts[i]["compression_type"] = column_types_dict[i]
                 bigrams = _find_unique_bigrams(unique_values)
-                bit_length = f4py.get_bigram_size(len(bigrams)) * 8
+                num_bytes = f4py.get_bigram_size(len(bigrams))
 
                 for j, gram in _enumerate_for_compression(bigrams):
-                #for j, gram in enumerate(bigrams):
-                    #length = math.ceil(math.log(j + 1, 2) / 8) * 8 if j > 0 else 8
-
                     #column_compression_dicts[i]["map"][gram] = int2ba(j, length = length).to01()
-                    column_compression_dicts[i]["map"][gram] = int2ba(j, length = bit_length).tobytes()
-                    #column_compression_dicts[i]["map"][gram] = int2ba(j).tobytes()
-                    #column_compression_dicts[i]["map"][gram] = j.to_bytes(length, byteorder="little")
-                # print(unique_values)
-                # print(bigrams)
-                # print(column_compression_dicts[i]["map"])
-                # import sys
-                # sys.exit()
+                    #column_compression_dicts[i]["map"][gram] = int2ba(j, length = num_bytes * 8).tobytes()
+                    column_compression_dicts[i]["map"][gram] = j.to_bytes(length = num_bytes, byteorder = "big")
 
                 #TESTING
                 column_sizes_dict[i] = 0

@@ -91,7 +91,7 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     check_result("Column types", "CategoricalB column", parser.get_column_type_from_name("CategoricalB"), "s")
 
     parser.query_and_save(f4py.NoFilter(), [], out_file_path, num_processes=num_processes, lines_per_chunk=lines_per_chunk)
-    print(out_file_path, in_file_path)
+    #print(out_file_path, in_file_path)
     check_results("No filters, select all columns", read_file_into_lists(out_file_path), read_file_into_lists(in_file_path))
 
     parser.query_and_save(f4py.NoFilter(), ["ID","FloatA","FloatB","OrdinalA","OrdinalB","IntA","IntB","CategoricalA","CategoricalB"], out_file_path, num_processes=num_processes)

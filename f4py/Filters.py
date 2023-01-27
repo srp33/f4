@@ -9,13 +9,13 @@ import re
 This class is used to indicate that no filtering should be performed.
 """
 class NoFilter:
-    def check_types(self, column_index_dict, column_type_dict):
+    def check_types(self, column_type_dict):
         pass
 
     def get_column_name_set(self):
         return set()
 
-    def filter_column_values(self, data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict):
+    def filter_column_values(self, data_file_path, row_indices, column_coords_dict, compression_dict):
         return row_indices
 
     def filter_indexed_column_values(self, data_file_path, end_index, num_processes):
@@ -37,17 +37,39 @@ class __SimpleBaseFilter(NoFilter):
     def get_column_name_set(self):
         return set([self.column_name])
 
-    def filter_column_values(self, data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict):
+    def filter_column_values(self, data_file_path, row_indices, coords_dict, compression_dict):
         with f4py.Parser(data_file_path, fixed_file_extensions=[""], stats_file_extensions=[".ll"]) as parser:
             line_length = parser.get_stat(".ll")
-            coords = column_coords_dict[column_index_dict[self.column_name]]
+            coords = coords_dict[self.column_name]
             data_file_handle = parser.get_file_handle("")
-
+            column_compression_dict = compression_dict[self.column_name]
             passing_row_indices = set()
 
+            bigram_size = f4py.get_bigram_size(len(column_compression_dict["map"]))
+
             for i in row_indices:
-                if self.passes(parser._parse_row_value(i, coords, line_length, data_file_handle)):
+                #print(i)
+                #value = int.from_bytes(parser._parse_row_value(i, coords, line_length, data_file_handle), byteorder="little")
+                #value = int.from_bytes(parser._parse_row_value(i, coords, line_length, data_file_handle), byteorder="little")
+                #value = f4py.convert_bytes_to_int(parser._parse_row_value(i, coords, line_length, data_file_handle))
+                value = parser._parse_row_value(i, coords, line_length, data_file_handle)
+                #print(value)
+                decompressed_value = f4py.decompress(value, column_compression_dict, bigram_size)
+                # if (self.value == b'FA' and i > 300 and i < 320):
+                #     print(i, decompressed_value, self.passes(decompressed_value))
+                # if self.passes(decompressed_value):
+                #     print(i)
+                #     print(self.column_name)
+                #     print(coords)
+                #     print(value)
+                #     print(decompressed_value)
+                #     print(self.value)
+
+                if self.passes(f4py.decompress(value, column_compression_dict, bigram_size)):
                     passing_row_indices.add(i)
+
+            # import sys
+            # sys.exit()
 
             return passing_row_indices
 
@@ -80,8 +102,8 @@ class StringFilter(__OperatorFilter):
         self.check_argument(value, "value", str)
         super().__init__(column_name, oper, value.encode())
 
-    def check_types(self, column_index_dict, column_type_dict):
-        if column_type_dict[column_index_dict[self.column_name]] != "s":
+    def check_types(self, column_type_dict):
+        if column_type_dict[self.column_name] != "s":
             raise Exception(f"A StringFilter may only be used with string columns, and {self.column_name.decode()} is not a string.")
 
 class FloatFilter(__OperatorFilter):
@@ -89,8 +111,8 @@ class FloatFilter(__OperatorFilter):
         self.check_argument(value, "value", float)
         super().__init__(column_name, oper, value)
 
-    def check_types(self, column_index_dict, column_type_dict):
-        if column_type_dict[column_index_dict[self.column_name]] != "f":
+    def check_types(self, column_type_dict):
+        if column_type_dict[self.column_name] != "f":
             raise Exception(f"A float filter may only be used with float columns, but {self.column_name.decode()} is not a float.")
 
     def get_conversion_function(self):
@@ -101,8 +123,8 @@ class IntFilter(__OperatorFilter):
         self.check_argument(value, "value", int)
         super().__init__(column_name, oper, value)
 
-    def check_types(self, column_index_dict, column_type_dict):
-        if column_type_dict[column_index_dict[self.column_name]] != "i":
+    def check_types(self, column_type_dict):
+        if column_type_dict[self.column_name] != "i":
             raise Exception(f"An integer filter may only be used with integer columns, but {self.column_name.decode()} is not an integer.")
 
     def get_conversion_function(self):
@@ -116,7 +138,7 @@ class StartsWithFilter(__SimpleBaseFilter):
     def filter_indexed_column_values(self, data_file_path, end_index, num_processes):
         index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.column_name.decode())
 
-        return f4py.IndexHelper._get_passing_row_indices_for_with_filter(index_file_path, self, end_index, num_processes)
+        return f4py.IndexHelper._get_passing_row_indices_with_filter(index_file_path, self, end_index, num_processes)
 
     def passes(self, value):
         return value.startswith(self.value)
@@ -132,7 +154,7 @@ class EndsWithFilter(StartsWithFilter):
         if os.path.exists(custom_index_file_path):
             custom_fltr = f4py.StartsWithFilter(self.column_name.decode(), custom_index_function(self.value).decode())
 
-            return f4py.IndexHelper._get_passing_row_indices_for_with_filter(custom_index_file_path, custom_fltr, end_index, num_processes)
+            return f4py.IndexHelper._get_passing_row_indices_with_filter(custom_index_file_path, custom_fltr, end_index, num_processes)
         else:
             index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.column_name.decode())
 
@@ -179,14 +201,14 @@ class HeadFilter(NoFilter):
         with f4py.Parser(data_file_path, fixed_file_extensions=[""], stats_file_extensions=[".nrow"]) as parser:
             return parser.get_num_rows()
 
-    def filter_column_values(self, data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict):
+    def filter_column_values(self, data_file_path, row_indices, column_coords_dict, compression_dict):
         return set(range(min(self._get_num_rows(data_file_path), self.n))) & row_indices
 
     def filter_indexed_column_values(self, data_file_path, end_index, num_processes):
         return set(range(min(self._get_num_rows(data_file_path), self.n)))
 
 class TailFilter(HeadFilter):
-    def filter_column_values(self, data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict):
+    def filter_column_values(self, data_file_path, row_indices, column_coords_dict, compression_dict):
         num_rows = self._get_num_rows(data_file_path)
         return set(range(num_rows - self.n, num_rows)) & row_indices
 
@@ -199,9 +221,9 @@ class __CompositeFilter(NoFilter):
         self.filter1 = filter1
         self.filter2 = filter2
 
-    def check_types(self, column_index_dict, column_type_dict):
-        self.filter1.check_types(column_index_dict, column_type_dict)
-        self.filter2.check_types(column_index_dict, column_type_dict)
+    def check_types(self, column_type_dict):
+        self.filter1.check_types(column_type_dict)
+        self.filter2.check_types(column_type_dict)
 
     def get_column_name_set(self):
         return self.filter1.get_column_name_set() | self.filter2.get_column_name_set()
@@ -235,9 +257,9 @@ class AndFilter(__CompositeFilter):
     def __init__(self, filter1, filter2):
         super().__init__(filter1, filter2)
 
-    def filter_column_values(self, data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict):
-        row_indices_1 = self.filter1.filter_column_values(data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict)
-        return self.filter2.filter_column_values(data_file_path, row_indices_1, column_index_dict, column_type_dict, column_coords_dict)
+    def filter_column_values(self, data_file_path, row_indices, column_coords_dict, compression_dict):
+        row_indices_1 = self.filter1.filter_column_values(data_file_path, row_indices, column_coords_dict, compression_dict)
+        return self.filter2.filter_column_values(data_file_path, row_indices_1, column_coords_dict, compression_dict)
 
     def filter_indexed_column_values(self, data_file_path, end_index, num_processes):
         # Currently, this combination of two-column filters is supported. Add more later.
@@ -280,9 +302,9 @@ class OrFilter(__CompositeFilter):
     def __init__(self, filter1, filter2):
         super().__init__(filter1, filter2)
 
-    def filter_column_values(self, data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict):
-        row_indices_1 = self.filter1.filter_column_values(data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict)
-        row_indices_2 = self.filter2.filter_column_values(data_file_path, row_indices - row_indices_1, column_index_dict, column_type_dict, column_coords_dict)
+    def filter_column_values(self, data_file_path, row_indices, column_coords_dict, compression_dict):
+        row_indices_1 = self.filter1.filter_column_values(data_file_path, row_indices, column_coords_dict, compression_dict)
+        row_indices_2 = self.filter2.filter_column_values(data_file_path, row_indices - row_indices_1, column_coords_dict, compression_dict)
 
         return row_indices_1 | row_indices_2
 
@@ -303,8 +325,8 @@ class __RangeFilter(__CompositeFilter):
         if filter1.value > filter2.value:
             raise Exception("The lower_bound_value must be less than or equal to the upper_bound_value.")
 
-    def filter_column_values(self, data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict):
-        return AndFilter(self.filter1, self.filter2).filter_column_values(data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict)
+    def filter_column_values(self, data_file_path, row_indices, column_coords_dict, compression_dict):
+        return AndFilter(self.filter1, self.filter2).filter_column_values(data_file_path, row_indices, column_coords_dict, compression_dict)
 
     def filter_indexed_column_values(self, data_file_path, end_index, num_processes):
         index_file_path = f4py.IndexHelper._get_index_file_path(data_file_path, self.filter1.column_name.decode())

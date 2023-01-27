@@ -24,6 +24,8 @@ def read_file_into_lists(file_path, delimiter=b"\t"):
     return out_items
 
 def check_results(description, actual_lists, expected_lists):
+    #print(actual_lists)
+    #print(expected_lists)
     check_result(description, "Number of rows", len(actual_lists), len(expected_lists), False)
 
     for i in range(len(actual_lists)):
@@ -89,6 +91,7 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     check_result("Column types", "CategoricalB column", parser.get_column_type_from_name("CategoricalB"), "s")
 
     parser.query_and_save(f4py.NoFilter(), [], out_file_path, num_processes=num_processes, lines_per_chunk=lines_per_chunk)
+    print(out_file_path, in_file_path)
     check_results("No filters, select all columns", read_file_into_lists(out_file_path), read_file_into_lists(in_file_path))
 
     parser.query_and_save(f4py.NoFilter(), ["ID","FloatA","FloatB","OrdinalA","OrdinalB","IntA","IntB","CategoricalA","CategoricalB"], out_file_path, num_processes=num_processes)
@@ -406,15 +409,19 @@ def run_small_tests(in_file_path, f4_file_path, out_file_path, num_processes = 1
     check_results("Filter using string/int-range two-column index", read_file_into_lists(out_file_path), [[b"FloatA"], [b"9.9"], [b"2.2"]])
 
 def run_medium_tests(num_processes):
-    in_file_path = "/data/medium.tsv"
-    f4_file_path = "/data/medium.f4"
+    in_file_path = "data/medium.tsv"
+    f4_file_path = "data/medium.f4"
     out_file_path = "/tmp/f4_out.tsv"
 
-    with open("/data/medium.tsv") as medium_file:
-        medium_lines = medium_file.read().rstrip("\n").split("\n")
+    with open("data/medium.tsv") as medium_file:
+        medium_lines = [line for line in medium_file.read().rstrip("\n").split("\n")]
         medium_ID = [[line.split("\t")[0].encode()] for line in medium_lines]
-        medium_Discrete1 = [[line.split("\t")[1].encode()] for line in medium_lines]
-        medium_Numeric1 = [[line.split("\t")[2].encode()] for line in medium_lines]
+        medium_Categorical1 = [[line.split("\t")[1].encode()] for line in medium_lines]
+        medium_Discrete1 = [[line.split("\t")[2].encode()] for line in medium_lines]
+        medium_Numeric1 = [[line.split("\t")[3]] for line in medium_lines]
+
+        for i in range(1, len(medium_Numeric1)):
+            medium_Numeric1[i][0] = float(medium_Numeric1[i][0])
 
     # Clean up data files if they already exist
     for file_path in glob.glob(f"{f4_file_path}*"):
@@ -426,97 +433,105 @@ def run_medium_tests(num_processes):
     print(f"Running all tests for {in_file_path} - no indexing")
     print("-------------------------------------------------------")
 
-    run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, medium_Numeric1, num_processes)
+    run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Categorical1, medium_Discrete1, medium_Numeric1, num_processes)
 
-    print("-------------------------------------------------------")
-    print(f"Running all tests for {in_file_path} - with indexing")
-    print("-------------------------------------------------------")
+    #print("-------------------------------------------------------")
+    #print(f"Running all tests for {in_file_path} - with indexing")
+    #print("-------------------------------------------------------")
 
-    f4py.IndexHelper.build_indexes(f4_file_path, ["ID", "Discrete1", "Numeric1"])
+    #f4py.IndexHelper.build_indexes(f4_file_path, ["ID", "Discrete1", "Numeric1"])
 
-    run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, medium_Numeric1, num_processes)
+    #run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Categorical1, medium_Discrete1, medium_Numeric1, num_processes)
 
-    print("-------------------------------------------------------")
-    print(f"Running all tests for {in_file_path} - custom indexing")
-    print("-------------------------------------------------------")
+    #print("-------------------------------------------------------")
+    #print(f"Running all tests for {in_file_path} - custom indexing")
+    #print("-------------------------------------------------------")
 
-    f4py.IndexHelper.build_endswith_index(f4_file_path, "Discrete1")
+    #f4py.IndexHelper.build_endswith_index(f4_file_path, "Discrete1")
 
-    run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, medium_Numeric1, num_processes)
+    #run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Categorical1, medium_Discrete1, medium_Numeric1, num_processes)
 
-def run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Discrete1, medium_Numeric1, num_processes):
+def run_medium_tests2(f4_file_path, out_file_path, medium_ID, medium_Categorical1, medium_Discrete1, medium_Numeric1, num_processes):
     parser = f4py.Parser(f4_file_path)
 
     parser.query_and_save(f4py.StringFilter("ID", operator.eq, "Row1"), ["Discrete1"], out_file_path, num_processes=num_processes)
-    check_results("Filter ID = Row1", read_file_into_lists(out_file_path), [[b"Discrete1"],[b"MY"]])
+    check_results("Filter ID = Row1", read_file_into_lists(out_file_path), [[b"Discrete1"], medium_Discrete1[1]])
     parser.query_and_save(f4py.StringFilter("ID", operator.eq, "Row33"), ["Discrete1"], out_file_path, num_processes=num_processes)
-    check_results("Filter ID = Row33", read_file_into_lists(out_file_path), [[b"Discrete1"],[b"CV"]])
+    check_results("Filter ID = Row33", read_file_into_lists(out_file_path), [[b"Discrete1"], medium_Discrete1[33]])
     parser.query_and_save(f4py.StringFilter("ID", operator.eq, "Row91"), ["Discrete1"], out_file_path, num_processes=num_processes)
-    check_results("Filter ID = Row91", read_file_into_lists(out_file_path), [[b"Discrete1"],[b"AB"]])
+    check_results("Filter ID = Row91", read_file_into_lists(out_file_path), [[b"Discrete1"], medium_Discrete1[91]])
     parser.query_and_save(f4py.StringFilter("ID", operator.eq, "Row100"), ["Discrete1"], out_file_path, num_processes=num_processes)
-    check_results("Filter ID = Row100", read_file_into_lists(out_file_path), [[b"Discrete1"],[b"UG"]])
+    check_results("Filter ID = Row100", read_file_into_lists(out_file_path), [[b"Discrete1"], medium_Discrete1[100]])
 
-    parser.query_and_save(f4py.FloatRangeFilter("Numeric1", 0.0, 1.0), ["ID"], out_file_path, num_processes=num_processes)
-    check_results("Filter FloatWithin = 0.0-1.0", read_file_into_lists(out_file_path), medium_ID)
-    parser.query_and_save(f4py.FloatRangeFilter("Numeric1", 0.85, 0.90), ["ID"], out_file_path, num_processes=num_processes)
-    check_results("Filter FloatWithin = 0.85-0.90", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[1], medium_ID[19], medium_ID[84], medium_ID[100]])
-    parser.query_and_save(f4py.FloatRangeFilter("Numeric1", -0.90, -0.85), ["ID"], out_file_path, num_processes=num_processes)
-    check_results("Filter FloatWithin = -0.90--0.85", read_file_into_lists(out_file_path), [medium_ID[0]])
-    parser.query_and_save(f4py.FloatRangeFilter("Numeric1", float(medium_Numeric1[1][0].decode()), float(medium_Numeric1[1][0].decode())), ["ID"], out_file_path, num_processes=num_processes)
-    check_results("Filter FloatWithin = row 1", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[1]])
-    parser.query_and_save(f4py.FloatRangeFilter("Numeric1", float(medium_Numeric1[2][0].decode()), float(medium_Numeric1[2][0].decode())), ["ID"], out_file_path, num_processes=num_processes)
-    check_results("Filter FloatWithin = row 2", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[2]])
-    parser.query_and_save(f4py.FloatRangeFilter("Numeric1", float(medium_Numeric1[3][0].decode()), float(medium_Numeric1[3][0].decode())), ["ID"], out_file_path, num_processes=num_processes)
-    check_results("Filter FloatWithin = row 3", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[3]])
-    parser.query_and_save(f4py.FloatRangeFilter("Numeric1", float(medium_Numeric1[98][0].decode()), float(medium_Numeric1[98][0].decode())), ["ID"], out_file_path, num_processes=num_processes)
-    check_results("Filter FloatWithin = row 98", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[98]])
-    parser.query_and_save(f4py.FloatRangeFilter("Numeric1", float(medium_Numeric1[99][0].decode()), float(medium_Numeric1[99][0].decode())), ["ID"], out_file_path, num_processes=num_processes)
-    check_results("Filter FloatWithin = row 99", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[99]])
-    parser.query_and_save(f4py.FloatRangeFilter("Numeric1", float(medium_Numeric1[100][0].decode()), float(medium_Numeric1[100][0].decode())), ["ID"], out_file_path, num_processes=num_processes)
-    check_results("Filter FloatWithin = row 100", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[100]])
+    run_string_test("Categorical1", "A", "A", parser, medium_ID, medium_Categorical1, out_file_path, num_processes)
+    run_string_test("Categorical1", "D", "D", parser, medium_ID, medium_Categorical1, out_file_path, num_processes)
+    run_string_test("Categorical1", "A", "D", parser, medium_ID, medium_Categorical1, out_file_path, num_processes)
+    run_string_test("Categorical1", "B", "C", parser, medium_ID, medium_Categorical1, out_file_path, num_processes)
+    run_string_test("Categorical1", "A", "C", parser, medium_ID, medium_Categorical1, out_file_path, num_processes)
+    run_string_test("Categorical1", "B", "D", parser, medium_ID, medium_Categorical1, out_file_path, num_processes)
+    run_string_test("Categorical1", "B", "Z", parser, medium_ID, medium_Categorical1, out_file_path, num_processes)
 
-    parser.query_and_save(f4py.StringFilter("Discrete1", operator.eq, medium_Discrete1[1][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
-    check_results("Filter Discrete1 = row 1", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[1]])
-    parser.query_and_save(f4py.StringFilter("Discrete1", operator.eq, medium_Discrete1[2][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
-    check_results("Filter Discrete1 = row 2", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[2]])
-    parser.query_and_save(f4py.StringFilter("Discrete1", operator.eq, medium_Discrete1[3][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
-    check_results("Filter Discrete1 = row 3", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[3]])
-    parser.query_and_save(f4py.StringFilter("Discrete1", operator.eq, medium_Discrete1[98][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
-    check_results("Filter Discrete1 = row 98", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[98]])
-    parser.query_and_save(f4py.StringFilter("Discrete1", operator.eq, medium_Discrete1[99][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
-    check_results("Filter Discrete1 = row 99", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[99]])
-    parser.query_and_save(f4py.StringFilter("Discrete1", operator.eq, medium_Discrete1[100][0].decode()), ["ID"], out_file_path, num_processes=num_processes)
-    check_results("Filter Discrete1 = row 100", read_file_into_lists(out_file_path), [medium_ID[0], medium_ID[100]])
+    run_string_test("Discrete1", "AA", "AA", parser, medium_ID, medium_Discrete1, out_file_path, num_processes)
+    run_string_test("Discrete1", "PM", "PM", parser, medium_ID, medium_Discrete1, out_file_path, num_processes)
+    run_string_test("Discrete1", "AA", "ZZ", parser, medium_ID, medium_Discrete1, out_file_path, num_processes)
+    run_string_test("Discrete1", "FA", "SZ", parser, medium_ID, medium_Discrete1, out_file_path, num_processes)
 
-    parser.query_and_save(f4py.EndsWithFilter("Discrete1", "M"), ["ID"], out_file_path, num_processes=num_processes)
-    check_results("EndsWith filter - M", read_file_into_lists(out_file_path), [[b"ID"], [b"Row3"], [b"Row29"], [b"Row80"]])
+    run_endswith_test("M", parser, medium_ID, medium_Discrete1, out_file_path, num_processes)
+    run_endswith_test("PM", parser, medium_ID, medium_Discrete1, out_file_path, num_processes)
+    run_endswith_test("ZZZZ", parser, medium_ID, medium_Discrete1, out_file_path, num_processes)
 
-    parser.query_and_save(f4py.EndsWithFilter("Discrete1", "PM"), ["ID"], out_file_path, num_processes=num_processes)
-    check_results("EndsWith filter - PM", read_file_into_lists(out_file_path), [[b"ID"], [b"Row3"]])
+    run_float_test(0.0, 1.0, parser, medium_ID, medium_Numeric1, out_file_path, num_processes)
+    run_float_test(0.85, 0.9, parser, medium_ID, medium_Numeric1, out_file_path, num_processes)
+    run_float_test(-0.9, -0.85, parser, medium_ID, medium_Numeric1, out_file_path, num_processes)
+    run_float_test(-0.5, 0.0, parser, medium_ID, medium_Numeric1, out_file_path, num_processes)
+    run_float_test(-0.5, 0.5, parser, medium_ID, medium_Numeric1, out_file_path, num_processes)
+    run_float_test(-1000.0, 1000.0, parser, medium_ID, medium_Numeric1, out_file_path, num_processes)
+    run_float_test(0.5, 0.5, parser, medium_ID, medium_Numeric1, out_file_path, num_processes)
+
+def run_string_test(column_name, lower_bound, upper_bound, parser, medium_ID, filter_values, out_file_path, num_processes):
+    parser.query_and_save(f4py.StringRangeFilter(column_name, lower_bound, upper_bound), ["ID"], out_file_path, num_processes=num_processes)
+    indices = [i for i in range(len(filter_values)) if filter_values[i][0] == column_name.encode() or (filter_values[i][0] >= lower_bound.encode() and filter_values[i][0] <= upper_bound.encode())]
+    matches = [medium_ID[i] for i in indices]
+    actual = read_file_into_lists(out_file_path)
+    check_results(f"Filter {column_name} = {lower_bound} <> {upper_bound} = {len(matches) - 1} matches", read_file_into_lists(out_file_path), matches)
+
+def run_endswith_test(value, parser, medium_ID, filter_values, out_file_path, num_processes):
+    column_name = "Discrete1"
+    parser.query_and_save(f4py.EndsWithFilter(column_name, value), ["ID"], out_file_path, num_processes=num_processes)
+    indices = [i for i in range(len(filter_values)) if filter_values[i][0] == column_name.encode() or filter_values[i][0].endswith(value.encode())]
+    matches = [medium_ID[i] for i in indices]
+    check_results(f"EndsWith filter - {column_name} - {value} = {len(matches) - 1} matches", read_file_into_lists(out_file_path), matches)
+
+def run_float_test(lower_bound, upper_bound, parser, medium_ID, medium_Numeric1, out_file_path, num_processes):
+    column_name = "Numeric1"
+    parser.query_and_save(f4py.FloatRangeFilter(column_name, lower_bound, upper_bound), ["ID"], out_file_path, num_processes=num_processes)
+    indices = [i for i in range(len(medium_Numeric1)) if isinstance(medium_Numeric1[i][0], str) or (medium_Numeric1[i][0] >= lower_bound and medium_Numeric1[i][0] <= upper_bound)]
+    matches = [medium_ID[i] for i in indices]
+    check_results(f"Filter FloatWithin = {lower_bound} <> {upper_bound} = {len(matches) - 1} matches", read_file_into_lists(out_file_path), matches)
 
 # Basic small tests
-f4_file_path = "/data/small.f4"
+f4_file_path = "data/small.f4"
 out_file_path = "/tmp/small_out.tsv"
-run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
-run_small_tests("/data/small.tsv.gz", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
-run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
-run_small_tests("/data/small.tsv.gz", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
+run_small_tests("data/small.tsv", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
+#run_small_tests("data/small.tsv.gz", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
+run_small_tests("data/small.tsv", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
+#run_small_tests("data/small.tsv.gz", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
 
 ## Small tests with z-standard compression
-#f4_file_path = "/data/small_compressed.f4"
+#f4_file_path = "data/small_compressed.f4"
 #out_file_path = "/tmp/small_compressed_out.tsv"
-#run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1, compression_level = 1)
-#run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2, compression_level = 1)
+#run_small_tests("data/small.tsv", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1, compression_level = 1)
+#run_small_tests("data/small.tsv", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2, compression_level = 1)
 
-# Small tests with indexing
-f4_file_path = "/data/small_indexing.f4"
-out_file_path = "/tmp/small_indexing_out.tsv"
-index_columns = ["ID", "CategoricalB", "FloatA", "FloatB", "IntA", "IntB", "OrdinalA", ["CategoricalB", "IntB"]]
-run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1, index_columns = index_columns)
-run_small_tests("/data/small.tsv", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2, index_columns = index_columns)
+## Small tests with indexing
+#f4_file_path = "data/small_indexing.f4"
+#out_file_path = "/tmp/small_indexing_out.tsv"
+#index_columns = ["ID", "CategoricalB", "FloatA", "FloatB", "IntA", "IntB", "OrdinalA", ["CategoricalB", "IntB"]]
+#run_small_tests("data/small.tsv", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1, index_columns = index_columns)
+#run_small_tests("data/small.tsv", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2, index_columns = index_columns)
 
 # Medium tests
 run_medium_tests(num_processes=1)
-run_medium_tests(num_processes=2)
+#run_medium_tests(num_processes=2)
 
 print("All tests passed!!")

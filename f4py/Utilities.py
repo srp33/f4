@@ -1,7 +1,14 @@
+#TODO
+from bitarray import bitarray
+from bitarray.util import ba2int
 import datetime
 import gzip
 import fastnumbers
+import math
 import mmap
+#TODO
+#import msgpack
+import msgspec
 from operator import itemgetter
 import zstandard
 
@@ -19,9 +26,6 @@ def read_int_from_file(file_path, file_extension=""):
 def write_str_to_file(file_path, the_string):
     with open(file_path, 'wb') as the_file:
         the_file.write(the_string)
-
-#def is_missing_value(value):
-#    return value == b"" or value == b"NA"
 
 def get_column_start_coords(column_sizes):
     # Calculate the position where each column starts.
@@ -85,3 +89,58 @@ def get_delimited_file_handle(file_path):
 
 def format_string_as_fixed_width(x, size):
     return x + b" " * (size - len(x))
+
+def compress_using_2_grams(value, compression_dict):
+    compressed_value = b""
+
+    for start_i in range(0, len(value), 2):
+        end_i = (start_i + 2)
+        gram = value[start_i:end_i]
+        compressed_value += compression_dict[gram]
+
+    return compressed_value
+
+def get_bigram_size(num_bigrams):
+    return math.ceil(math.log(num_bigrams, 2) / 8)
+
+def decompress(compressed_value, compression_dict, bigram_size):
+    if compression_dict["compression_type"] == b"c":
+        return compression_dict["map"][convert_bytes_to_int(compressed_value)]
+
+    #print(compressed_value)
+    #print(type(compressed_value))
+    #print(compression_dict["map"][b'\xde'])
+    # print(compression_dict["map"][222])
+    # print(sorted(list(compression_dict["map"].keys())))
+    # import sys
+    # sys.exit()
+    #print(sorted(list(compression_dict["map"].values())))
+    #print(len(compressed_value))
+    #print(compressed_value[0])
+    value = b""
+    #for int_char in compressed_value:
+    for start_pos in range(0, len(compressed_value), bigram_size):
+        end_pos = start_pos + bigram_size
+        compressed_piece = convert_bytes_to_int(compressed_value[start_pos:end_pos])
+        #print(compressed_piece)
+        #print(int_char)
+        value += compression_dict["map"][compressed_piece]
+    #print(value)
+    # import sys
+    # sys.exit()
+    return value
+
+#TODO: Change to int.from_bytes()
+def convert_bytes_to_int(b):
+    ba = bitarray()
+    ba.frombytes(b)
+    return ba2int(ba)
+
+def serialize(obj):
+    #https://github.com/TkTech/json_benchmark
+    return msgspec.msgpack.encode(obj)
+#    return msgpack.packb(obj)
+
+def deserialize(msg):
+    return msgspec.msgpack.decode(msg)
+#    return msgpack.unpackb(msg, strict_map_key=False)

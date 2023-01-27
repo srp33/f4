@@ -6,3 +6,4 @@ tests/data/wide*
 tests/data/cadd*
 nohup*
 tests/nohup*
+F4.code-workspace

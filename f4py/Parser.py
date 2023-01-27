@@ -4,7 +4,9 @@ import glob
 from itertools import chain
 from joblib import Parallel, delayed
 import math
+import os
 import sys
+#TODO
 import zstandard
 
 class Parser:
@@ -29,7 +31,7 @@ class Parser:
         for ext in fixed_file_extensions:
             self.__file_handles[ext] = self.set_file_handle(ext)
 
-        self.__decompressor = None
+        #self.__decompressor = None
         #self.__decompressor = f4py.CompressionHelper._get_decompressor(data_file_path)
 
         # Cache statistics in a dictionary.
@@ -72,11 +74,11 @@ class Parser:
         else:
             select_columns = []
 
-        # Store column indicies and types in dictionaries so we only have to retrieve
+        # Store column indices and types in dictionaries so we only have to retrieve
         # each once, even if we use the same column in multiple filters.
-        select_columns, column_index_dict, column_type_dict, column_coords_dict = self._get_column_meta(fltr, select_columns)
+        select_columns, column_type_dict, column_coords_dict, column_compression_dict = self._get_column_meta(fltr.get_column_name_set(), select_columns)
 
-        fltr.check_types(column_index_dict, column_type_dict)
+        fltr.check_types(column_type_dict)
 
         has_index = len(glob.glob(self.data_file_path + ".idx_*")) > 0
 
@@ -102,13 +104,17 @@ class Parser:
         else:
             if num_processes == 1:
                 row_indices = set(range(self.get_num_rows()))
-                keep_row_indices = sorted(fltr.filter_column_values(self.data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict))
+                keep_row_indices = sorted(fltr.filter_column_values(self.data_file_path, row_indices, column_coords_dict, column_compression_dict))
             else:
-                # Loop through the rows in parallel and find matching row indices.
-                keep_row_indices = sorted(chain.from_iterable(Parallel(n_jobs = num_processes)(delayed(fltr.filter_column_values)(self.data_file_path, row_indices, column_index_dict, column_type_dict, column_coords_dict) for row_indices in self._generate_row_chunks(num_processes))))
+                #TODO: Create smaller dictionaries so less data has to be serialized during parallelization?
+                #filter_column_type_dict = {column_index_dict[i]: column_type_dict[i] for i in filter_column_indices}
+                #filter_column_coords_dict = {column_index_dict[i]: column_coords_dict[i] for i in filter_column_indices}
+                #filter_column_compression_dict = {column_index_dict[i]: compression_dict[i] for i in filter_column_indices}
 
-        # Get the coords for each column to select
-        select_column_coords = self._parse_data_coords([column_index_dict[x] for x in select_columns])
+                # Loop through the rows in parallel and find matching row indices.
+                keep_row_indices = sorted(chain.from_iterable(Parallel(n_jobs = num_processes)(delayed(fltr.filter_column_values)(self.data_file_path, row_indices, column_coords_dict, column_compression_dict) for row_indices in self._generate_row_chunks(num_processes))))
+
+        select_column_coords = [column_coords_dict[name] for name in select_columns]
 
         if out_file_path:
             # Write output (in chunks)
@@ -116,9 +122,27 @@ class Parser:
                 # Header line
                 out_file.write(b"\t".join(select_columns) + b"\n")
 
+                # Cache these values so we don't have to recalculate for each row
+                bigram_size_dict = {}
+                for column_name in select_columns:
+                    bigram_size_dict[column_name] = f4py.get_bigram_size(len(column_compression_dict[column_name]["map"]))
+                
                 out_lines = []
                 for row_index in keep_row_indices:
-                    out_lines.append(b"\t".join([x for x in self.__parse_row_values(row_index, select_column_coords)]))
+                    values = self.__parse_row_values(row_index, select_column_coords)
+                    # print(values[0])
+                    # print(values[0][0:1])
+                    # print(values[0][0:2])
+                    # print(values[0][0])
+                    # print(values[0][1])
+                    # print(column_compression_dict[select_columns[0]]["map"])
+                    # print(column_compression_dict[select_columns[0]]["map"][values[0][0]])
+                    # print(column_compression_dict[select_columns[0]]["map"][values[0][1]])
+                    # import sys
+                    # sys.exit()
+                    out_values = [f4py.decompress(values.pop(0), column_compression_dict[name], bigram_size_dict[name]) for name in select_columns]
+
+                    out_lines.append(b"\t".join(out_values))
 
                     if len(out_lines) % lines_per_chunk == 0:
                         out_file.write(b"\n".join(out_lines) + b"\n")
@@ -129,6 +153,7 @@ class Parser:
         else:
             sys.stdout.buffer.write(b"\t".join(select_columns) + b"\n")
 
+            #TODO: Make sure this is consistent with the section above.
             for row_index in keep_row_indices:
                 sys.stdout.buffer.write(b"\t".join([x for x in self.__parse_row_values(row_index, select_column_coords)]))
 
@@ -159,7 +184,7 @@ class Parser:
             raise Exception(f"A column with the name {column_name} does not exist.")
 
     def _get_column_index_from_name(self, index_parser, column_name):
-        position = f4py.IndexHelper._get_identifier_row_index(index_parser, column_name.encode(), self.get_num_cols(), num_processes=1)
+        position = f4py.IndexHelper._get_identifier_row_index(index_parser, column_name.encode(), self.get_num_cols())
 
         if position < 0:
             raise Exception(f"Could not retrieve index because column named {column_name} was not found.")
@@ -182,45 +207,69 @@ class Parser:
     # Non-public functions
     ##############################################
 
-    def _get_column_meta(self, fltr, select_columns):
+    def _get_column_meta(self, filter_column_set, select_columns):
+        column_type_dict = {}
+        column_coords_dict = {}
+        column_index_name_dict = {}
+
         if len(select_columns) == 0:
+            #select_columns = []
+
             with f4py.Parser(self.data_file_path + ".cn", fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"]) as cn_parser:
-                line_length = cn_parser.get_stat(".ll")
                 coords = cn_parser._parse_data_coords([0, 1])
 
-                # They are not in sorted order in the file, so we must put them in a dict and sort it.
-                column_index_dict = {}
                 for row_index in range(self.get_num_cols()):
                     values = cn_parser.__parse_row_values(row_index, coords)
+                    column_name = values[0]
+                    column_index = fastnumbers.fast_int(values[1])
 
-                    column_index_dict[fastnumbers.fast_int(values[1])] = values[0]
+                    column_index_name_dict[column_index] = column_name
+                    #select_columns.append([row_index, column_name])
 
-                select_columns = []
-                for index, name in sorted(column_index_dict.items()):
-                    select_columns.append(name)
+                    if column_name in filter_column_set:
+                        column_type_dict[column_name] = row_index
 
-                column_index_dict = {name: index for index, name in enumerate(select_columns)}
+                all_coords = self._parse_data_coords(range(self.get_num_cols()))
+                for row_index in range(self.get_num_cols()):
+                    column_coords_dict[column_index_name_dict[row_index]] = all_coords[row_index]
+
+            # The columns are sorted by name in the file, so we must sort them by index here.
+            #select_columns = [x[1] for x in f4py.sort_first_column(select_columns)]
+            select_columns = [x[1] for x in sorted(column_index_name_dict.items())]
         else:
-            select_columns = [x.encode() for x in select_columns]
+            with f4py.IndexHelper._get_index_parser(f"{self.data_file_path}.cn") as index_parser:
+                select_columns = [name.encode() for name in select_columns]
 
-            column_names_file_path = f"{self.data_file_path}.cn"
+                column_name_index_dict = {}
+                for column_name in (filter_column_set | set(select_columns)):
+                    column_index = self._get_column_index_from_name(index_parser, column_name.decode())
+                    column_name_index_dict[column_name] = column_index
+                    column_index_name_dict[column_index] = column_name
 
-            with f4py.IndexHelper._get_index_parser(column_names_file_path) as index_parser:
-                column_index_dict = {name: self._get_column_index_from_name(index_parser, name.decode()) for name in fltr.get_column_name_set() | set(select_columns)}
+                for column_name in filter_column_set:
+                    column_type_dict[column_name] = self.get_column_type(column_name_index_dict[column_name])
 
-        type_columns = fltr.get_column_name_set() | set(select_columns)
-        filter_column_type_dict = {}
-        for column_name in type_columns:
-            column_index = column_index_dict[column_name]
-            filter_column_type_dict[column_index] = self.get_column_type(column_index)
+            all_columns = list(filter_column_set | set(select_columns))
+            all_column_indices = [column_name_index_dict[name] for name in all_columns]
+            all_coords = self._parse_data_coords(all_column_indices)
 
-        column_indices = list(column_index_dict.values())
-        column_coords = self._parse_data_coords(column_indices)
-        column_coords_dict = {}
-        for i in range(len(column_indices)):
-            column_coords_dict[column_indices[i]] = column_coords[i]
+            for i, column_name in enumerate(all_columns):
+                column_coords_dict[column_name] = all_coords[i]
 
-        return select_columns, column_index_dict, filter_column_type_dict, column_coords_dict
+        # We will only need to check the types of columns used for filtering
+        # with f4py.IndexHelper._get_index_parser(f"{self.data_file_path}.cn") as index_parser:
+
+        #     for column_name in filter_column_set:
+        #         #column_type_dict[column_name] = self.get_column_type(column_index_dict[column_name])
+        #         column_type_dict[column_name] = self._get_column_index_from_name(index_parser, column_name.decode())
+
+        # column_indices = [column_index_dict[name] for name in all_columns]
+        # column_coords = self._parse_data_coords(column_indices)
+        # column_coords_dict = {}
+        # for i, column_name in enumerate(all_columns):
+        #     column_coords_dict[column_name] = column_coords[i]
+
+        return select_columns, column_type_dict, column_coords_dict, self.__get_compression_dict(column_index_name_dict)
 
     def _generate_row_chunks(self, num_processes):
         rows_per_chunk = math.ceil(self.get_num_rows() / num_processes)
@@ -252,7 +301,7 @@ class Parser:
                 data_start_pos = out_dict[index]
             # If not, retrieve the start position from the cc file and then cache it.
             else:
-                data_start_pos = fastnumbers.fast_int(self.__file_handles[".cc"][start_pos:next_start_pos].rstrip())
+                data_start_pos = fastnumbers.fast_int(self.__file_handles[".cc"][start_pos:next_start_pos].rstrip(b" "))
                 out_dict[index] = data_start_pos
 
             # See if we already have cached the end position.
@@ -260,7 +309,7 @@ class Parser:
                 data_end_pos = out_dict[index + 1]
             # If not, retrieve the end position from the cc file and then cache it.
             else:
-                data_end_pos = fastnumbers.fast_int(self.__file_handles[".cc"][next_start_pos:further_next_start_pos].rstrip())
+                data_end_pos = fastnumbers.fast_int(self.__file_handles[".cc"][next_start_pos:further_next_start_pos].rstrip(b" "))
                 out_dict[index + 1] = data_end_pos
 
             data_coords.append([data_start_pos, data_end_pos])
@@ -276,23 +325,82 @@ class Parser:
         start_pos = start_element * segment_length
 
         for coords in data_coords:
-            yield str_like_object[(start_pos + coords[0]):(start_pos + coords[1])].rstrip()
+            yield str_like_object[(start_pos + coords[0]):(start_pos + coords[1])].rstrip(b" ")
 
     def _parse_row_value(self, row_index, column_coords, line_length, file_handle):
-        if self.__decompressor:
-            line = self.__parse_data_value(row_index, line_length, [0, line_length], file_handle)
-            line = self.__decompressor.decompress(line)
+#        if self.__decompressor:
+#            line = self.__parse_data_value(row_index, line_length, [0, line_length], file_handle)
+#            line = self.__decompressor.decompress(line)
+#
+#            return self.__parse_data_value(0, 0, column_coords, line).rstrip(b" ")
 
-            return self.__parse_data_value(0, 0, column_coords, line).rstrip()
-
-        return self.__parse_data_value(row_index, line_length, column_coords, file_handle).rstrip()
+        return self.__parse_data_value(row_index, line_length, column_coords, file_handle).rstrip(b" ")
 
     def __parse_row_values(self, row_index, column_coords):
-        if self.__decompressor:
-            line_length = self.__stats[".ll"]
-            line = self.__parse_data_value(row_index, line_length, [0, line_length], self.__file_handles[""])
-            line = self.__decompressor.decompress(line)
-
-            return list(self.__parse_data_values(0, 0, column_coords, line))
+#        if self.__decompressor:
+#            line_length = self.__stats[".ll"]
+#            line = self.__parse_data_value(row_index, line_length, [0, line_length], self.__file_handles[""])
+#            line = self.__decompressor.decompress(line)
+#
+#            return list(self.__parse_data_values(0, 0, column_coords, line))
 
         return list(self.__parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
+
+    def __get_compression_dict(self, column_index_name_dict):
+        file_path = f"{self.data_file_path}.cmpr"
+
+        if not os.path.exists(file_path):
+            return None
+
+        with open(file_path, "rb") as cmpr_file:
+            column_compression_dict = f4py.deserialize(cmpr_file.read())
+
+        column_compression_dict2 = {}
+        for column_index, column_name in column_index_name_dict.items():
+            column_compression_dict2[column_name] = column_compression_dict[column_index]
+
+        return column_compression_dict2
+
+    #     compression_dict = {}
+    #     with open(file_path, "rb") as cmpr_file:
+    #         for line in cmpr_file:
+    #             line_items = line.rstrip(b"\n").split(b"\t")
+    #             column_index = fastnumbers.fast_int(line_items[0])
+
+    #             if column_index in column_index_name_dict:
+    #                 column_name = column_index_name_dict[column_index]
+    #                 compression_dict[column_name] = f4py.deserialize(line_items[1])
+
+    #     #for column_index in column_index_name_dict.keys():
+    #     #     compression_dict[column_index_name_dict[column_index]] = {}
+    #     #     compression_dict[column_index_name_dict[column_index]]["map"] = {}
+
+    #     # with Parser(file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"]) as parser:
+    #     #     coords = parser._parse_data_coords([0, 1, 2])
+    #     #     num_rows = fastnumbers.fast_int((len(parser.get_file_handle("")) + 1) / parser.get_stat(".ll"))
+
+    #     #     # Use a set for performance reasons
+    #     #     column_indices_set = set(column_index_name_dict.keys())
+
+    #     #     with Parser(f"{self.data_file_path}.cmpr", fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"]) as parser:
+    #     #         for row_index in range(num_rows):
+    #     #             values = parser.__parse_row_values(row_index, coords)
+    #     #             column_index = fastnumbers.fast_int(values[0])
+
+    #     #             if column_index in column_indices_set:
+    #     #                 compressed_value = f4py.convert_bytes_to_int(values[2])
+
+    #     #                 compression_dict[column_index_name_dict[column_index]]["map"][compressed_value] = values[1]
+
+    #     # # # We need column names as keys rather than indices.
+    #     # # compression_dict2 = {}
+    #     # # for i, column_name in enumerate(column_names):
+    #     # #     compression_dict2[column_name] = compression_dict[column_indices[i]]
+
+    #     # with Parser(f"{self.data_file_path}.cmprtype", fixed_file_extensions=[""], stats_file_extensions=[".ll"]) as parser:
+    #     #     coords = [[0, 1]]
+
+    #     #     for column_index in column_index_name_dict.keys():
+    #     #         compression_dict[column_index_name_dict[column_index]]["compression_type"] = parser.__parse_row_values(column_index, coords)[0]
+
+    #     return compression_dict

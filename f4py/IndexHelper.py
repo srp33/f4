@@ -156,7 +156,7 @@ class IndexHelper:
     def _get_index_parser(index_file_path):
         return f4py.Parser(index_file_path, fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"])
 
-    def _get_identifier_row_index(index_parser, query_value, end_index, num_processes=1):
+    def _get_identifier_row_index(index_parser, query_value, end_index):
         if end_index == 0:
             return -1
 
@@ -363,7 +363,7 @@ class IndexHelper:
 
         return passing_row_indices
 
-    def _get_passing_row_indices_for_with_filter(index_file_path, fltr, end_index, num_processes):
+    def _get_passing_row_indices_with_filter(index_file_path, fltr, end_index, num_processes):
         with f4py.IndexHelper._get_index_parser(index_file_path) as index_parser:
             line_length = index_parser.get_stat(".ll")
             coords = index_parser._parse_data_coords([0, 1])

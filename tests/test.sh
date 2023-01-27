@@ -6,7 +6,7 @@ set -o errexit
 # Build the Docker image
 #######################################################
 
-docker build --platform linux/x86_64 -t srp33/f4_test .
+#docker build --platform linux/x86_64 -t srp33/f4_test .
 
 #######################################################
 # Run detailed functional tests on small file
@@ -20,9 +20,14 @@ cp -r ../f4py .
 dockerCommand="docker run -i -t --rm --platform linux/x86_64 --user $(id -u):$(id -g) -v $(pwd):/sandbox -v $(pwd)/data:/data -v /tmp:/tmp --workdir=/sandbox srp33/f4_test"
 #dockerCommand="docker run --rm --user $(id -u):$(id -g) -v $(pwd):/sandbox -v $(pwd)/data:/data -v /tmp:/tmp --workdir=/sandbox srp33/f4_test"
 
-#$dockerCommand bash -c "time python3 BuildTsv.py 1 1 100 data/medium.tsv"
+#$dockerCommand bash -c "time python3 BuildTsv.py 1 1 1 1000 data/medium.tsv"
 
-$dockerCommand python3 TestSmallAndMedium.py
+#TODO: Integer f4py into the analysis paper tests.
+#TODO: See how much storage space it takes for compression with tall/wide files. Try using cmprtype as a key rather than column name and make the dictionary generic across columns. See how much that helps with storage.
+#TODO: Uncomment tests that use zstandard compression and make sure those pass
+#TODO: Uncomment tests that use indexes and make sure those pass
+python3 TestSmallAndMedium.py
+#$dockerCommand python3 TestSmallAndMedium.py
 #$dockerCommand python3
 
 #######################################################

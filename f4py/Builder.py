@@ -1,5 +1,6 @@
 #TODO: Keep this import?
 from bitarray import frozenbitarray
+from bitarray.util import int2ba
 import f4py
 import fastnumbers
 from joblib import Parallel, delayed
@@ -8,6 +9,7 @@ import os
 import pickle
 import shutil
 import tempfile
+#TODO: Keep?
 import zstandard
 
 class Builder:
@@ -46,7 +48,7 @@ class Builder:
         # Summarize the column sizes and types across the chunks.
         column_sizes = []
         column_types = []
-        compression_dicts = {}
+        column_compression_dicts = {}
 
         for chunk_tuple in chunk_results:
             for i, size in sorted(chunk_tuple[0].items()):
@@ -57,7 +59,7 @@ class Builder:
 
             if len(chunk_tuple) > 0:
                 # This merges the dictionaries
-                compression_dicts = {**compression_dicts, **chunk_tuple[2]}
+                column_compression_dicts = {**column_compression_dicts, **chunk_tuple[2]}
 
         # When each chunk was processed, we went through all rows, so we can get these numbers from just the first chunk.
         num_rows = chunk_results[0][3]
@@ -72,10 +74,6 @@ class Builder:
 
         #    f4py.CompressionHelper._save_level_file(f4_file_path, compression_level)
 
-#        #print(compression_dicts)
-#        #import sys
-#        #sys.exit(0)
-#
 #        nocomp_total_bits = 0
 #        encode_total_bits = 0
 #        new_total_bits = 0
@@ -197,12 +195,11 @@ class Builder:
 #        sys.exit()
 
 
-        line_length = self._create_output_file(delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path2)
-        #self._create_output_file(delimited_file_path, f4_file_path, delimiter, compression_level, column_types, compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path2)
+        line_length = self._save_output_file(delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, column_compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path2)
 
         self._print_message(f"Saving meta files for {f4_file_path}")
-        self._save_meta_files(f4_file_path, column_sizes, line_length, column_names, column_types, compression_dicts, num_rows)
-        #self._save_meta_files(f4_file_path, column_names, column_types, compression_dicts, num_rows)
+        self._save_meta_files(f4_file_path, column_sizes, line_length, column_names, column_types, column_compression_dicts, num_rows)
+        #self._save_meta_files(f4_file_path, column_names, column_types, column_compression_dicts, num_rows)
 
         self._remove_tmp_dir(tmp_dir_path2)
         self._print_message(f"Done converting {delimited_file_path} to {f4_file_path}")
@@ -215,8 +212,8 @@ class Builder:
     #####################################################
 
     #TODO: Currently, this function is used in IndexHelper as well. Consider splitting it out.
-    #def _save_meta_files(self, f4_file_path, column_sizes, column_names=None, column_types=None, compression_dicts=None, num_rows=None):
-    def _save_meta_files(self, f4_file_path, column_sizes, line_length, column_names=None, column_types=None, compression_dicts=None, num_rows=None):
+    #def _save_meta_files(self, f4_file_path, column_sizes, column_names=None, column_types=None, column_compression_dicts=None, num_rows=None):
+    def _save_meta_files(self, f4_file_path, column_sizes, line_length, column_names=None, column_types=None, column_compression_dicts=None, num_rows=None):
     #def _save_meta_files(self, f4_file_path, column_names, column_types, compression_dicts, num_rows):
         #column_sizes = []
         #for column_index, compression_dict in sorted(compression_dicts.items()):
@@ -246,13 +243,10 @@ class Builder:
             # Build a map of the column types and save this to a file.
             column_types_string, max_col_type_length = f4py.build_string_map(column_types)
             f4py.write_str_to_file(f4_file_path + ".ct", column_types_string)
+            f4py.write_str_to_file(f4_file_path + ".mctl", str(max_col_type_length).encode())
 
-        #TODO: switch keys and values and save as 3-column f4 file...
-        #import pickle
-        #f4py.write_str_to_file(f4_file_path + ".cmpd", pickle.dumps(compression_dicts))
-        #TODO
-        #f4py.write_str_to_file(f4_file_path + ".cmpd", f4py.CompressionHelper.build_table(compression_dicts))
-        #f4py.CompressionHelper._build_table(compression_dicts)
+        if column_compression_dicts:
+            self._save_compression_dict(f4_file_path, column_compression_dicts)
 
         # Save number of rows and columns.
         f4py.write_str_to_file(f4_file_path + ".nrow", str(num_rows).encode())
@@ -292,7 +286,7 @@ class Builder:
 
             # Initialize the column sizes and types.
             column_sizes_dict = {}
-            column_types_values_dict = {} # TODO: This dictionary could get really large. Could modify the code to use sqlitedict.
+            column_types_values_dict = {} # TODO: This dictionary could get really large. Could modify the code to use sqlitedict or https://stackoverflow.com/questions/47233562/key-value-store-in-python-for-possibly-100-gb-of-data-without-client-server.
             column_types_dict = {}
             for i in range(start_index, end_index):
                 column_sizes_dict[i] = 0
@@ -319,8 +313,7 @@ class Builder:
                 if num_rows % 100000 == 0:
                     self._print_message(f"Processed line {num_rows} of {delimited_file_path} for columns {start_index} - {end_index - 1}")
 
-        compression_dict = {}
-#        column_compression_dicts = {}
+        column_compression_dicts = {}
 #        int_compression_dict = _build_int_compression_dict()
 
         for i in range(start_index, end_index):
@@ -363,43 +356,58 @@ class Builder:
             #   In memory, build a dictionary of bitstrings to 2-grams.
             #   For strings that are not max length, pad the end with zero(es).
             unique_values = list(column_types_values_dict[i][b"s"] | column_types_values_dict[i][b"i"] | column_types_values_dict[i][b"f"])
+            unique_values = sorted(unique_values)
+
             use_categorical_compression = (len(unique_values) / num_rows) <= 0.1
+            column_compression_dicts[i] = {}
+            column_compression_dicts[i]["map"] = {}
 
-#            if use_categorical_compression:
-#                compression_type = "c"
-#
-#                compression_dict = {}
-#                for i, value in enumerate(range(len(unique_values))):
-#                    #TODO: Add leading/trailing zeroes.
-#                    bits = frozenbitarray(str(i)).tobytes()
-#                    compression_dict[value] = bits
-#            else:
-#                compression_type = column_types_dict[i]
-#
-#                compression_dict = {}
-#                if compression_type == "s":
-#                    grams = _find_2_grams(unique_values)
-#
-#                    for i, value in enumerate(range(len(grams))):
-#                        #TODO: Add leading/trailing zeroes.
-#                        bits = frozenbitarray(str(i)).tobytes()
-#                        compression_dict[value] = bits
-#                elif compression_type == "i":
-#                    for x in
+            if use_categorical_compression:
+                column_compression_dicts[i]["compression_type"] = b"c"
+                num_bytes = f4py.get_bigram_size(len(unique_values))
 
+                #for j, value in enumerate(unique_values):
+                for j, value in _enumerate_for_compression(unique_values):
+                    #length = math.ceil(math.log(j + 1, 2) / 8) * 8 if j > 0 else 8
+                    #column_compression_dicts[i]["map"][value] = int2ba(j, length = length).to01()
+                    column_compression_dicts[i]["map"][value] = int2ba(j, length = num_bytes * 8).tobytes()
+                    #column_compression_dicts[i]["map"][value] = int2ba(j).tobytes()
 
+                    #column_compression_dicts[i]["map"][value] = j.to_bytes(length, byteorder="little")
 
+                #column_sizes_dict[i] = f4py.get_max_string_length(unique_values)
+                column_sizes_dict[i] = num_bytes
+            else:
+                column_compression_dicts[i]["compression_type"] = column_types_dict[i]
+                bigrams = _find_unique_bigrams(unique_values)
+                bit_length = f4py.get_bigram_size(len(bigrams)) * 8
 
-            #TODO: temp placeholder
-            compression_dict[i] = {}
+                for j, gram in _enumerate_for_compression(bigrams):
+                #for j, gram in enumerate(bigrams):
+                    #length = math.ceil(math.log(j + 1, 2) / 8) * 8 if j > 0 else 8
+
+                    #column_compression_dicts[i]["map"][gram] = int2ba(j, length = length).to01()
+                    column_compression_dicts[i]["map"][gram] = int2ba(j, length = bit_length).tobytes()
+                    #column_compression_dicts[i]["map"][gram] = int2ba(j).tobytes()
+                    #column_compression_dicts[i]["map"][gram] = j.to_bytes(length, byteorder="little")
+                # print(unique_values)
+                # print(bigrams)
+                # print(column_compression_dicts[i]["map"])
+                # import sys
+                # sys.exit()
+
+                #TESTING
+                column_sizes_dict[i] = 0
+                for unique_value in unique_values:
+                    compressed_length = len(f4py.compress_using_2_grams(unique_value, column_compression_dicts[i]["map"]))
+                    column_sizes_dict[i] = max(column_sizes_dict[i], compressed_length)
 
             #compression_characters = f4py.CompressionHelper.get_compression_characters(len(unique_values))
             #compression_dict[i] = {value: compression_characters[i] for i, value in enumerate(unique_values)}
 
-        return column_sizes_dict, column_types_dict, compression_dict, num_rows
+        return column_sizes_dict, column_types_dict, column_compression_dicts, num_rows
 
-    def _create_output_file(self, delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path):
-    #def _create_output_file(self, delimited_file_path, f4_file_path, delimiter, compression_level, column_types, compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path):
+    def _save_output_file(self, delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path):
         self._print_message(f"Parsing chunks of {delimited_file_path} and saving to temp directory ({tmp_dir_path})")
 
         if num_processes == 1:
@@ -424,7 +432,7 @@ class Builder:
     #def _save_rows_chunk(self, delimited_file_path, f4_file_path, delimiter, compression_level, column_types, compression_dicts, chunk_number, start_index, end_index, num_rows_per_save, tmp_dir_path):
         max_line_size = 0
         #column_sizes = []
-        compressor = f4py.CompressionHelper._get_compressor(f4_file_path, compression_level)
+        #compressor = f4py.CompressionHelper._get_compressor(f4_file_path, compression_level)
 
         # Save the data to output file. Ignore the header line.
         with f4py.get_delimited_file_handle(delimited_file_path) as in_file:
@@ -453,9 +461,20 @@ class Builder:
                         #column_sizes[column_index] = len(line_items[column_index])
 
                     # Format the column sizes using fixed widths.
-                    out_items = [f4py.format_string_as_fixed_width(line_items[i], size) for i, size in enumerate(column_sizes)]
+                    # out_items = [f4py.format_string_as_fixed_width(line_items[i], size) for i, size in enumerate(column_sizes)]
+                    # out_line = b"".join(out_items)
+
+                    #TODO: Make a shared int/float compression dict?
+                    out_items = []
+
+                    for i, size in enumerate(column_sizes):
+                        #TESTING
+                        compressed_value = f4py.compress_using_2_grams(line_items[i], compression_dicts[i]["map"])
+
+                        out_items.append(f4py.format_string_as_fixed_width(compressed_value, size))
+                    # import sys
+                    # sys.exit()
                     out_line = b"".join(out_items)
-                    #out_line = (b"".join(line_items))
 
                     #TODO
                     #if compressor:
@@ -536,6 +555,72 @@ class Builder:
             if len(out_lines) > 0:
                 f4_file.write(b"".join(out_lines))
 
+    def _save_compression_dict(self, f4_file_path, column_compression_dicts):
+        # To enable decompressing the data, we need to switch the keys and values.
+        for column_index, compression_dict in column_compression_dicts.items():
+            decompression_map = {}
+            for value, compressed_value in compression_dict["map"].items():
+                decompression_map[f4py.convert_bytes_to_int(compressed_value)] = value
+                #decompression_map[compressed_value] = value
+
+            column_compression_dicts[column_index]["map"] = decompression_map
+
+        with open(f"{f4_file_path}.cmpr", "wb") as cmpr_file:
+            cmpr_file.write(f4py.serialize(column_compression_dicts))
+
+                #cmpr_file.write((f"{column_index}\t").encode() + f4py.serialize(decompression_dict) + b"\n")
+
+        # column_indices = []
+        # values = []
+        # compressed_values = []
+
+        # for i, column_compression_dict in column_compression_dicts.items():
+        #     for value, compressed_value in column_compression_dict["map"].items():
+        #         column_indices.append(str(i).encode())
+        #         values.append(value)
+        #         compressed_values.append(compressed_value)
+
+        # mcil = f4py.get_max_string_length(column_indices)
+        # mvl = f4py.get_max_string_length(values)
+        # mcvl = f4py.get_max_string_length(compressed_values)
+
+        # column_indices = f4py.format_column_items(column_indices, mcil)
+        # values = f4py.format_column_items(values, mvl)
+        # print(compressed_values)
+        # print(mcvl)
+        # import sys
+        # sys.exit()
+        #compressed_values = f4py.format_column_items(compressed_values, mcvl)
+
+        # table = b""
+        # for i in range(len(column_indices)):
+        #     #table += (f"{column_indices[i].decode()}{values[i].decode()}{compressed_values[i].decode()}").encode()
+        #     table += column_indices[i] + values[i] + compressed_values[i]
+
+        #     if i != (len(column_indices) - 1):
+        #         table += b"\n"
+
+        # f4py.write_str_to_file(f4_file_path + ".cmpr", table)
+
+        # column_start_coords = f4py.get_column_start_coords([mcil, mvl, mcvl])
+        # column_coords_string, max_column_coord_length = f4py.build_string_map(column_start_coords)
+        # f4py.write_str_to_file(f4_file_path + ".cmpr.cc", column_coords_string)
+        # f4py.write_str_to_file(f4_file_path + ".cmpr.mccl", str(max_column_coord_length).encode())
+        # #TODO: Remove the following line?
+        # f4py.write_str_to_file(f4_file_path + ".cmpr.ll", str(mcil + mvl + mcvl + 1).encode())
+
+        # # Save compression type information
+        # compression_types = []
+        # for i, column_compression_dict in column_compression_dicts.items():
+        #     compression_types.append(column_compression_dict["compression_type"])
+
+        # mctl = f4py.get_max_string_length(compression_types)
+        # compression_types = f4py.format_column_items(compression_types, mctl)
+        # table = b"\n".join(compression_types)
+
+        # f4py.write_str_to_file(f4_file_path + ".cmprtype", table)
+        # f4py.write_str_to_file(f4_file_path + ".cmprtype.ll", str(mctl + 1).encode())
+
     def _print_message(self, message):
         f4py.print_message(message, self.__verbose)
 
@@ -574,37 +659,52 @@ def _infer_type_for_column(types_dict):
 
     return b"i"
 
-def _find_2_grams(values):
+def _find_unique_bigrams(values):
     grams = set()
 
     for value in values:
         for start_i in range(0, len(value), 2):
             end_i = (start_i + 2)
-            grams.add(value[start_i:end_i].encode())
+            grams.add(value[start_i:end_i])
 
-    return list(grams)
+    return sorted(list(grams))
 
-def _build_int_compression_dict():
-    compression_dict = {}
-    numbers = [i for i in range(10)]
+# We skip the space character because it causes a problem when we parse from a file.
+def _enumerate_for_compression(values):
+    ints = []
+    capacity = len(values)
+    length = f4py.get_bigram_size(capacity)
 
-    for i in numbers:
-        for j in numbers:
-            value = (f"{i}{j}").encode()
+    i = 0
+    while len(ints) < capacity:
+        if b' ' not in i.to_bytes(length = length, byteorder = "big"):
+            ints.append(i)
+        
+        i += 1
 
-            #TODO: Does frozenbitarray start at 0 or 1 when converting into to bitstring?
-            #      If 1, then don't subtract 1 in the calculation below.
-            value = str((i + 1) * (j + 1) - 1).encode()
-            bits = frozenbitarray(str(i)).tobytes()
-            compression_dict[value] = bits
+    for i in ints:
+        yield i, values.pop(0)
 
-        #TODO: Does frozenbitarray start at 0 or 1 when converting into to bitstring?
-        value = str(i).encode()
-        bits = frozenbitarray(str(i)).tobytes()
-        compression_dict[value] = bits
+#def _build_int_compression_dict():
+#    compression_dict = {}
+#    numbers = [i for i in range(10)]
+#
+#    for i in numbers:
+#        for j in numbers:
+#            value = (f"{i}{j}").encode()
+#
+#            #TODO: Does frozenbitarray start at 0 or 1 when converting into to bitstring?
+#            #      If 1, then don't subtract 1 in the calculation below.
+#            value = str((i + 1) * (j + 1) - 1).encode()
+#            bits = frozenbitarray(str(i)).tobytes()
+#            compression_dict[value] = bits
+#
+#        #TODO: Does frozenbitarray start at 0 or 1 when converting into to bitstring?
+#        value = str(i).encode()
+#        bits = frozenbitarray(str(i)).tobytes()
+#        compression_dict[value] = bits
+#
+#    return compression_dict
 
-    return compression_dict
-
-def _build_float_compression_dict():
-    compression_dict = _build_int_compression_dict()
-
+#def _build_float_compression_dict():
+#    compression_dict = _build_int_compression_dict()

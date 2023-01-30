@@ -22,20 +22,23 @@ dockerCommand="docker run -i -t --rm --platform linux/x86_64 --user $(id -u):$(i
 
 #$dockerCommand bash -c "time python3 BuildTsv.py 10 10 10 10000 data/medium.tsv"
 
-#TODO: Fix the sys.stdout.buffer lines in Parser.py.
 #TODO: Use more options for compression type and only store compression dictionary when more than 256 combinations (?).
-#TODO: Filters.py - Can we filter without decompressing by converting self.value in constructor?
-#      Probably have to store the compression dict in F4 format. But think of a better way to do it.
 #TODO: Uncomment tests that use indexes and make sure those pass
 #TODO: Add conditional logic in Builder on which type of compression, if any, to do.
 #TODO: Uncomment tests that use zstandard compression and make sure those pass
 #TODO: Does it work if we do not include a newline character after the last line?
+#TODO: Store individual, serialized compression dictionaries on one line, using .cc file to indicate where each starts and ends.
+#TODO: Filters.py - Can we filter without decompressing by converting self.value in constructor?
+#      Looks like we can do it for some filter classes (String, StartsWith, EndsWith, Head, Tail), but not others.
+#      If you don't do it, remove select_compression_dict as a parameter from filter_column_values().
+#TODO: Combine all information into a single file.
 #TODO: Address remaining TODO items in the code.
 #        Remove CompressionHelper.py?
 #TODO: Integer f4py into the analysis paper tests.
 #TODO: Save for separate paper?
 #        Do compression at the bigram level.
 #        Do bit-packing (see to01() function in bitarray module). Also https://wiki.python.org/moin/BitManipulation
+#        Pandas integration
 python3 TestSmallAndMedium.py
 #$dockerCommand python3 TestSmallAndMedium.py
 #$dockerCommand python3

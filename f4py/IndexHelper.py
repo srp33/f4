@@ -36,7 +36,7 @@ class IndexHelper:
 
         with f4py.Parser(f4_file_path) as parser:
             f4py.print_message(f"Getting column meta information for {index_column} index for {f4_file_path}.", verbose)
-            ignore, column_index_dict, column_type_dict, column_coords_dict = parser._get_column_meta(f4py.NoFilter(), [index_column])
+            ignore, column_index_dict, column_type_dict, column_coords_dict, column_decompression_dict, select_column_compression_dict = parser._get_column_meta(f4py.NoFilter(), [index_column])
             #TODO: Add logic to verify that index_column is valid.
 
             file_handle = parser.get_file_handle("")
@@ -71,7 +71,7 @@ class IndexHelper:
 
         with f4py.Parser(f4_file_path) as parser:
             f4py.print_message(f"Getting column meta information for {index_name} index and {f4_file_path}.", verbose)
-            ignore, column_index_dict, column_type_dict, column_coords_dict = parser._get_column_meta(f4py.NoFilter(), [index_column_1, index_column_2])
+            ignore, column_index_dict, column_type_dict, column_coords_dict, column_decompression_dict, select_column_compression_dict = parser._get_column_meta(f4py.NoFilter(), [index_column_1, index_column_2])
             #TODO: Add logic to verify that index_column is valid.
 
             file_handle = parser.get_file_handle("")

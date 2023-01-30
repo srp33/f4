@@ -1,6 +1,7 @@
 import f4py
 import glob
 import gzip
+from io import TextIOWrapper, BytesIO
 import operator
 import os
 import sys
@@ -20,6 +21,14 @@ def read_file_into_lists(file_path, delimiter=b"\t"):
         out_items.append(line.rstrip(b"\n").split(delimiter))
 
     the_file.close()
+
+    return out_items
+
+def read_string_into_lists(s, delimiter="\t"):
+    out_items = []
+
+    for line in s.split("\n"):
+        out_items.append([x.encode() for x in line.split(delimiter)])
 
     return out_items
 
@@ -516,6 +525,17 @@ run_small_tests("data/small.tsv", f4_file_path, out_file_path, num_processes = 1
 #run_small_tests("data/small.tsv.gz", f4_file_path, out_file_path, num_processes = 1, num_cols_per_chunk = 1, lines_per_chunk = 1)
 run_small_tests("data/small.tsv", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
 #run_small_tests("data/small.tsv.gz", f4_file_path, out_file_path, num_processes = 2, num_cols_per_chunk = 2, lines_per_chunk = 2)
+
+# Make sure we print to standard out properly (this code does not work inside a function).
+old_stdout = sys.stdout
+sys.stdout = TextIOWrapper(BytesIO(), sys.stdout.encoding)
+parser = f4py.Parser(f4_file_path)
+parser.query_and_save(f4py.NoFilter(), [], out_file_path=None, num_processes=1, lines_per_chunk=10)
+sys.stdout.seek(0)
+out = sys.stdout.read()
+sys.stdout.close()
+sys.stdout = old_stdout
+check_results("No filters, select all columns - std out", read_string_into_lists(out), read_file_into_lists("data/small.tsv"))
 
 ## Small tests with z-standard compression
 #f4_file_path = "data/small_compressed.f4"

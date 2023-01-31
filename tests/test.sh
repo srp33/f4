@@ -22,20 +22,23 @@ dockerCommand="docker run -i -t --rm --platform linux/x86_64 --user $(id -u):$(i
 
 #$dockerCommand bash -c "time python3 BuildTsv.py 10 10 10 10000 data/medium.tsv"
 
-#TODO: Use more options for compression type and only store compression dictionary when more than 256 combinations (?).
 #TODO: Uncomment tests that use indexes and make sure those pass
 #TODO: Add conditional logic in Builder on which type of compression, if any, to do.
-#TODO: Uncomment tests that use zstandard compression and make sure those pass
-#TODO: Does it work if we do not include a newline character after the last line?
-#TODO: Store individual, serialized compression dictionaries on one line, using .cc file to indicate where each starts and ends.
-#TODO: Filters.py - Can we filter without decompressing by converting self.value in constructor?
-#      Looks like we can do it for some filter classes (String, StartsWith, EndsWith, Head, Tail), but not others.
-#      If you don't do it, remove select_compression_dict as a parameter from filter_column_values().
-#TODO: Combine all information into a single file.
-#TODO: Address remaining TODO items in the code.
+#        Uncomment tests that use zstandard compression and make sure those pass
 #        Remove CompressionHelper.py?
-#TODO: Integer f4py into the analysis paper tests.
-#TODO: Save for separate paper?
+#TODO: Shorten the names of Filter.py classes.
+#TODO: Does it work if we do not include a newline character after the last line?
+#TODO: Address remaining TODO items in the code.
+#TODO: Calculate .nrow and .ncol so you don't have to save them in files?
+#TODO: Combine all information into a single file.
+#TODO: Integrate f4py into the analysis paper tests.
+#TODO: Save for separate paper:
+#        Filters.py - Can we filter without decompressing by converting self.value in constructor?
+#          Looks like we can do it for some filter classes (String, StartsWith, EndsWith, Head, Tail), but not others.
+#          If you don't do it, remove select_compression_dict as a parameter from filter_column_values().
+#        Compress values in index files using our custom compression technique.
+#        Use more options for compression type and only store compression dictionary when more than 256 combinations (?).
+#        Store individual, serialized compression dictionaries on one line, using .cc file to indicate where each starts and ends.
 #        Do compression at the bigram level.
 #        Do bit-packing (see to01() function in bitarray module). Also https://wiki.python.org/moin/BitManipulation
 #        Pandas integration

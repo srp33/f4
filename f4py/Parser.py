@@ -178,13 +178,13 @@ class Parser:
 
     def get_column_type_from_name(self, column_name):
         try:
-            with f4py.IndexHelper._get_index_parser(f"{self.data_file_path}.cn") as index_parser:
+            with f4py.IndexSearcher._get_index_parser(f"{self.data_file_path}.cn") as index_parser:
                 return self.get_column_type(self._get_column_index_from_name(index_parser, column_name))
         except:
             raise Exception(f"A column with the name {column_name} does not exist.")
 
     def _get_column_index_from_name(self, index_parser, column_name):
-        position = f4py.IndexHelper._get_identifier_row_index(index_parser, column_name.encode(), self.get_num_cols())
+        position = f4py.IndexSearcher._get_identifier_row_index(index_parser, column_name.encode(), self.get_num_cols())
 
         if position < 0:
             raise Exception(f"Could not retrieve index because column named {column_name} was not found.")
@@ -211,7 +211,6 @@ class Parser:
         column_type_dict = {}
         column_coords_dict = {}
         column_index_name_dict = {}
-        column_name_index_dict = {}
 
         if len(select_columns) == 0:
             with f4py.Parser(self.data_file_path + ".cn", fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"]) as cn_parser:
@@ -233,7 +232,7 @@ class Parser:
 
             select_columns = [x[1] for x in sorted(column_index_name_dict.items())]
         else:
-            with f4py.IndexHelper._get_index_parser(f"{self.data_file_path}.cn") as index_parser:
+            with f4py.IndexSearcher._get_index_parser(f"{self.data_file_path}.cn") as index_parser:
                 select_columns = [name.encode() for name in select_columns]
 
                 column_name_index_dict = {}

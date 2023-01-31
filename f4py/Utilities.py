@@ -61,7 +61,7 @@ def do_nothing(x):
      return(x)
 
 def get_conversion_function(column_type):
-    if column_type == "c": # column name
+    if column_type == "n": # column name
         return do_nothing
     elif column_type == "s":
         return decode_string

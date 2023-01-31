@@ -3,10 +3,8 @@ import fastnumbers
 from joblib import Parallel, delayed
 import math
 import os
-import pickle
 import shutil
 import tempfile
-#TODO: Keep?
 #import zstandard
 
 class Builder:
@@ -80,13 +78,13 @@ class Builder:
         self._print_message(f"Done converting {delimited_file_path} to {f4_file_path}")
 
         if index_columns:
-            f4py.IndexHelper.build_indexes(f4_file_path, index_columns)
+            f4py.IndexBuilder.build_indexes(f4_file_path, index_columns)
 
     #####################################################
     # Non-public functions
     #####################################################
 
-    #TODO: Currently, this function is used in IndexHelper as well. Consider splitting it out.
+    #TODO: Currently, this function is used in IndexBuilder as well. Consider splitting it out.
     def _save_meta_files(self, f4_file_path, column_sizes, line_length, column_names=None, column_types=None, column_compression_dicts=None, num_rows=None):
         #column_sizes = []
         #for column_index, compression_dict in sorted(compression_dicts.items()):
@@ -109,8 +107,8 @@ class Builder:
         # Build an index of the column names and save this to a file.
         sorted_column_names = sorted(column_names)
         values_positions = [[x.decode(), column_name_index_dict[x]] for x in sorted_column_names]
-        f4py.IndexHelper._customize_values_positions(values_positions, ["c"], f4py.sort_first_column, f4py.do_nothing)
-        f4py.IndexHelper._save_index(values_positions, f"{f4_file_path}.cn")
+        f4py.IndexBuilder._customize_values_positions(values_positions, ["n"], f4py.sort_first_column, f4py.do_nothing)
+        f4py.IndexBuilder._save_index(values_positions, f"{f4_file_path}.cn")
 
         if column_types:
             # Build a map of the column types and save this to a file.

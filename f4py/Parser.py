@@ -6,8 +6,7 @@ from joblib import Parallel, delayed
 import math
 import os
 import sys
-#TODO
-#import zstandard
+import zstandard
 
 class Parser:
     """
@@ -31,8 +30,9 @@ class Parser:
         for ext in fixed_file_extensions:
             self.__file_handles[ext] = self.set_file_handle(ext)
 
-        #self.__decompressor = None
-        #self.__decompressor = f4py.CompressionHelper._get_decompressor(data_file_path)
+        self.__zstd_decompressor = None
+        if os.path.exists(f"{data_file_path}.zstd"):
+            self.__zstd_decompressor = zstandard.ZstdDecompressor()
 
         # Cache statistics in a dictionary.
         self.__stats = {}
@@ -315,21 +315,21 @@ class Parser:
             yield str_like_object[(start_pos + coords[0]):(start_pos + coords[1])].rstrip(b" ")
 
     def _parse_row_value(self, row_index, column_coords, line_length, file_handle):
-#        if self.__decompressor:
-#            line = self.__parse_data_value(row_index, line_length, [0, line_length], file_handle)
-#            line = self.__decompressor.decompress(line)
-#
-#            return self.__parse_data_value(0, 0, column_coords, line).rstrip(b" ")
+        if self.__zstd_decompressor:
+            line = self.__parse_data_value(row_index, line_length, [0, line_length], file_handle)
+            line = self.__zstd_decompressor.decompress(line)
+
+            return self.__parse_data_value(0, 0, column_coords, line).rstrip(b" ")
 
         return self.__parse_data_value(row_index, line_length, column_coords, file_handle).rstrip(b" ")
 
     def __parse_row_values(self, row_index, column_coords):
-#        if self.__decompressor:
-#            line_length = self.__stats[".ll"]
-#            line = self.__parse_data_value(row_index, line_length, [0, line_length], self.__file_handles[""])
-#            line = self.__decompressor.decompress(line)
-#
-#            return list(self.__parse_data_values(0, 0, column_coords, line))
+        if self.__zstd_decompressor:
+            line_length = self.__stats[".ll"]
+            line = self.__parse_data_value(row_index, line_length, [0, line_length], self.__file_handles[""])
+            line = self.__zstd_decompressor.decompress(line)
+
+            return list(self.__parse_data_values(0, 0, column_coords, line))
 
         return list(self.__parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
 

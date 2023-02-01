@@ -22,9 +22,8 @@ dockerCommand="docker run -i -t --rm --platform linux/x86_64 --user $(id -u):$(i
 
 #$dockerCommand bash -c "time python3 BuildTsv.py 10 10 10 10000 data/medium.tsv"
 
-#TODO: Add conditional logic in Builder on which type of compression, if any, to do.
-#        Uncomment tests that use zstandard compression and make sure those pass
-#        Remove CompressionHelper.py?
+#TODO: Uncomment tests that use zstandard compression and make sure those pass
+#        Record each line size? Check how variable the line sizes are.
 #TODO: Shorten the names of Filter.py classes.
 #TODO: Calculate .nrow and .ncol so you don't have to save them in files?
 #TODO: Does it work if we do not include a newline character after the last line?

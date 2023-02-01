@@ -5,7 +5,7 @@ import math
 import os
 import shutil
 import tempfile
-#import zstandard
+import zstandard
 
 class Builder:
     def __init__(self, verbose=False):
@@ -73,6 +73,10 @@ class Builder:
 
         self._print_message(f"Saving meta files for {f4_file_path}")
         self._save_meta_files(f4_file_path, column_sizes, line_length, column_names, column_types, column_compression_dicts, num_rows)
+
+        if compression_type == "zstd":
+            with open(f"{f4_file_path}.zstd", "wb") as zstd_file:
+                zstd_file.write(b"0") # This is the compression level
 
         self._remove_tmp_dir(tmp_dir_path2)
         self._print_message(f"Done converting {delimited_file_path} to {f4_file_path}")
@@ -240,16 +244,17 @@ class Builder:
     def _save_rows_chunk(self, delimited_file_path, f4_file_path, delimiter, compression_type, column_sizes, column_types, compression_dicts, chunk_number, start_index, end_index, num_rows_per_save, tmp_dir_path):
         max_line_size = 0
         #column_sizes = []
-        #compressor = f4py.CompressionHelper._get_compressor(f4_file_path, compression_type)
+
+        if compression_type == "zstd":
+            compressor = zstandard.ZstdCompressor(level = 0)
+            #out_line_sizes = []
 
         # Save the data to output file. Ignore the header line.
         with f4py.get_delimited_file_handle(delimited_file_path) as in_file:
             in_file.readline()
 
             with open(f"{tmp_dir_path}{chunk_number}", 'wb') as chunk_file:
-#                with open(f"{tmp_dir_path}{chunk_number}_linesizes", 'wb') as size_file:
                 out_lines = []
-                #out_line_sizes = []
 
                 line_index = -1
                 for line in in_file:
@@ -284,17 +289,14 @@ class Builder:
 
                     out_line = b"".join(out_items)
 
-                    #TODO
-                    #if compressor:
-                    #    out_line = compressor.compress(out_line)
-                    #else:
-                    #    # We add a newline character when the data are not compressed.
-                    #    # This makes the file more readable (doesn't matter when the data are compressed).
-                    #    out_line += b"\n"
+                    if compression_type == "zstd":
+                        out_line = compressor.compress(out_line)
+                    else:
+                       # We add a newline character when the data are not compressed.
+                       # This makes the file more readable (doesn't matter when the data are compressed).
+                       out_line += b"\n"
 
-                    out_line += b"\n"
                     line_size = len(out_line)
-
                     max_line_size = max([max_line_size, line_size])
 
                     out_lines.append(out_line)

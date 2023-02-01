@@ -43,15 +43,21 @@ class __SimpleBaseFilter(NoFilter):
             line_length = parser.get_stat(".ll")
             coords = column_coords_dict[self.column_name]
             data_file_handle = parser.get_file_handle("")
-            column_decompression_dict = decompression_dict[self.column_name]
-            bigram_size = f4py.get_bigram_size(len(column_decompression_dict["map"]))
-
             passing_row_indices = set()
-            for i in row_indices:
-                value = parser._parse_row_value(i, coords, line_length, data_file_handle)
 
-                if self.passes(f4py.decompress(value, column_decompression_dict, bigram_size)):
-                    passing_row_indices.add(i)
+            if len(decompression_dict) > 0:
+                column_decompression_dict = decompression_dict[self.column_name]
+                bigram_size = f4py.get_bigram_size(len(column_decompression_dict["map"]))
+
+                for i in row_indices:
+                    value = parser._parse_row_value(i, coords, line_length, data_file_handle)
+
+                    if self.passes(f4py.decompress(value, column_decompression_dict, bigram_size)):
+                        passing_row_indices.add(i)
+            else:
+                for i in row_indices:
+                    if self.passes(parser._parse_row_value(i, coords, line_length, data_file_handle)):
+                        passing_row_indices.add(i)
 
             return passing_row_indices
 

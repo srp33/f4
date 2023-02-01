@@ -104,9 +104,7 @@ class Parser:
         else:
             if num_processes == 1:
                 row_indices = set(range(self.get_num_rows()))
-                keep_row_indices = sorted(
-                    fltr.filter_column_values(self.data_file_path, row_indices, column_coords_dict,
-                                              column_compression_dict, select_column_decompression_dict))
+                keep_row_indices = sorted(fltr.filter_column_values(self.data_file_path, row_indices, column_coords_dict, column_compression_dict, select_column_decompression_dict))
             else:
                 #TODO: Create smaller dictionaries so less data has to be serialized during parallelization?
                 #filter_column_type_dict = {column_index_dict[i]: column_type_dict[i] for i in filter_column_indices}
@@ -120,8 +118,9 @@ class Parser:
 
         # Cache these values so we don't have to recalculate for each row
         bigram_size_dict = {}
-        for column_name in select_columns:
-            bigram_size_dict[column_name] = f4py.get_bigram_size(len(column_compression_dict[column_name]["map"]))
+        if (len(column_compression_dict) > 0):
+            for column_name in select_columns:
+                bigram_size_dict[column_name] = f4py.get_bigram_size(len(column_compression_dict[column_name]["map"]))
 
         if out_file_path:
             # Write output (in chunks)
@@ -150,12 +149,13 @@ class Parser:
                 if row_index != keep_row_indices[-1]:
                     sys.stdout.buffer.write(b"\n")
 
-    def __parse_values_for_output(self, bigram_size_dict, column_compression_dict, row_index, select_column_coords,
-                                  select_columns):
+    def __parse_values_for_output(self, bigram_size_dict, column_compression_dict, row_index, select_column_coords, select_columns):
         values = self.__parse_row_values(row_index, select_column_coords)
-        out_values = [f4py.decompress(values.pop(0), column_compression_dict[name], bigram_size_dict[name]) for name in
-                      select_columns]
-        return out_values
+
+        if len(column_compression_dict) == 0:
+            return values
+
+        return [f4py.decompress(values.pop(0), column_compression_dict[name], bigram_size_dict[name]) for name in select_columns]
 
     def head(self, n = 10, select_columns=None, out_file_path=None, out_file_type="tsv"):
         if not select_columns:
@@ -252,7 +252,9 @@ class Parser:
                 column_coords_dict[column_name] = all_coords[i]
 
         decompression_dict = self.__get_decompression_dict(column_index_name_dict)
-        select_compression_dict = self.__invert_decompression_dict(decompression_dict, select_columns)
+        select_compression_dict = {}
+        if len(decompression_dict) > 0:
+            select_compression_dict = self.__invert_decompression_dict(decompression_dict, select_columns)
 
         return select_columns, column_type_dict, column_coords_dict, decompression_dict, select_compression_dict
 
@@ -335,7 +337,7 @@ class Parser:
         file_path = f"{self.data_file_path}.cmpr"
 
         if not os.path.exists(file_path):
-            return None
+            return {}
 
         with open(file_path, "rb") as cmpr_file:
             column_compression_dict = f4py.deserialize(cmpr_file.read())

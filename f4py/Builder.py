@@ -11,7 +11,7 @@ class Builder:
     def __init__(self, verbose=False):
         self.__verbose = verbose
 
-    def convert_delimited_file(self, delimited_file_path, f4_file_path, index_columns=[], delimiter="\t", compression_level=1, build_compression_dictionary=True, num_processes=1, num_cols_per_chunk=None, num_rows_per_save=100, tmp_dir_path=None, cache_dir_path=None):
+    def convert_delimited_file(self, delimited_file_path, f4_file_path, index_columns=[], delimiter="\t", compression_type=None, num_processes=1, num_cols_per_chunk=None, num_rows_per_save=100, tmp_dir_path=None):
         if type(delimiter) != str:
             raise Exception("The delimiter value must be a string.")
 
@@ -35,10 +35,10 @@ class Builder:
         # Iterate through the lines to summarize each column.
         self._print_message(f"Summarizing each column in {delimited_file_path}")
         if num_processes == 1:
-            chunk_results = [self._parse_columns_chunk(delimited_file_path, delimiter, 0, num_cols, build_compression_dictionary)]
+            chunk_results = [self._parse_columns_chunk(delimited_file_path, delimiter, 0, num_cols, compression_type)]
         else:
             column_chunk_indices = _generate_chunk_ranges(num_cols, num_cols_per_chunk)
-            chunk_results = Parallel(n_jobs=num_processes)(delayed(self._parse_columns_chunk)(delimited_file_path, delimiter, column_chunk[0], column_chunk[1], build_compression_dictionary) for column_chunk in column_chunk_indices)
+            chunk_results = Parallel(n_jobs=num_processes)(delayed(self._parse_columns_chunk)(delimited_file_path, delimiter, column_chunk[0], column_chunk[1], compression_type) for column_chunk in column_chunk_indices)
 
         # Summarize the column sizes and types across the chunks.
         column_sizes = []
@@ -69,7 +69,7 @@ class Builder:
 
         #    f4py.CompressionHelper._save_level_file(f4_file_path, compression_level)
 
-        line_length = self._save_output_file(delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, column_compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path2)
+        line_length = self._save_output_file(delimited_file_path, f4_file_path, delimiter, compression_type, column_sizes, column_types, column_compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path2)
 
         self._print_message(f"Saving meta files for {f4_file_path}")
         self._save_meta_files(f4_file_path, column_sizes, line_length, column_names, column_types, column_compression_dicts, num_rows)
@@ -86,10 +86,6 @@ class Builder:
 
     #TODO: Currently, this function is used in IndexBuilder as well. Consider splitting it out.
     def _save_meta_files(self, f4_file_path, column_sizes, line_length, column_names=None, column_types=None, column_compression_dicts=None, num_rows=None):
-        #column_sizes = []
-        #for column_index, compression_dict in sorted(compression_dicts.items()):
-        #    column_sizes.append(len(list(compression_dict.values())[0])) # All values should have the same length
-
         # Calculate and save the column coordinates and max length of these coordinates.
         column_start_coords = f4py.get_column_start_coords(column_sizes)
         column_coords_string, max_column_coord_length = f4py.build_string_map(column_start_coords)
@@ -116,7 +112,7 @@ class Builder:
             f4py.write_str_to_file(f4_file_path + ".ct", column_types_string)
             f4py.write_str_to_file(f4_file_path + ".mctl", str(max_col_type_length).encode())
 
-        if column_compression_dicts:
+        if len(column_compression_dicts) > 0:
             self._save_compression_dict(f4_file_path, column_compression_dicts)
 
         # Save number of rows and columns.
@@ -148,7 +144,7 @@ class Builder:
                 print(e)
                 pass
 
-    def _parse_columns_chunk(self, delimited_file_path, delimiter, start_index, end_index, build_compression_dictionary):
+    def _parse_columns_chunk(self, delimited_file_path, delimiter, start_index, end_index, compression_type):
         #compression_training_set = set()
 
         with f4py.get_delimited_file_handle(delimited_file_path) as in_file:
@@ -184,55 +180,56 @@ class Builder:
                 if num_rows % 100000 == 0:
                     self._print_message(f"Processed line {num_rows} of {delimited_file_path} for columns {start_index} - {end_index - 1}")
 
-        column_compression_dicts = {}
-
         for i in range(start_index, end_index):
             column_types_dict[i] = _infer_type_for_column(column_types_values_dict[i])
 
-            unique_values = list(column_types_values_dict[i][b"s"] | column_types_values_dict[i][b"i"] | column_types_values_dict[i][b"f"])
-            unique_values = sorted(unique_values)
+        column_compression_dicts = {}
 
-            use_categorical_compression = (len(unique_values) / num_rows) <= 0.1
-            column_compression_dicts[i] = {}
-            column_compression_dicts[i]["map"] = {}
+        if compression_type == "dictionary":
+            for i in range(start_index, end_index):
+                unique_values = list(column_types_values_dict[i][b"s"] | column_types_values_dict[i][b"i"] | column_types_values_dict[i][b"f"])
+                unique_values = sorted(unique_values)
 
-            if use_categorical_compression:
-                column_compression_dicts[i]["compression_type"] = b"c"
-                num_bytes = f4py.get_bigram_size(len(unique_values))
+                use_categorical_compression = (len(unique_values) / num_rows) <= 0.1
+                column_compression_dicts[i] = {}
+                column_compression_dicts[i]["map"] = {}
 
-                for j, value in _enumerate_for_compression(unique_values):
-                    #column_compression_dicts[i]["map"][value] = int2ba(j, length = length).to01()
-                    column_compression_dicts[i]["map"][value] = j.to_bytes(length = num_bytes, byteorder = "big")
+                if use_categorical_compression:
+                    column_compression_dicts[i]["compression_type"] = b"c"
+                    num_bytes = f4py.get_bigram_size(len(unique_values))
 
-                column_sizes_dict[i] = num_bytes
-            else:
-                column_compression_dicts[i]["compression_type"] = column_types_dict[i]
-                bigrams = _find_unique_bigrams(unique_values)
-                num_bytes = f4py.get_bigram_size(len(bigrams))
+                    for j, value in _enumerate_for_compression(unique_values):
+                        #column_compression_dicts[i]["map"][value] = int2ba(j, length = length).to01()
+                        column_compression_dicts[i]["map"][value] = j.to_bytes(length = num_bytes, byteorder = "big")
 
-                for j, gram in _enumerate_for_compression(bigrams):
-                    #column_compression_dicts[i]["map"][gram] = int2ba(j, length = length).to01()
-                    column_compression_dicts[i]["map"][gram] = j.to_bytes(length = num_bytes, byteorder = "big")
+                    column_sizes_dict[i] = num_bytes
+                else:
+                    column_compression_dicts[i]["compression_type"] = column_types_dict[i]
+                    bigrams = _find_unique_bigrams(unique_values)
+                    num_bytes = f4py.get_bigram_size(len(bigrams))
 
-                column_sizes_dict[i] = 0
-                for unique_value in unique_values:
-                    compressed_length = len(f4py.compress_using_2_grams(unique_value, column_compression_dicts[i]["map"]))
-                    column_sizes_dict[i] = max(column_sizes_dict[i], compressed_length)
+                    for j, gram in _enumerate_for_compression(bigrams):
+                        #column_compression_dicts[i]["map"][gram] = int2ba(j, length = length).to01()
+                        column_compression_dicts[i]["map"][gram] = j.to_bytes(length = num_bytes, byteorder = "big")
+
+                    column_sizes_dict[i] = 0
+                    for unique_value in unique_values:
+                        compressed_length = len(f4py.compress_using_2_grams(unique_value, column_compression_dicts[i]["map"]))
+                        column_sizes_dict[i] = max(column_sizes_dict[i], compressed_length)
 
         return column_sizes_dict, column_types_dict, column_compression_dicts, num_rows
 
-    def _save_output_file(self, delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path):
+    def _save_output_file(self, delimited_file_path, f4_file_path, delimiter, compression_type, column_sizes, column_types, compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path):
         self._print_message(f"Parsing chunks of {delimited_file_path} and saving to temp directory ({tmp_dir_path})")
 
         if num_processes == 1:
-            line_length = self._save_rows_chunk(delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, compression_dicts, 0, 0, num_rows, num_rows_per_save, tmp_dir_path)
+            line_length = self._save_rows_chunk(delimited_file_path, f4_file_path, delimiter, compression_type, column_sizes, column_types, compression_dicts, 0, 0, num_rows, num_rows_per_save, tmp_dir_path)
         else:
             row_chunk_indices = _generate_chunk_ranges(num_rows, math.ceil(num_rows / num_processes) + 1)
 
             # Find the line length.
-            max_line_sizes = Parallel(n_jobs=num_processes)(delayed(self._save_rows_chunk)(delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, compression_dicts, i, row_chunk[0], row_chunk[1], num_rows_per_save, tmp_dir_path) for i, row_chunk in enumerate(row_chunk_indices))
+            max_line_sizes = Parallel(n_jobs=num_processes)(delayed(self._save_rows_chunk)(delimited_file_path, f4_file_path, delimiter, compression_type, column_sizes, column_types, compression_dicts, i, row_chunk[0], row_chunk[1], num_rows_per_save, tmp_dir_path) for i, row_chunk in enumerate(row_chunk_indices))
             line_length = max(max_line_sizes)
-            Parallel(n_jobs=num_processes)(delayed(self._save_rows_chunk)(delimited_file_path, f4_file_path, delimiter, compression_level, column_types, compression_dicts, i, row_chunk[0], row_chunk[1], num_rows_per_save, tmp_dir_path) for i, row_chunk in enumerate(row_chunk_indices))
 
         # Merge the file chunks. This dictionary enables us to sort them properly.
         self._print_message(f"Merging the file chunks for {delimited_file_path}")
@@ -240,10 +237,10 @@ class Builder:
 
         return line_length
 
-    def _save_rows_chunk(self, delimited_file_path, f4_file_path, delimiter, compression_level, column_sizes, column_types, compression_dicts, chunk_number, start_index, end_index, num_rows_per_save, tmp_dir_path):
+    def _save_rows_chunk(self, delimited_file_path, f4_file_path, delimiter, compression_type, column_sizes, column_types, compression_dicts, chunk_number, start_index, end_index, num_rows_per_save, tmp_dir_path):
         max_line_size = 0
         #column_sizes = []
-        #compressor = f4py.CompressionHelper._get_compressor(f4_file_path, compression_level)
+        #compressor = f4py.CompressionHelper._get_compressor(f4_file_path, compression_type)
 
         # Save the data to output file. Ignore the header line.
         with f4py.get_delimited_file_handle(delimited_file_path) as in_file:
@@ -275,13 +272,16 @@ class Builder:
                     # out_items = [f4py.format_string_as_fixed_width(line_items[i], size) for i, size in enumerate(column_sizes)]
                     # out_line = b"".join(out_items)
 
-                    #TODO: Make a shared int/float compression dict?
                     out_items = []
 
-                    for i, size in enumerate(column_sizes):
-                        compressed_value = f4py.compress_using_2_grams(line_items[i], compression_dicts[i]["map"])
+                    if compression_type == "dictionary":
+                        for i, size in enumerate(column_sizes):
+                            compressed_value = f4py.compress_using_2_grams(line_items[i], compression_dicts[i]["map"])
+                            out_items.append(f4py.format_string_as_fixed_width(compressed_value, size))
+                    else:
+                        for i, size in enumerate(column_sizes):
+                            out_items.append(f4py.format_string_as_fixed_width(line_items[i], size))
 
-                        out_items.append(f4py.format_string_as_fixed_width(compressed_value, size))
                     out_line = b"".join(out_items)
 
                     #TODO

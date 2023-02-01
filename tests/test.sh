@@ -22,13 +22,16 @@ dockerCommand="docker run -i -t --rm --platform linux/x86_64 --user $(id -u):$(i
 
 #$dockerCommand bash -c "time python3 BuildTsv.py 10 10 10 10000 data/medium.tsv"
 
-#TODO: Uncomment tests that use zstandard compression and make sure those pass
-#        Record each line size? Check how variable the line sizes are.
-#TODO: Shorten the names of Filter.py classes.
+#TODO: zstandard compression
+#        No longer create .zstd file. Instead, use .cmpr. Add logic to determine the compression_type from it.
+#        Record line indices and starts positions in a msgpack file? Check how variable the line sizes are.
 #TODO: Calculate .nrow and .ncol so you don't have to save them in files?
-#TODO: Does it work if we do not include a newline character after the last line?
+#TODO: Does it work if we do not include a newline character after the last line (no compression)?
 #TODO: Address remaining TODO items in the code, remove unnecessary commented code.
 #TODO: Combine all information into a single file.
+#        Use this spec? https://tools.ietf.org/id/draft-kunze-bagit-16.html
+#
+#TODO: Combine these TODO items with the TODO file.
 #TODO: Integrate f4py into the analysis paper tests.
 #TODO: Save for separate paper:
 #        Filters.py - Can we filter without decompressing by converting self.value in constructor?
@@ -40,6 +43,7 @@ dockerCommand="docker run -i -t --rm --platform linux/x86_64 --user $(id -u):$(i
 #        Do compression at the bigram level.
 #        Do bit-packing (see to01() function in bitarray module). Also https://wiki.python.org/moin/BitManipulation
 #        Pandas integration
+#          Instead of And, Or, FloatRange, etc. classes, use the same syntax that they use?
 python3 TestSmallAndMedium.py
 #$dockerCommand python3 TestSmallAndMedium.py
 #$dockerCommand python3

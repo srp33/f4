@@ -1,33 +1,14 @@
 In Builder.py, add a setting to ignore lines starting with a specified comment character (default = "#").
+
 CSV/TSV compression project:
-  Build an index file that indicates start position of each line and compression dictionary.
-    Make it JSON or msgpack so it is language agnostic?
-  Compare different compression algorithms.
-    gzip
-    zstandard (with training dictionary or without)
-    lz4
-    etc.
-    bgzip?
-  Read up on bgzip. Why do they use 64 kb blocks?
-  Fine tune my method:
-    We get poor performance when using n-grams only on cadd_head_medium. What is the optimal threshold for the proportion of unique values in a given column before you use n-grams?
-      There seems to be a slight benefit when using lookup table with large integers. But how different is that from using n-grams on those?
-    Evaluate best n size for n-grams. Automatically determine whether to use n-grams or dictionary lookup.
-    Compare against encoding method.
-    Describe scenarios (columns) where you get high vs. low compression ratios.
-    Describe the benefits you get from bit packing.
-    When converting bit arrays, can you ever get better compression ratios with zstandard than bitarray?
+  Use 64 kb blocks for zstandard compression, similar to bgzip?
   What benefit do you get from gzipping the whole file in addition to a line-by-line scheme?
   Python code/module?
-  R code/package?
   Lossy compression of numerical datasets using n-grams (see notes). (Or should that be a separate paper?)
 
 Remove tmp_chunk_results_file_path logic from Builder.py (and function signature).
-Remove the compression_level and build_compression_dict arguments?
-Remove CompressionHelper.py?
 Re-run TestBuildLarge.py overnight.
 Try changing from pickle to msgpack (because it is language agnostic).
-Add logic to only compress if the compressed version of a column will be smaller.
 
 Remove unnecessary comments and address TODO items in ../f4py/*.
 
@@ -59,13 +40,7 @@ Huge benchmarks:
       This *might* help when doing a lot of decompression.
     Python 3.11. beta version already available. Production release in October 22. At least 20% speedup.
 
-Remove unnecessary comments and address TODO items in ../f4py/*.
-
 Kick off full set of tests for large files and save results to GitHub.
-
-Compare against other libraries/formats.
-  Update to the latest version of R (in the Dockerfile).
-  Update to the latest version of Python (in the Dockerfile)?
 
 Implement basic http server functionality as a demo.
 
@@ -81,16 +56,7 @@ Raise a friendly exception if the user tries to do an indexed query when the ind
 
 Allow user to specify missing values in Builder.convert() function. There is a function called is_missing_value in Utilities.py that should be removed.
 
-Implement interpolation search in place of binary search?
-  https://softwareengineering.stackexchange.com/questions/119703/interpolation-search-vs-binary-search#119736
-
-Support the following scenarios (make sure the tests reflect them):
-  1) uncompressed data + no index
-  2) non-compressed data + non-compressed index
-  3) compressed data + non-compressed index
-    # See tests in TestSmallAndMedium.py
-    # Update TestBuildLarge.py and TestParseLarge.py
-  4) compressed data + compressed index (when they want to be able to query any column).
+Support compressed indexes?
 
 Modify some function names to be private.
 
@@ -118,10 +84,6 @@ Make sure all arguments to public functions are fully validated in tests.
 If possible, move functions out of Helper.py. If you keep any, document them.
 Make all code consistent with PEP8 spec (using PyCharm).
 
-Rework the format so that everything is stored in a single file.
-  Use this spec? https://tools.ietf.org/id/draft-kunze-bagit-16.html
-
-Look at pandas for other functionality that might make sense to support? Add to TODO list.
 Support joins?
 Support date and string (has at least one non-number and more than 50% of values are unique?) columns.
 Support in_file_delimiter="," and out_file_type="csv"
@@ -132,8 +94,6 @@ Add documentation for all public functions.
   Mention .gz file support.
   Mention that if they specify tmp_dir_path, we assume that it is empty. It will not work if it is not.
 Set up readthedocs.
-
-Build a FastAPI wrapper.
 
 Translate to Rust. Or create Rust/Python wrapper. https://crates.io/crates/pyo3
   https://www.youtube.com/watch?v=Ygk0IMbu2nY

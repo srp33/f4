@@ -136,14 +136,6 @@ class Parser:
                 if row_index != keep_row_indices[-1]:
                     sys.stdout.buffer.write(b"\n")
 
-    # def __parse_values_for_output(self, decompression_type, decompressor, bigram_size_dict, row_index, select_column_coords, select_columns):
-    #     values = self.__parse_row_values(row_index, select_column_coords)
-    #
-    #     if len(decompressor) == 0:
-    #         return values
-    #
-    #     return [f4py.decompress(values.pop(0), decompressor[name], bigram_size_dict[name]) for name in select_columns]
-
     def head(self, n = 10, select_columns=None, out_file_path=None, out_file_type="tsv"):
         if not select_columns:
             select_columns = []
@@ -198,6 +190,7 @@ class Parser:
         column_type_dict = {}
         column_coords_dict = {}
         column_index_name_dict = {}
+        #column_name_index_dict = {} #TODO
 
         if len(select_columns) == 0:
             with f4py.Parser(self.data_file_path + ".cn", fixed_file_extensions=["", ".cc"], stats_file_extensions=[".ll", ".mccl"]) as cn_parser:
@@ -209,6 +202,7 @@ class Parser:
                     column_index = fastnumbers.fast_int(values[1])
 
                     column_index_name_dict[column_index] = column_name
+                    #column_name_index_dict[column_name] = column_index
 
                     if column_name in filter_column_set:
                         column_type_dict[column_name] = row_index
@@ -345,24 +339,10 @@ class Parser:
 
             return values
 
-        # if decompression_type == "zstd":
-        #     line_length = self.__stats[".ll"]
-        #     line = self.__parse_data_value(row_index, line_length, [0, line_length], self.__file_handles[""])
-        #     line = self.__zstd_decompressor.decompress(line)
-        #
-        #     return list(self.__parse_data_values(0, 0, column_coords, line))
-        #
-        # return list(self.__parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
-
     def __get_decompression_dict(self, file_path, column_index_name_dict):
         with open(file_path, "rb") as cmpr_file:
-            column_compression_dict = f4py.deserialize(cmpr_file.read())
+            return f4py.deserialize(cmpr_file.read())
 
-        column_compression_dict2 = {}
-        for column_index, column_name in column_index_name_dict.items():
-            column_compression_dict2[column_name] = column_compression_dict[column_index]
-
-        return column_compression_dict2
 
     #     compression_dict = {}
     #     with open(file_path, "rb") as cmpr_file:

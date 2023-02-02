@@ -23,9 +23,9 @@ dockerCommand="docker run -i -t --rm --platform linux/x86_64 --user $(id -u):$(i
 #$dockerCommand bash -c "time python3 BuildTsv.py 10 10 10 10000 data/medium.tsv"
 
 #TODO: zstandard compression
-#        No longer create .zstd file. Instead, use .cmpr. Add logic to determine the compression_type from it.
-#        Why are we inverting in get_decompression_dict?
-#        Record line indices and starts positions in a msgpack file? Check how variable the line sizes are.
+#        Why are we inverting in get_decompression_dict rather than storing inverted dictionary?
+#        Split parse_row_value() and parse_row_values() into two functions so we only need to check for decompression once.
+#        Check how variable the line sizes are. Record line indices and starts positions in a msgpack file?
 #TODO: Calculate .nrow and .ncol so you don't have to save them in files?
 #TODO: Does it work if we do not include a newline character after the last line (no compression)?
 #TODO: Address remaining TODO items in the code, remove unnecessary commented code.

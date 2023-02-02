@@ -50,19 +50,6 @@ class __SimpleBaseFilter(NoFilter):
                 if self.passes(parser._parse_row_value(i, coords, line_length, data_file_handle, decompression_type, decompressor, bigram_size_dict, self.column_name)):
                     passing_row_indices.add(i)
 
-            # if len(decompressor) > 0:
-            #     column_decompression_dict = decompressor[self.column_name]
-            #
-            #     for i in row_indices:
-            #         value = parser._parse_row_value(i, coords, line_length, data_file_handle)
-            #
-            #         if self.passes(f4py.decompress(value, column_decompression_dict, bigram_size)):
-            #             passing_row_indices.add(i)
-            # else:
-            #     for i in row_indices:
-            #         if self.passes(parser._parse_row_value(i, coords, line_length, data_file_handle)):
-            #             passing_row_indices.add(i)
-
             return passing_row_indices
 
     def get_conversion_function(self):

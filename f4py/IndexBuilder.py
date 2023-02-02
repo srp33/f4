@@ -93,9 +93,6 @@ class IndexBuilder:
             index_column_2_type = column_type_dict[index_column_2_encoded]
             coords_1 = column_coords_dict[index_column_1_encoded]
             coords_2 = column_coords_dict[index_column_2_encoded]
-#            if len(column_decompression_dict) > 0:
-                # bigram_size_1 = f4py.get_bigram_size(len(column_decompression_dict[index_column_1_encoded]["map"]))
-                # bigram_size_2 = f4py.get_bigram_size(len(column_decompression_dict[index_column_2_encoded]["map"]))
             decompressor = f4py.get_decompressor(decompression_type, decompressor)
 
             values_positions = []
@@ -105,22 +102,6 @@ class IndexBuilder:
                 value_2 = parser._parse_row_value(row_index, coords_2, line_length, file_handle, decompression_type, decompressor, bigram_size_dict, index_column_2_encoded)
 
                 values_positions.append([value_1, value_2, row_index])
-
-            # if len(column_decompression_dict) > 0:
-            #     for row_index in range(parser.get_num_rows()):
-            #         value_1 = parser._parse_row_value(row_index, coords_1, line_length, file_handle)
-            #         value_2 = parser._parse_row_value(row_index, coords_2, line_length, file_handle)
-            #
-            #         decompressed_value_1 = f4py.decompress(value_1, column_decompression_dict[index_column_1_encoded], bigram_size_1)
-            #         decompressed_value_2 = f4py.decompress(value_2, column_decompression_dict[index_column_2_encoded], bigram_size_2)
-            #
-            #         values_positions.append([decompressed_value_1, decompressed_value_2, row_index])
-            # else:
-            #     for row_index in range(parser.get_num_rows()):
-            #         value_1 = parser._parse_row_value(row_index, coords_1, line_length, file_handle)
-            #         value_2 = parser._parse_row_value(row_index, coords_2, line_length, file_handle)
-            #
-            #         values_positions.append([value_1, value_2, row_index])
 
             f4py.print_message(f"Building index file for {index_name} and {f4_file_path}.", verbose)
             IndexBuilder._customize_values_positions(values_positions, [index_column_1_type, index_column_2_type], f4py.sort_first_two_columns, f4py.do_nothing)

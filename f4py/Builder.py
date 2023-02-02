@@ -72,11 +72,7 @@ class Builder:
         line_length = self._save_output_file(delimited_file_path, f4_file_path, delimiter, compression_type, column_sizes, column_types, column_compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path2)
 
         self._print_message(f"Saving meta files for {f4_file_path}")
-        self._save_meta_files(f4_file_path, column_sizes, line_length, column_names, column_types, column_compression_dicts, num_rows)
-
-        if compression_type == "zstd":
-            with open(f"{f4_file_path}.zstd", "wb") as zstd_file:
-                zstd_file.write(b"0") # This is the compression level
+        self._save_meta_files(f4_file_path, column_sizes, line_length, column_names, column_types, compression_type, column_compression_dicts, num_rows)
 
         self._remove_tmp_dir(tmp_dir_path2)
         self._print_message(f"Done converting {delimited_file_path} to {f4_file_path}")
@@ -89,7 +85,7 @@ class Builder:
     #####################################################
 
     #TODO: Currently, this function is used in IndexBuilder as well. Consider splitting it out.
-    def _save_meta_files(self, f4_file_path, column_sizes, line_length, column_names=None, column_types=None, column_compression_dicts=None, num_rows=None):
+    def _save_meta_files(self, f4_file_path, column_sizes, line_length, column_names=None, column_types=None, compression_type=None, column_compression_dicts=None, num_rows=None):
         # Calculate and save the column coordinates and max length of these coordinates.
         column_start_coords = f4py.get_column_start_coords(column_sizes)
         column_coords_string, max_column_coord_length = f4py.build_string_map(column_start_coords)
@@ -116,8 +112,7 @@ class Builder:
             f4py.write_str_to_file(f4_file_path + ".ct", column_types_string)
             f4py.write_str_to_file(f4_file_path + ".mctl", str(max_col_type_length).encode())
 
-        if len(column_compression_dicts) > 0:
-            self._save_compression_dict(f4_file_path, column_compression_dicts)
+        self._save_compression_info(f4_file_path, compression_type, column_compression_dicts)
 
         # Save number of rows and columns.
         f4py.write_str_to_file(f4_file_path + ".nrow", str(num_rows).encode())
@@ -359,20 +354,27 @@ class Builder:
             if len(out_lines) > 0:
                 f4_file.write(b"".join(out_lines))
 
-    def _save_compression_dict(self, f4_file_path, column_compression_dicts):
-        # To enable decompressing the data, we need to switch the keys and values.
-        for column_index, compression_dict in column_compression_dicts.items():
-            decompression_map = {}
-            for value, compressed_value in compression_dict["map"].items():
-                decompression_map[f4py.convert_bytes_to_int(compressed_value)] = value
-                #decompression_map[compressed_value] = value
-
-            column_compression_dicts[column_index]["map"] = decompression_map
+    def _save_compression_info(self, f4_file_path, compression_type, column_compression_dicts):
+        if not compression_type:
+            return
 
         with open(f"{f4_file_path}.cmpr", "wb") as cmpr_file:
-            cmpr_file.write(f4py.serialize(column_compression_dicts))
+            if compression_type == "dictionary":
+                # To enable decompressing the data, we need to switch the keys and values.
+                for column_index, compression_dict in column_compression_dicts.items():
+                    decompression_map = {}
+                    for value, compressed_value in compression_dict["map"].items():
+                        decompression_map[f4py.convert_bytes_to_int(compressed_value)] = value
+                        #decompression_map[compressed_value] = value
 
-                #cmpr_file.write((f"{column_index}\t").encode() + f4py.serialize(decompression_dict) + b"\n")
+                    column_compression_dicts[column_index]["map"] = decompression_map
+
+                cmpr_file.write(f4py.serialize(column_compression_dicts))
+            else:
+                cmpr_file.write(b"z")
+
+
+        #cmpr_file.write((f"{column_index}\t").encode() + f4py.serialize(decompression_dict) + b"\n")
 
         # column_indices = []
         # values = []

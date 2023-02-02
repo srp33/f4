@@ -24,13 +24,13 @@ dockerCommand="docker run -i -t --rm --platform linux/x86_64 --user $(id -u):$(i
 
 #TODO: zstandard compression
 #        No longer create .zstd file. Instead, use .cmpr. Add logic to determine the compression_type from it.
+#        Why are we inverting in get_decompression_dict?
 #        Record line indices and starts positions in a msgpack file? Check how variable the line sizes are.
 #TODO: Calculate .nrow and .ncol so you don't have to save them in files?
 #TODO: Does it work if we do not include a newline character after the last line (no compression)?
 #TODO: Address remaining TODO items in the code, remove unnecessary commented code.
 #TODO: Combine all information into a single file.
 #        Use this spec? https://tools.ietf.org/id/draft-kunze-bagit-16.html
-#
 #TODO: Combine these TODO items with the TODO file.
 #TODO: Integrate f4py into the analysis paper tests.
 #TODO: Save for separate paper:

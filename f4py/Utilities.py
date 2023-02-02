@@ -7,8 +7,7 @@ import mmap
 #import msgpack
 import msgspec
 from operator import itemgetter
-#TODO
-#import zstandard
+import zstandard
 
 def open_read_file(file_path, file_extension=""):
     the_file = open(file_path + file_extension, 'rb')
@@ -112,6 +111,10 @@ def decompress(compressed_value, compression_dict, bigram_size):
         value += compression_dict["map"][compressed_piece]
 
     return value
+
+def get_decompressor(decompression_type, decompressor):
+    # We have to instantiate this object more than once because some functions are invoked in parallel, and they cannot be serialized.
+    return zstandard.ZstdDecompressor() if decompression_type == "zstd" else decompressor
 
 def convert_bytes_to_int(b):
     return int.from_bytes(b, byteorder="big")

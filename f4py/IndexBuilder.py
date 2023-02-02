@@ -30,34 +30,35 @@ class IndexBuilder:
     def _build_one_column_index(f4_file_path, index_column, verbose, custom_index_function):
         # TODO: Add logic to verify that index_column is valid. But where?
         f4py.print_message(f"Saving index for {f4_file_path} and {index_column}.", verbose)
+        index_column_encoded = index_column.encode()
 
         with f4py.Parser(f4_file_path) as parser:
             f4py.print_message(f"Getting column meta information for {index_column} index for {f4_file_path}.", verbose)
-            select_columns, column_type_dict, column_coords_dict, column_decompression_dict, select_column_compression_dict = parser._get_column_meta(set([index_column.encode()]), [])
+            select_columns, column_type_dict, column_coords_dict, decompression_type, decompressor, bigram_size_dict = parser._get_column_meta(set([index_column_encoded]), [])
 
             file_handle = parser.get_file_handle("")
             line_length = parser.get_stat(".ll")
-
-            index_column_type = column_type_dict[index_column.encode()]
-            coords = column_coords_dict[index_column.encode()]
-
-            if len(column_decompression_dict) > 0:
-                bigram_size = f4py.get_bigram_size(len(column_decompression_dict[index_column.encode()]["map"]))
-                # recompression_dict = {0: {}}
-
+            index_column_type = column_type_dict[index_column_encoded]
+            coords = column_coords_dict[index_column_encoded]
             values_positions = []
+            decompressor = f4py.get_decompressor(decompression_type, decompressor)
 
             f4py.print_message(f"Parsing values and positions for {index_column} index for {f4_file_path}.", verbose)
-            if len(column_decompression_dict) > 0:
-                for row_index in range(parser.get_num_rows()):
-                    value = parser._parse_row_value(row_index, coords, line_length, file_handle)
-                    decompressed_value = f4py.decompress(value, column_decompression_dict[index_column.encode()], bigram_size)
+            for row_index in range(parser.get_num_rows()):
+                value = parser._parse_row_value(row_index, coords, line_length, file_handle, decompression_type, decompressor, bigram_size_dict, index_column_encoded)
+                values_positions.append([value, row_index])
+#            if len(column_decompression_dict) > 0:
+                # recompression_dict = {0: {}}
+
+ #               for row_index in range(parser.get_num_rows()):
+#                    value = parser._parse_row_value(row_index, coords, line_length, file_handle, decompression_type, decompressor, bigram_size_dict, index_column_encoded)
+                    #decompressed_value = f4py.decompress(value, column_decompression_dict[index_column_encoded], bigram_size)
                     # recompression_dict[0][decompressed_value] = value
-                    values_positions.append([decompressed_value, row_index])
-            else:
-                for row_index in range(parser.get_num_rows()):
-                    value = parser._parse_row_value(row_index, coords, line_length, file_handle)
-                    values_positions.append([value, row_index])
+                    #values_positions.append([decompressed_value, row_index])
+#            else:
+#                 for row_index in range(parser.get_num_rows()):
+#                     value = parser._parse_row_value(row_index, coords, line_length, file_handle)
+#                     values_positions.append([value, row_index])
 
             f4py.print_message(f"Building index file for {index_column} index for {f4_file_path}.", verbose)
             IndexBuilder._customize_values_positions(values_positions, [index_column_type], f4py.sort_first_column, custom_index_function)
@@ -72,48 +73,54 @@ class IndexBuilder:
 
     # TODO: Combine this function with the above one and make it generic enough to handle indexes with more columns.
     def _build_two_column_index(f4_file_path, index_column_1, index_column_2, verbose):
-        if not isinstance(index_column_1, str) or not isinstance(index_column_1, str):
+        if not isinstance(index_column_1, str) or not isinstance(index_column_2, str):
             raise Exception("When specifying an index column name, it must be a string.")
 
         f4py.print_message(f"Saving index for {index_column_1} and {index_column_2} for {f4_file_path}.", verbose)
 
         index_name = "____".join([index_column_1, index_column_2])
+        index_column_1_encoded = index_column_1.encode()
+        index_column_2_encoded = index_column_2.encode()
 
         with f4py.Parser(f4_file_path) as parser:
             f4py.print_message(f"Getting column meta information for {index_name} index and {f4_file_path}.", verbose)
-            select_columns, column_type_dict, column_coords_dict, column_decompression_dict, select_column_compression_dict = parser._get_column_meta(set([index_column_1.encode(), index_column_2.encode()]), [])
+            select_columns, column_type_dict, column_coords_dict, decompression_type, decompressor, bigram_size_dict = parser._get_column_meta(set([index_column_1_encoded, index_column_2_encoded]), [])
             # TODO: Add logic to verify that index_column_1 and index_column_2 are valid.
 
             file_handle = parser.get_file_handle("")
             line_length = parser.get_stat(".ll")
-
-            index_column_1_type = column_type_dict[index_column_1.encode()]
-            index_column_2_type = column_type_dict[index_column_2.encode()]
-            coords_1 = column_coords_dict[index_column_1.encode()]
-            coords_2 = column_coords_dict[index_column_2.encode()]
-
-            if len(column_decompression_dict) > 0:
-                bigram_size_1 = f4py.get_bigram_size(len(column_decompression_dict[index_column_1.encode()]["map"]))
-                bigram_size_2 = f4py.get_bigram_size(len(column_decompression_dict[index_column_2.encode()]["map"]))
+            index_column_1_type = column_type_dict[index_column_1_encoded]
+            index_column_2_type = column_type_dict[index_column_2_encoded]
+            coords_1 = column_coords_dict[index_column_1_encoded]
+            coords_2 = column_coords_dict[index_column_2_encoded]
+#            if len(column_decompression_dict) > 0:
+                # bigram_size_1 = f4py.get_bigram_size(len(column_decompression_dict[index_column_1_encoded]["map"]))
+                # bigram_size_2 = f4py.get_bigram_size(len(column_decompression_dict[index_column_2_encoded]["map"]))
+            decompressor = f4py.get_decompressor(decompression_type, decompressor)
 
             values_positions = []
             f4py.print_message(f"Parsing values and positions for {index_name} index and {f4_file_path}.", verbose)
+            for row_index in range(parser.get_num_rows()):
+                value_1 = parser._parse_row_value(row_index, coords_1, line_length, file_handle, decompression_type, decompressor, bigram_size_dict, index_column_1_encoded)
+                value_2 = parser._parse_row_value(row_index, coords_2, line_length, file_handle, decompression_type, decompressor, bigram_size_dict, index_column_2_encoded)
 
-            if len(column_decompression_dict) > 0:
-                for row_index in range(parser.get_num_rows()):
-                    value_1 = parser._parse_row_value(row_index, coords_1, line_length, file_handle)
-                    value_2 = parser._parse_row_value(row_index, coords_2, line_length, file_handle)
+                values_positions.append([value_1, value_2, row_index])
 
-                    decompressed_value_1 = f4py.decompress(value_1, column_decompression_dict[index_column_1.encode()], bigram_size_1)
-                    decompressed_value_2 = f4py.decompress(value_2, column_decompression_dict[index_column_2.encode()], bigram_size_2)
-
-                    values_positions.append([decompressed_value_1, decompressed_value_2, row_index])
-            else:
-                for row_index in range(parser.get_num_rows()):
-                    value_1 = parser._parse_row_value(row_index, coords_1, line_length, file_handle)
-                    value_2 = parser._parse_row_value(row_index, coords_2, line_length, file_handle)
-
-                    values_positions.append([value_1, value_2, row_index])
+            # if len(column_decompression_dict) > 0:
+            #     for row_index in range(parser.get_num_rows()):
+            #         value_1 = parser._parse_row_value(row_index, coords_1, line_length, file_handle)
+            #         value_2 = parser._parse_row_value(row_index, coords_2, line_length, file_handle)
+            #
+            #         decompressed_value_1 = f4py.decompress(value_1, column_decompression_dict[index_column_1_encoded], bigram_size_1)
+            #         decompressed_value_2 = f4py.decompress(value_2, column_decompression_dict[index_column_2_encoded], bigram_size_2)
+            #
+            #         values_positions.append([decompressed_value_1, decompressed_value_2, row_index])
+            # else:
+            #     for row_index in range(parser.get_num_rows()):
+            #         value_1 = parser._parse_row_value(row_index, coords_1, line_length, file_handle)
+            #         value_2 = parser._parse_row_value(row_index, coords_2, line_length, file_handle)
+            #
+            #         values_positions.append([value_1, value_2, row_index])
 
             f4py.print_message(f"Building index file for {index_name} and {f4_file_path}.", verbose)
             IndexBuilder._customize_values_positions(values_positions, [index_column_1_type, index_column_2_type], f4py.sort_first_two_columns, f4py.do_nothing)
@@ -170,8 +177,6 @@ class IndexBuilder:
         column_coords_string, rows_max_length = f4py.build_string_map(rows)
         f4py.write_str_to_file(index_file_path, column_coords_string)
 
-        # TODO: Remove this line?
-        # f4py.Builder()._save_meta_files(index_file_path, max_lengths, rows_max_length + 1)
         column_start_coords = f4py.get_column_start_coords(max_lengths)
         column_coords_string, max_column_coord_length = f4py.build_string_map(column_start_coords)
         f4py.write_str_to_file(index_file_path + ".cc", column_coords_string)

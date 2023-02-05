@@ -106,18 +106,19 @@ class Parser:
                 keep_row_indices = sorted(chain.from_iterable(Parallel(n_jobs = num_processes)(delayed(fltr.filter_column_values)(self.data_file_path, row_indices, column_coords_dict, decompression_type, decompressor, bigram_size_dict) for row_indices in self._generate_row_chunks(num_processes))))
 
         select_column_coords = [column_coords_dict[name] for name in select_columns]
+
+        # This avoids having to check the decompression type each time we parse a value.
         decompressor = f4py.get_decompressor(decompression_type, decompressor)
+        parse_function = self._get_parse_row_values_function(decompression_type)
 
         if out_file_path:
             # Write output (in chunks)
             with open(out_file_path, 'wb') as out_file:
-                # Header line
-                out_file.write(b"\t".join(select_columns) + b"\n")
+                out_file.write(b"\t".join(select_columns) + b"\n") # Header line
                 
                 out_lines = []
                 for row_index in keep_row_indices:
-                    #out_values = self.__parse_values_for_output(decompression_type, decompressor, bigram_size_dict, row_index, select_column_coords, select_columns)
-                    out_values = self.__parse_row_values(row_index, select_column_coords, decompression_type, decompressor, bigram_size_dict, select_columns)
+                    out_values = parse_function(row_index, select_column_coords, decompression_type, decompressor, bigram_size_dict, select_columns)
                     out_lines.append(b"\t".join(out_values))
 
                     if len(out_lines) % lines_per_chunk == 0:
@@ -127,10 +128,10 @@ class Parser:
                 if len(out_lines) > 0:
                     out_file.write(b"\n".join(out_lines) + b"\n")
         else:
-            sys.stdout.buffer.write(b"\t".join(select_columns) + b"\n")
+            sys.stdout.buffer.write(b"\t".join(select_columns) + b"\n") # Header line
 
             for row_index in keep_row_indices:
-                out_values = self.__parse_row_values(row_index, select_column_coords, decompression_type, decompressor, bigram_size_dict, select_columns)
+                out_values = parse_function(row_index, select_column_coords, decompression_type, decompressor, bigram_size_dict, select_columns)
                 sys.stdout.buffer.write(b"\t".join(out_values))
 
                 if row_index != keep_row_indices[-1]:
@@ -311,33 +312,70 @@ class Parser:
         for coords in data_coords:
             yield str_like_object[(start_pos + coords[0]):(start_pos + coords[1])].rstrip(b" ")
 
-    def _parse_row_value(self, row_index, column_coords, line_length, file_handle, decompression_type=None, decompressor=None, bigram_size_dict=None, column_name=None):
-        if decompression_type == "zstd":
-            line = self.__parse_data_value(row_index, line_length, [0, line_length], file_handle)
-            line = decompressor.decompress(line)
-            return self.__parse_data_value(0, 0, column_coords, line).rstrip(b" ")
+    def _get_parse_row_value_function(self, decompression_type):
+        if not decompression_type:
+            return self._parse_row_value
+        elif decompression_type == "zstd":
+            return self._parse_zstd_compressed_row_value
         else:
-            value = self.__parse_data_value(row_index, line_length, column_coords, file_handle).rstrip(b" ")
+            return self._parse_dictionary_compressed_row_value
 
-            if decompression_type == "dictionary":
-                value = f4py.decompress(value, decompressor[column_name], bigram_size_dict[column_name])
+    def _parse_row_value(self, row_index, column_coords, line_length, file_handle, decompression_type=None, decompressor=None, bigram_size_dict=None, column_name=None):
+        return self.__parse_data_value(row_index, line_length, column_coords, file_handle).rstrip(b" ")
 
-            return value
+        # if decompression_type == "zstd":
+        #     line = self.__parse_data_value(row_index, line_length, [0, line_length], file_handle)
+        #     line = decompressor.decompress(line)
+        #     return self.__parse_data_value(0, 0, column_coords, line).rstrip(b" ")
+        # else:
+        #     value = self.__parse_data_value(row_index, line_length, column_coords, file_handle).rstrip(b" ")
+        #
+        #     if decompression_type == "dictionary":
+        #         value = f4py.decompress(value, decompressor[column_name], bigram_size_dict[column_name])
+        #
+        #     return value
+
+    def _parse_zstd_compressed_row_value(self, row_index, column_coords, line_length, file_handle, decompression_type=None, decompressor=None, bigram_size_dict=None, column_name=None):
+        # if decompression_type == "zstd":
+        #     line = self.__parse_data_value(row_index, line_length, [0, line_length], file_handle)
+        #     line = decompressor.decompress(line)
+        #     return self.__parse_data_value(0, 0, column_coords, line).rstrip(b" ")
+        # else:
+        #     value = self.__parse_data_value(row_index, line_length, column_coords, file_handle).rstrip(b" ")
+        #
+        #     if decompression_type == "dictionary":
+        #         value = f4py.decompress(value, decompressor[column_name], bigram_size_dict[column_name])
+        #
+        #     return value
+        line = self.__parse_data_value(row_index, line_length, [0, line_length], file_handle)
+        line = decompressor.decompress(line)
+        return self.__parse_data_value(0, 0, column_coords, line).rstrip(b" ")
+
+    def _parse_dictionary_compressed_row_value(self, row_index, column_coords, line_length, file_handle, decompression_type=None, decompressor=None, bigram_size_dict=None, column_name=None):
+        value = self.__parse_data_value(row_index, line_length, column_coords, file_handle).rstrip(b" ")
+        return f4py.decompress(value, decompressor[column_name], bigram_size_dict[column_name])
+
+    def _get_parse_row_values_function(self, decompression_type):
+        if not decompression_type:
+            return self.__parse_row_values
+        elif decompression_type == "zstd":
+            return self.__parse_zstd_compressed_row_values
+        else:
+            return self.__parse_dictionary_compressed_row_values
 
     def __parse_row_values(self, row_index, column_coords, decompression_type=None, decompressor=None, bigram_size_dict=None, column_names=None):
-        if decompression_type == "zstd":
-            line_length = self.__stats[".ll"]
-            line = self.__parse_data_value(row_index, line_length, [0, line_length], self.__file_handles[""])
-            line = decompressor.decompress(line)
+        return list(self.__parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
 
-            return list(self.__parse_data_values(0, 0, column_coords, line))
-        else:
+    def __parse_zstd_compressed_row_values(self, row_index, column_coords, decompression_type=None, decompressor=None, bigram_size_dict=None, column_names=None):
+        line_length = self.__stats[".ll"]
+        line = self.__parse_data_value(row_index, line_length, [0, line_length], self.__file_handles[""])
+        line = decompressor.decompress(line)
+
+        return list(self.__parse_data_values(0, 0, column_coords, line))
+
+    def __parse_dictionary_compressed_row_values(self, row_index, column_coords, decompression_type=None, decompressor=None, bigram_size_dict=None, column_names=None):
             values = list(self.__parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
-
-            if decompression_type == "dictionary":
-                values = [f4py.decompress(values.pop(0), decompressor[column_name], bigram_size_dict[column_name]) for column_name in column_names]
-
-            return values
+            return [f4py.decompress(values.pop(0), decompressor[column_name], bigram_size_dict[column_name]) for column_name in column_names]
 
     def __get_decompression_dict(self, file_path, column_index_name_dict):
         with open(file_path, "rb") as cmpr_file:

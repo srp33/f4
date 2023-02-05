@@ -6,10 +6,6 @@ import math
 import operator
 
 class IndexSearcher:
-    def __init__(self, compression_dict, bigram_size):
-        self.__compression_dict = compression_dict
-        self.__bigram_size = bigram_size
-
     def _get_identifier_row_index(index_parser, query_value, end_index):
         if end_index == 0:
             return -1
@@ -55,35 +51,27 @@ class IndexSearcher:
             file_handle = index_parser.get_file_handle("")
 
             if fltr.oper == operator.eq:
-                return IndexSearcher._find_row_indices_for_range(index_parser,
-                                                                 coords[0], coords[1], fltr, fltr, end_index, num_processes)
+                return IndexSearcher._find_row_indices_for_range(index_parser, coords[0], coords[1], fltr, fltr, end_index, num_processes)
             else:
                 if fltr.oper == operator.ne:
-                    lower_position, upper_position = IndexSearcher._find_bounds_for_range(index_parser, coords[
-                        0], fltr, fltr, end_index, num_processes)
+                    lower_position, upper_position = IndexSearcher._find_bounds_for_range(index_parser, coords[0], fltr, fltr, end_index, num_processes)
 
                     lower_positions = (0, lower_position)
                     upper_positions = (upper_position, end_index)
 
-                    lower_row_indices = IndexSearcher._retrieve_matching_row_indices(index_parser, coords[
-                        1], lower_positions, num_processes)
-                    upper_row_indices = IndexSearcher._retrieve_matching_row_indices(index_parser, coords[
-                        1], upper_positions, num_processes)
+                    lower_row_indices = IndexSearcher._retrieve_matching_row_indices(index_parser, coords[1], lower_positions, num_processes)
+                    upper_row_indices = IndexSearcher._retrieve_matching_row_indices(index_parser, coords[1], upper_positions, num_processes)
 
                     return lower_row_indices | upper_row_indices
                 else:
                     if fltr.oper == operator.gt:
-                        positions = IndexSearcher._find_positions_g(index_parser, line_length,
-                                                                    coords[0], file_handle, fltr, 0, end_index, operator.le)
+                        positions = IndexSearcher._find_positions_g(index_parser, line_length, coords[0], file_handle, fltr, 0, end_index, operator.le)
                     elif fltr.oper == operator.ge:
-                        positions = IndexSearcher._find_positions_g(index_parser, line_length,
-                                                                    coords[0], file_handle, fltr, 0, end_index, operator.lt)
+                        positions = IndexSearcher._find_positions_g(index_parser, line_length, coords[0], file_handle, fltr, 0, end_index, operator.lt)
                     elif fltr.oper == operator.lt:
-                        positions = IndexSearcher._find_positions_l(index_parser, line_length,
-                                                                    coords[0], file_handle, fltr, 0, end_index, fltr.oper)
+                        positions = IndexSearcher._find_positions_l(index_parser, line_length, coords[0], file_handle, fltr, 0, end_index, fltr.oper)
                     elif fltr.oper == operator.le:
-                        positions = IndexSearcher._find_positions_l(index_parser, line_length,
-                                                                    coords[0], file_handle, fltr, 0, end_index, fltr.oper)
+                        positions = IndexSearcher._find_positions_l(index_parser, line_length, coords[0], file_handle, fltr, 0, end_index, fltr.oper)
 
                     return IndexSearcher._retrieve_matching_row_indices(index_parser, coords[1], positions, num_processes)
 
@@ -206,8 +194,7 @@ class IndexSearcher:
         file_handle = index_parser.get_file_handle("")
 
         lower_positions = IndexSearcher._find_positions_g(index_parser, line_length, value_coords, file_handle, filter1, start_index, end_index, operator.lt)
-        upper_positions = IndexSearcher._find_positions_l(index_parser, line_length, value_coords, file_handle, filter2,
-                                                          lower_positions[0], lower_positions[1], operator.le)
+        upper_positions = IndexSearcher._find_positions_l(index_parser, line_length, value_coords, file_handle, filter2, lower_positions[0], lower_positions[1], operator.le)
 
         lower_position = max(lower_positions[0], upper_positions[0])
         upper_position = min(lower_positions[1], upper_positions[1])
@@ -217,8 +204,7 @@ class IndexSearcher:
     def _find_row_indices_for_range(index_parser, value_coords, position_coords, filter1, filter2, end_index, num_processes):
         lower_position, upper_position = IndexSearcher._find_bounds_for_range(index_parser, value_coords, filter1, filter2, end_index, num_processes)
 
-        return IndexSearcher._retrieve_matching_row_indices(index_parser, position_coords, (
-        lower_position, upper_position), num_processes)
+        return IndexSearcher._retrieve_matching_row_indices(index_parser, position_coords, (lower_position, upper_position), num_processes)
 
     def _get_passing_row_indices(fltr, parser, line_length, coords_value, coords_position, file_handle, start_index, end_index):
         passing_row_indices = set()
@@ -235,18 +221,14 @@ class IndexSearcher:
             coords = index_parser._parse_data_coords([0, 1])
             file_handle = index_parser.get_file_handle("")
 
-            lower_range = f4py.IndexSearcher._find_positions_g(index_parser, line_length,
-                                                               coords[0], file_handle, fltr, 0, end_index, operator.lt)
+            lower_range = f4py.IndexSearcher._find_positions_g(index_parser, line_length, coords[0], file_handle, fltr, 0, end_index, operator.lt)
 
             if lower_range[0] == end_index:
                 return set()
 
-            upper_position = IndexSearcher._search_with_filter(index_parser, line_length,
-                                                               coords[0], file_handle,
-                                                               lower_range[0], lower_range[1], end_index, fltr)
+            upper_position = IndexSearcher._search_with_filter(index_parser, line_length, coords[0], file_handle, lower_range[0], lower_range[1], end_index, fltr)
 
-            return f4py.IndexSearcher._retrieve_matching_row_indices(index_parser, coords[1], (
-            lower_range[0], upper_position), num_processes)
+            return f4py.IndexSearcher._retrieve_matching_row_indices(index_parser, coords[1], (lower_range[0], upper_position), num_processes)
 
     #####################################################
     # Class (static) functions

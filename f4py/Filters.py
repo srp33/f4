@@ -43,11 +43,14 @@ class __SimpleBaseFilter(NoFilter):
             line_length = parser.get_stat(".ll")
             coords = column_coords_dict[self.column_name]
             data_file_handle = parser.get_file_handle("")
+
+            # This avoids having to check the decompression type each time we parse a value.
             decompressor = f4py.get_decompressor(decompression_type, decompressor)
+            parse_function = parser._get_parse_row_value_function(decompression_type)
 
             passing_row_indices = set()
             for i in row_indices:
-                if self.passes(parser._parse_row_value(i, coords, line_length, data_file_handle, decompression_type, decompressor, bigram_size_dict, self.column_name)):
+                if self.passes(parse_function(i, coords, line_length, data_file_handle, decompression_type, decompressor, bigram_size_dict, self.column_name)):
                     passing_row_indices.add(i)
 
             return passing_row_indices

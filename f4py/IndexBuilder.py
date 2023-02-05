@@ -41,12 +41,15 @@ class IndexBuilder:
             index_column_type = column_type_dict[index_column_encoded]
             coords = column_coords_dict[index_column_encoded]
             values_positions = []
+
             decompressor = f4py.get_decompressor(decompression_type, decompressor)
+            parse_function = parser._get_parse_row_value_function(decompression_type)
 
             f4py.print_message(f"Parsing values and positions for {index_column} index for {f4_file_path}.", verbose)
             for row_index in range(parser.get_num_rows()):
-                value = parser._parse_row_value(row_index, coords, line_length, file_handle, decompression_type, decompressor, bigram_size_dict, index_column_encoded)
+                value = parse_function(row_index, coords, line_length, file_handle, decompression_type, decompressor, bigram_size_dict, index_column_encoded)
                 values_positions.append([value, row_index])
+
 #            if len(column_decompression_dict) > 0:
                 # recompression_dict = {0: {}}
 
@@ -93,13 +96,15 @@ class IndexBuilder:
             index_column_2_type = column_type_dict[index_column_2_encoded]
             coords_1 = column_coords_dict[index_column_1_encoded]
             coords_2 = column_coords_dict[index_column_2_encoded]
+
             decompressor = f4py.get_decompressor(decompression_type, decompressor)
+            parse_function = parser._get_parse_row_value_function(decompression_type)
 
             values_positions = []
             f4py.print_message(f"Parsing values and positions for {index_name} index and {f4_file_path}.", verbose)
             for row_index in range(parser.get_num_rows()):
-                value_1 = parser._parse_row_value(row_index, coords_1, line_length, file_handle, decompression_type, decompressor, bigram_size_dict, index_column_1_encoded)
-                value_2 = parser._parse_row_value(row_index, coords_2, line_length, file_handle, decompression_type, decompressor, bigram_size_dict, index_column_2_encoded)
+                value_1 = parse_function(row_index, coords_1, line_length, file_handle, decompression_type, decompressor, bigram_size_dict, index_column_1_encoded)
+                value_2 = parse_function(row_index, coords_2, line_length, file_handle, decompression_type, decompressor, bigram_size_dict, index_column_2_encoded)
 
                 values_positions.append([value_1, value_2, row_index])
 

@@ -113,6 +113,9 @@ def decompress(compressed_value, compression_dict, bigram_size):
     return value
 
 def get_decompressor(decompression_type, decompressor):
+    if not decompression_type:
+        return None
+
     # We have to instantiate this object more than once because some functions are invoked in parallel, and they cannot be serialized.
     return zstandard.ZstdDecompressor() if decompression_type == "zstd" else decompressor
 

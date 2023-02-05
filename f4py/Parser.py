@@ -148,6 +148,7 @@ class Parser:
         self.query_and_save(f4py.TailFilter(n, select_columns), select_columns, out_file_path=out_file_path, out_file_type=out_file_type)
 
     def get_num_rows(self):
+        #return len(self.__file_handles[""]) / self.__stats[".ll"]
         return self.__stats[".nrow"]
 
     def get_num_cols(self):

@@ -22,11 +22,8 @@ dockerCommand="docker run -i -t --rm --platform linux/x86_64 --user $(id -u):$(i
 
 #$dockerCommand bash -c "time python3 BuildTsv.py 10 10 10 10000 data/medium.tsv"
 
-#TODO: zstandard compression
-#        Split parse_row_value() and parse_row_values() into two functions so we only need to check for decompression once.
-#        Check how variable the line sizes are. Record line indices and starts positions in a msgpack file?
-#TODO: Calculate .nrow and .ncol so you don't have to save them in files?
 #TODO: Does it work if we do not include a newline character after the last line (no compression)?
+#TODO: Calculate .nrow and .ncol so you don't have to save them in files?
 #TODO: Address remaining TODO items in the code, remove unnecessary commented code.
 #TODO: Combine all information into a single file.
 #        Use this spec? https://tools.ietf.org/id/draft-kunze-bagit-16.html
@@ -43,6 +40,8 @@ dockerCommand="docker run -i -t --rm --platform linux/x86_64 --user $(id -u):$(i
 #        Do bit-packing (see to01() function in bitarray module). Also https://wiki.python.org/moin/BitManipulation
 #        Pandas integration
 #          Instead of And, Or, FloatRange, etc. classes, use the same syntax that they use?
+#TODO: Not sure whether to do:
+#        zstandard compression: Record line indices and starts positions in .cmpr file (in msgpack format) instead of "z"?
 python3 TestSmallAndMedium.py
 #$dockerCommand python3 TestSmallAndMedium.py
 #$dockerCommand python3

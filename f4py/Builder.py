@@ -240,11 +240,9 @@ class Builder:
 
     def _save_rows_chunk(self, delimited_file_path, f4_file_path, delimiter, compression_type, column_sizes, column_types, compression_dicts, chunk_number, start_index, end_index, num_rows_per_save, tmp_dir_path):
         max_line_size = 0
-        #column_sizes = []
 
         if compression_type == "zstd":
             compressor = zstandard.ZstdCompressor(level = 0)
-            #out_line_sizes = []
 
         # Save the data to output file. Ignore the header line.
         with f4py.get_delimited_file_handle(delimited_file_path) as in_file:
@@ -288,27 +286,19 @@ class Builder:
 
                     if compression_type == "zstd":
                         out_line = compressor.compress(out_line)
-                    else:
-                       # We add a newline character when the data are not compressed.
-                       # This makes the file more readable (doesn't matter when the data are compressed).
-                       out_line += b"\n"
 
                     line_size = len(out_line)
                     max_line_size = max([max_line_size, line_size])
 
                     out_lines.append(out_line)
-                    #out_line_sizes.append((f"{line_size}\n").encode())
 
                     if len(out_lines) % num_rows_per_save == 0:
                         self._print_message(f"Processed chunk of {delimited_file_path} at line {line_index} (start_index = {start_index}, end_index = {end_index})")
                         chunk_file.write(b"".join(out_lines))
-                        #size_file.write(b"".join(out_line_sizes))
                         out_lines = []
-                        #out_line_sizes = []
 
                 if len(out_lines) > 0:
                     chunk_file.write(b"".join(out_lines))
-                    #size_file.write(b"".join(out_line_sizes))
 
         return max_line_size
 

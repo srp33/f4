@@ -180,7 +180,8 @@ class HeadFilter(NoFilter):
         return self.select_columns_set
 
     def _get_num_rows(self, data_file_path):
-        with f4py.Parser(data_file_path, fixed_file_extensions=[""], stats_file_extensions=[".nrow"]) as parser:
+        #with f4py.Parser(data_file_path, fixed_file_extensions=[""], stats_file_extensions=[".nrow"]) as parser:
+        with f4py.Parser(data_file_path, fixed_file_extensions=[""], stats_file_extensions=[".ll"]) as parser:
             return parser.get_num_rows()
 
     def filter_column_values(self, data_file_path, row_indices, column_coords_dict, decompression_type, decompressor, bigram_size_dict):

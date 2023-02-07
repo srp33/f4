@@ -40,7 +40,8 @@ def build_string_map(the_list):
     max_value_length = get_max_string_length(the_list)
 
     column_items = format_column_items(the_list, max_value_length)
-    return b"\n".join(column_items), max_value_length
+    #return b"\n".join(column_items), max_value_length
+    return b"".join(column_items), max_value_length
 
 def get_max_string_length(the_list):
     return max([len(x) for x in set(the_list)])

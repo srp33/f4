@@ -117,8 +117,8 @@ class Builder:
         self._save_compression_info(f4_file_path, compression_type, column_compression_dicts, column_index_name_dict)
 
         # Save number of rows and columns.
-        f4py.write_str_to_file(f4_file_path + ".nrow", str(num_rows).encode())
-        f4py.write_str_to_file(f4_file_path + ".ncol", str(len(column_names)).encode())
+        #f4py.write_str_to_file(f4_file_path + ".nrow", str(num_rows).encode())
+        #f4py.write_str_to_file(f4_file_path + ".ncol", str(len(column_names)).encode())
 
     def _prepare_tmp_dir(self, tmp_dir_path):
         # Figure out where temp files will be stored and create directory, if needed.

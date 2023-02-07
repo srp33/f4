@@ -18,7 +18,8 @@ class Parser:
     Attributes:
         data_file_path (str): The path to an existing F4 file.
     """
-    def __init__(self, data_file_path, fixed_file_extensions=["", ".cc", ".ct"], stats_file_extensions=[".ll", ".mccl", ".nrow", ".ncol"]):
+    #def __init__(self, data_file_path, fixed_file_extensions=["", ".cc", ".ct"], stats_file_extensions=[".ll", ".mccl", ".nrow", ".ncol"]):
+    def __init__(self, data_file_path, fixed_file_extensions=["", ".cc", ".ct"], stats_file_extensions=[".ll", ".mccl"]):
         #TODO: expand this out for the other parameters.
         if not isinstance(data_file_path, str):
             raise Exception("You must specify data_file_path as an str value.")
@@ -148,14 +149,16 @@ class Parser:
         self.query_and_save(f4py.TailFilter(n, select_columns), select_columns, out_file_path=out_file_path, out_file_type=out_file_type)
 
     def get_num_rows(self):
-        #return len(self.__file_handles[""]) / self.__stats[".ll"]
-        return self.__stats[".nrow"]
+        return int(len(self.__file_handles[""]) / self.__stats[".ll"])
+        #return self.__stats[".nrow"]
 
     def get_num_cols(self):
-        return self.__stats[".ncol"]
+        return int(len(self.__file_handles[".cc"]) / self.__stats[".mccl"]) - 1
+        #return self.__stats[".ncol"]
 
     def get_column_type(self, column_index):
-        return next(self.__parse_data_values(column_index, 2, [[0, 1]], self.__file_handles[".ct"])).decode()
+        #return next(self.__parse_data_values(column_index, 2, [[0, 1]], self.__file_handles[".ct"])).decode()
+        return next(self.__parse_data_values(column_index, 1, [[0, 1]], self.__file_handles[".ct"])).decode()
 
     def get_column_type_from_name(self, column_name):
         try:
@@ -275,7 +278,8 @@ class Parser:
     def _parse_data_coords(self, indices):
         data_coords = []
         out_dict = {}
-        mccl = self.__stats[".mccl"] + 1
+        #mccl = self.__stats[".mccl"] + 1
+        mccl = self.__stats[".mccl"]
 
         for index in indices:
             start_pos = index * mccl

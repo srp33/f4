@@ -169,7 +169,8 @@ class IndexBuilder:
         f4py.write_str_to_file(index_file_path + ".mccl", str(max_column_coord_length).encode())
 
         # Find and save the line length.
-        f4py.write_str_to_file(index_file_path + ".ll", str(rows_max_length + 1).encode())
+        #f4py.write_str_to_file(index_file_path + ".ll", str(rows_max_length + 1).encode())
+        f4py.write_str_to_file(index_file_path + ".ll", str(rows_max_length).encode())
 
     def _get_index_file_path(data_file_path, index_name, custom_index_function=f4py.do_nothing):
         index_file_path_extension = f".idx_{index_name}"

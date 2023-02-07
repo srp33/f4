@@ -22,8 +22,9 @@ dockerCommand="docker run -i -t --rm --platform linux/x86_64 --user $(id -u):$(i
 
 #$dockerCommand bash -c "time python3 BuildTsv.py 10 10 10 10000 data/medium.tsv"
 
-#TODO: Does it work if we do not include a newline character after the last line (no compression)?
 #TODO: Calculate .nrow and .ncol so you don't have to save them in files?
+#        Don't store newline characters in .cc, .cn, .ct files (any others)? Make sure we parse properly.
+#        Then finish .get_num_cols(). Calculate as length of .ct file?
 #TODO: Address remaining TODO items in the code, remove unnecessary commented code.
 #TODO: Combine all information into a single file.
 #        Use this spec? https://tools.ietf.org/id/draft-kunze-bagit-16.html
@@ -42,6 +43,7 @@ dockerCommand="docker run -i -t --rm --platform linux/x86_64 --user $(id -u):$(i
 #          Instead of And, Or, FloatRange, etc. classes, use the same syntax that they use?
 #TODO: Not sure whether to do:
 #        zstandard compression: Record line indices and starts positions in .cmpr file (in msgpack format) instead of "z"?
+
 python3 TestSmallAndMedium.py
 #$dockerCommand python3 TestSmallAndMedium.py
 #$dockerCommand python3

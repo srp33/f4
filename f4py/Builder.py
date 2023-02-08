@@ -165,7 +165,7 @@ class Builder:
         #compression_training_set = set()
 
         with f4py.get_delimited_file_handle(delimited_file_path) as in_file:
-            self.__exclude_comments_and_header(in_file, comment_prefix)
+            self._exclude_comments_and_header(in_file, comment_prefix)
 
             # Initialize the column sizes and types.
             column_sizes_dict = {}
@@ -261,7 +261,7 @@ class Builder:
 
         # Save the data to output file. Ignore the header line.
         with f4py.get_delimited_file_handle(delimited_file_path) as in_file:
-            self.__exclude_comments_and_header(in_file, comment_prefix)
+            self._exclude_comments_and_header(in_file, comment_prefix)
 
             with open(f"{tmp_dir_path}{chunk_number}", 'wb') as chunk_file:
                 out_lines = []
@@ -317,7 +317,7 @@ class Builder:
 
         return max_line_size
 
-    def __exclude_comments_and_header(self, in_file, comment_prefix):
+    def _exclude_comments_and_header(self, in_file, comment_prefix):
         # Ignore the header because we don't need column names here. Also ignore commented lines.
         if comment_prefix:
             for line in in_file:

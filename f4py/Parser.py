@@ -29,7 +29,7 @@ class Parser:
         # Cache file handles in a dictionary.
         self.__file_handles = {}
         for ext in fixed_file_extensions:
-            self.__file_handles[ext] = self.set_file_handle(ext)
+            self.__file_handles[ext] = self._set_file_handle(ext)
 
         # Cache statistics in a dictionary.
         self.__stats = {}
@@ -73,9 +73,9 @@ class Parser:
 
         # Store column indices and types in dictionaries so we only have to retrieve
         # each once, even if we use the same column in multiple filters.
-        select_columns, column_type_dict, column_coords_dict, decompression_type, decompressor, bigram_size_dict = self._get_column_meta(fltr.get_column_name_set(), select_columns)
+        select_columns, column_type_dict, column_coords_dict, decompression_type, decompressor, bigram_size_dict = self._get_column_meta(fltr._get_column_name_set(), select_columns)
 
-        fltr.check_types(column_type_dict)
+        fltr._check_types(column_type_dict)
 
         has_index = len(glob.glob(self.data_file_path + ".idx_*")) > 0
 
@@ -84,7 +84,7 @@ class Parser:
 #            sub_filters = fltr.get_sub_filters()
 
 #            if num_processes == 1 or len(sub_filters) == 1:
-            keep_row_indices = sorted(fltr.filter_indexed_column_values(self.data_file_path, self.get_num_rows(), num_processes))
+            keep_row_indices = sorted(fltr._filter_indexed_column_values(self.data_file_path, self.get_num_rows(), num_processes))
 #            else:
 #                fltr_results_dict = {}
 
@@ -101,10 +101,10 @@ class Parser:
         else:
             if num_processes == 1:
                 row_indices = set(range(self.get_num_rows()))
-                keep_row_indices = sorted(fltr.filter_column_values(self.data_file_path, row_indices, column_coords_dict, decompression_type, decompressor, bigram_size_dict))
+                keep_row_indices = sorted(fltr._filter_column_values(self.data_file_path, row_indices, column_coords_dict, decompression_type, decompressor, bigram_size_dict))
             else:
                 # Loop through the rows in parallel and find matching row indices.
-                keep_row_indices = sorted(chain.from_iterable(Parallel(n_jobs = num_processes)(delayed(fltr.filter_column_values)(self.data_file_path, row_indices, column_coords_dict, decompression_type, decompressor, bigram_size_dict) for row_indices in self._generate_row_chunks(num_processes))))
+                keep_row_indices = sorted(chain.from_iterable(Parallel(n_jobs = num_processes)(delayed(fltr._filter_column_values)(self.data_file_path, row_indices, column_coords_dict, decompression_type, decompressor, bigram_size_dict) for row_indices in self._generate_row_chunks(num_processes))))
 
         select_column_coords = [column_coords_dict[name] for name in select_columns]
 
@@ -156,14 +156,10 @@ class Parser:
         return int(len(self.__file_handles[".cc"]) / self.__stats[".mccl"]) - 1
         #return self.__stats[".ncol"]
 
-    def get_column_type(self, column_index):
-        #return next(self.__parse_data_values(column_index, 2, [[0, 1]], self.__file_handles[".ct"])).decode()
-        return next(self.__parse_data_values(column_index, 1, [[0, 1]], self.__file_handles[".ct"])).decode()
-
     def get_column_type_from_name(self, column_name):
         try:
             with f4py.IndexSearcher._get_index_parser(f"{self.data_file_path}.cn") as index_parser:
-                return self.get_column_type(self._get_column_index_from_name(index_parser, column_name))
+                return self._get_column_type_from_index(self._get_column_index_from_name(index_parser, column_name))
         except:
             raise Exception(f"A column with the name {column_name} does not exist.")
 
@@ -175,21 +171,25 @@ class Parser:
 
         return position
 
-    def get_file_handle(self, ext):
+    def _get_file_handle(self, ext):
         return self.__file_handles[ext]
 
-    def set_file_handle(self, ext):
+    def _set_file_handle(self, ext):
         if ext not in self.__file_handles:
             self.__file_handles[ext] = f4py.open_read_file(self.data_file_path, ext)
 
-        return self.get_file_handle(ext)
+        return self._get_file_handle(ext)
 
-    def get_stat(self, ext):
+    def _get_stat(self, ext):
         return self.__stats[ext]
 
     ##############################################
     # Non-public functions
     ##############################################
+
+    def _get_column_type_from_index(self, column_index):
+        #return next(self.__parse_data_values(column_index, 2, [[0, 1]], self.__file_handles[".ct"])).decode()
+        return next(self._parse_data_values(column_index, 1, [[0, 1]], self.__file_handles[".ct"])).decode()
 
     def _get_column_meta(self, filter_column_set, select_columns):
         column_type_dict = {}
@@ -202,7 +202,7 @@ class Parser:
                 coords = cn_parser._parse_data_coords([0, 1])
 
                 for row_index in range(self.get_num_cols()):
-                    values = cn_parser.__parse_row_values(row_index, coords)
+                    values = cn_parser._parse_row_values(row_index, coords)
                     column_name = values[0]
                     column_index = fastnumbers.fast_int(values[1])
 
@@ -230,7 +230,7 @@ class Parser:
                     column_index_name_dict[column_index] = column_name
 
                 for column_name in filter_column_set:
-                    column_type_dict[column_name] = self.get_column_type(column_name_index_dict[column_name])
+                    column_type_dict[column_name] = self._get_column_type_from_index(column_name_index_dict[column_name])
 
             all_column_indices = [column_name_index_dict[name] for name in all_columns]
             all_coords = self._parse_data_coords(all_column_indices)
@@ -251,9 +251,9 @@ class Parser:
                 # decompressor = zstandard.ZstdDecompressor()
             else:
                 decompression_type = "dictionary"
-                decompressor = self.__get_decompression_dict(decompressor_file_path, column_index_name_dict)
+                decompressor = self._get_decompression_dict(decompressor_file_path, column_index_name_dict)
                 # if len(decompression_dict) > 0:
-                #    select_compression_dict = self.__invert_decompression_dict(decompression_dict, select_columns)
+                #    select_compression_dict = self._invert_decompression_dict(decompression_dict, select_columns)
 
                 for column_name in all_columns:
                     bigram_size_dict[column_name] = f4py.get_bigram_size(len(decompressor[column_name]["map"]))
@@ -306,12 +306,12 @@ class Parser:
 
         return data_coords
 
-    def __parse_data_value(self, start_element, segment_length, coords, str_like_object):
+    def _parse_data_value(self, start_element, segment_length, coords, str_like_object):
         start_pos = start_element * segment_length
 
         return str_like_object[(start_pos + coords[0]):(start_pos + coords[1])]
 
-    def __parse_data_values(self, start_element, segment_length, data_coords, str_like_object):
+    def _parse_data_values(self, start_element, segment_length, data_coords, str_like_object):
         start_pos = start_element * segment_length
 
         for coords in data_coords:
@@ -326,7 +326,7 @@ class Parser:
             return self._parse_dictionary_compressed_row_value
 
     def _parse_row_value(self, row_index, column_coords, line_length, file_handle, decompression_type=None, decompressor=None, bigram_size_dict=None, column_name=None):
-        return self.__parse_data_value(row_index, line_length, column_coords, file_handle).rstrip(b" ")
+        return self._parse_data_value(row_index, line_length, column_coords, file_handle).rstrip(b" ")
 
         # if decompression_type == "zstd":
         #     line = self.__parse_data_value(row_index, line_length, [0, line_length], file_handle)
@@ -352,40 +352,39 @@ class Parser:
         #         value = f4py.decompress(value, decompressor[column_name], bigram_size_dict[column_name])
         #
         #     return value
-        line = self.__parse_data_value(row_index, line_length, [0, line_length], file_handle)
+        line = self._parse_data_value(row_index, line_length, [0, line_length], file_handle)
         line = decompressor.decompress(line)
-        return self.__parse_data_value(0, 0, column_coords, line).rstrip(b" ")
+        return self._parse_data_value(0, 0, column_coords, line).rstrip(b" ")
 
     def _parse_dictionary_compressed_row_value(self, row_index, column_coords, line_length, file_handle, decompression_type=None, decompressor=None, bigram_size_dict=None, column_name=None):
-        value = self.__parse_data_value(row_index, line_length, column_coords, file_handle).rstrip(b" ")
+        value = self._parse_data_value(row_index, line_length, column_coords, file_handle).rstrip(b" ")
         return f4py.decompress(value, decompressor[column_name], bigram_size_dict[column_name])
 
     def _get_parse_row_values_function(self, decompression_type):
         if not decompression_type:
-            return self.__parse_row_values
+            return self._parse_row_values
         elif decompression_type == "zstd":
-            return self.__parse_zstd_compressed_row_values
+            return self._parse_zstd_compressed_row_values
         else:
-            return self.__parse_dictionary_compressed_row_values
+            return self._parse_dictionary_compressed_row_values
 
-    def __parse_row_values(self, row_index, column_coords, decompression_type=None, decompressor=None, bigram_size_dict=None, column_names=None):
-        return list(self.__parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
+    def _parse_row_values(self, row_index, column_coords, decompression_type=None, decompressor=None, bigram_size_dict=None, column_names=None):
+        return list(self._parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
 
-    def __parse_zstd_compressed_row_values(self, row_index, column_coords, decompression_type=None, decompressor=None, bigram_size_dict=None, column_names=None):
+    def _parse_zstd_compressed_row_values(self, row_index, column_coords, decompression_type=None, decompressor=None, bigram_size_dict=None, column_names=None):
         line_length = self.__stats[".ll"]
-        line = self.__parse_data_value(row_index, line_length, [0, line_length], self.__file_handles[""])
+        line = self._parse_data_value(row_index, line_length, [0, line_length], self.__file_handles[""])
         line = decompressor.decompress(line)
 
-        return list(self.__parse_data_values(0, 0, column_coords, line))
+        return list(self._parse_data_values(0, 0, column_coords, line))
 
-    def __parse_dictionary_compressed_row_values(self, row_index, column_coords, decompression_type=None, decompressor=None, bigram_size_dict=None, column_names=None):
-            values = list(self.__parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
+    def _parse_dictionary_compressed_row_values(self, row_index, column_coords, decompression_type=None, decompressor=None, bigram_size_dict=None, column_names=None):
+            values = list(self._parse_data_values(row_index, self.__stats[".ll"], column_coords, self.__file_handles[""]))
             return [f4py.decompress(values.pop(0), decompressor[column_name], bigram_size_dict[column_name]) for column_name in column_names]
 
-    def __get_decompression_dict(self, file_path, column_index_name_dict):
+    def _get_decompression_dict(self, file_path, column_index_name_dict):
         with open(file_path, "rb") as cmpr_file:
             return f4py.deserialize(cmpr_file.read())
-
 
     #     compression_dict = {}
     #     with open(file_path, "rb") as cmpr_file:
@@ -431,7 +430,7 @@ class Parser:
 
     #     return compression_dict
 
-    # def __invert_decompression_dict(self, decompression_dict, select_columns):
+    # def _invert_decompression_dict(self, decompression_dict, select_columns):
     #     inverted_dict = {}
     #
     #     for select_column in select_columns:

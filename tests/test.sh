@@ -22,7 +22,6 @@ dockerCommand="docker run -i -t --rm --platform linux/x86_64 --user $(id -u):$(i
 
 #$dockerCommand bash -c "time python3 build_tsv.py 10 10 10 10000 data/medium.tsv"
 
-#TODO: Add a parameter to ignore lines starting with a specified comment character (default = "#").
 #TODO: Modify some function names to be private.
 #TODO: Integrate f4py into the analysis paper tests. Check speed and optimize more, if needed.
 #TODO: Address remaining TODO items in the code, remove unnecessary commented code.

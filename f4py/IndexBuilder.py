@@ -36,8 +36,8 @@ class IndexBuilder:
             f4py.print_message(f"Getting column meta information for {index_column} index for {f4_file_path}.", verbose)
             select_columns, column_type_dict, column_coords_dict, decompression_type, decompressor, bigram_size_dict = parser._get_column_meta(set([index_column_encoded]), [])
 
-            file_handle = parser.get_file_handle("")
-            line_length = parser.get_stat(".ll")
+            file_handle = parser._get_file_handle("")
+            line_length = parser._get_stat(".ll")
             index_column_type = column_type_dict[index_column_encoded]
             coords = column_coords_dict[index_column_encoded]
             values_positions = []
@@ -90,8 +90,8 @@ class IndexBuilder:
             select_columns, column_type_dict, column_coords_dict, decompression_type, decompressor, bigram_size_dict = parser._get_column_meta(set([index_column_1_encoded, index_column_2_encoded]), [])
             # TODO: Add logic to verify that index_column_1 and index_column_2 are valid.
 
-            file_handle = parser.get_file_handle("")
-            line_length = parser.get_stat(".ll")
+            file_handle = parser._get_file_handle("")
+            line_length = parser._get_stat(".ll")
             index_column_1_type = column_type_dict[index_column_1_encoded]
             index_column_2_type = column_type_dict[index_column_2_encoded]
             coords_1 = column_coords_dict[index_column_1_encoded]

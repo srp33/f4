@@ -18,7 +18,8 @@ def read_file_into_lists(file_path, delimiter=b"\t"):
     the_file = get_delimited_file_handle(file_path)
 
     for line in the_file:
-        out_items.append(line.rstrip(b"\n").split(delimiter))
+        if not line.startswith(b"#"):
+            out_items.append(line.rstrip(b"\n").split(delimiter))
 
     the_file.close()
 

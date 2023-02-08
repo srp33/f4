@@ -11,7 +11,7 @@ class Builder:
     def __init__(self, verbose=False):
         self.__verbose = verbose
 
-    def convert_delimited_file(self, delimited_file_path, f4_file_path, index_columns=[], delimiter="\t", compression_type=None, num_processes=1, num_cols_per_chunk=None, num_rows_per_save=100, tmp_dir_path=None):
+    def convert_delimited_file(self, delimited_file_path, f4_file_path, index_columns=[], delimiter="\t", comment_prefix="#", compression_type=None, num_processes=1, num_cols_per_chunk=None, num_rows_per_save=100, tmp_dir_path=None):
         if type(delimiter) != str:
             raise Exception("The delimiter value must be a string.")
 
@@ -20,14 +20,31 @@ class Builder:
 
         delimiter = delimiter.encode()
 
+        if comment_prefix:
+            if type(comment_prefix) != str:
+                raise Exception("The comment_prefix value must be a string.")
+
+            comment_prefix = comment_prefix.encode()
+
+            if comment_prefix == "":
+                comment_prefix = None
+
         self._print_message(f"Converting from {delimited_file_path}")
 
         tmp_dir_path2 = self._prepare_tmp_dir(tmp_dir_path)
 
         # Get column names. Remove any leading or trailing white space around the column names.
         with f4py.get_delimited_file_handle(delimited_file_path) as in_file:
-            column_names = [x.strip() for x in in_file.readline().rstrip(b"\n").split(delimiter)]
-            num_cols = len(column_names)
+            if comment_prefix:
+                for line in in_file:
+                    if not line.startswith(comment_prefix):
+                        header_line = line
+                        break
+            else:
+                header_line = in_file.readline()
+
+        column_names = [x.strip() for x in header_line.rstrip(b"\n").split(delimiter)]
+        num_cols = len(column_names)
 
         if num_cols == 0:
             raise Exception(f"No data was detected in {delimited_file_path}.")
@@ -35,10 +52,10 @@ class Builder:
         # Iterate through the lines to summarize each column.
         self._print_message(f"Summarizing each column in {delimited_file_path}")
         if num_processes == 1:
-            chunk_results = [self._parse_columns_chunk(delimited_file_path, delimiter, 0, num_cols, compression_type)]
+            chunk_results = [self._parse_columns_chunk(delimited_file_path, delimiter, comment_prefix, 0, num_cols, compression_type)]
         else:
             column_chunk_indices = _generate_chunk_ranges(num_cols, num_cols_per_chunk)
-            chunk_results = Parallel(n_jobs=num_processes)(delayed(self._parse_columns_chunk)(delimited_file_path, delimiter, column_chunk[0], column_chunk[1], compression_type) for column_chunk in column_chunk_indices)
+            chunk_results = Parallel(n_jobs=num_processes)(delayed(self._parse_columns_chunk)(delimited_file_path, delimiter, comment_prefix, column_chunk[0], column_chunk[1], compression_type) for column_chunk in column_chunk_indices)
 
         # Summarize the column sizes and types across the chunks.
         column_sizes = []
@@ -69,7 +86,7 @@ class Builder:
 
         #    f4py.CompressionHelper._save_level_file(f4_file_path, compression_level)
 
-        line_length = self._save_output_file(delimited_file_path, f4_file_path, delimiter, compression_type, column_sizes, column_types, column_compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path2)
+        line_length = self._save_output_file(delimited_file_path, f4_file_path, delimiter, comment_prefix, compression_type, column_sizes, column_compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path2)
 
         self._print_message(f"Saving meta files for {f4_file_path}")
         self._save_meta_files(f4_file_path, column_sizes, line_length, column_names, column_types, compression_type, column_compression_dicts, num_rows)
@@ -84,7 +101,6 @@ class Builder:
     # Non-public functions
     #####################################################
 
-    #TODO: Currently, this function is used in IndexBuilder as well. Consider splitting it out.
     def _save_meta_files(self, f4_file_path, column_sizes, line_length, column_names=None, column_types=None, compression_type=None, column_compression_dicts=None, num_rows=None):
         # Calculate and save the column coordinates and max length of these coordinates.
         column_start_coords = f4py.get_column_start_coords(column_sizes)
@@ -145,12 +161,11 @@ class Builder:
                 print(e)
                 pass
 
-    def _parse_columns_chunk(self, delimited_file_path, delimiter, start_index, end_index, compression_type):
+    def _parse_columns_chunk(self, delimited_file_path, delimiter, comment_prefix, start_index, end_index, compression_type):
         #compression_training_set = set()
 
         with f4py.get_delimited_file_handle(delimited_file_path) as in_file:
-            # Ignore the header line because we don't need column names here.
-            in_file.readline()
+            self.__exclude_comments_and_header(in_file, comment_prefix)
 
             # Initialize the column sizes and types.
             column_sizes_dict = {}
@@ -220,16 +235,16 @@ class Builder:
 
         return column_sizes_dict, column_types_dict, column_compression_dicts, num_rows
 
-    def _save_output_file(self, delimited_file_path, f4_file_path, delimiter, compression_type, column_sizes, column_types, compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path):
+    def _save_output_file(self, delimited_file_path, f4_file_path, delimiter, comment_prefix, compression_type, column_sizes, compression_dicts, num_rows, num_processes, num_rows_per_save, tmp_dir_path):
         self._print_message(f"Parsing chunks of {delimited_file_path} and saving to temp directory ({tmp_dir_path})")
 
         if num_processes == 1:
-            line_length = self._save_rows_chunk(delimited_file_path, f4_file_path, delimiter, compression_type, column_sizes, column_types, compression_dicts, 0, 0, num_rows, num_rows_per_save, tmp_dir_path)
+            line_length = self._save_rows_chunk(delimited_file_path, delimiter, comment_prefix, compression_type, column_sizes, compression_dicts, 0, 0, num_rows, num_rows_per_save, tmp_dir_path)
         else:
             row_chunk_indices = _generate_chunk_ranges(num_rows, math.ceil(num_rows / num_processes) + 1)
 
             # Find the line length.
-            max_line_sizes = Parallel(n_jobs=num_processes)(delayed(self._save_rows_chunk)(delimited_file_path, f4_file_path, delimiter, compression_type, column_sizes, column_types, compression_dicts, i, row_chunk[0], row_chunk[1], num_rows_per_save, tmp_dir_path) for i, row_chunk in enumerate(row_chunk_indices))
+            max_line_sizes = Parallel(n_jobs=num_processes)(delayed(self._save_rows_chunk)(delimited_file_path, delimiter, comment_prefix, compression_type, column_sizes, compression_dicts, i, row_chunk[0], row_chunk[1], num_rows_per_save, tmp_dir_path) for i, row_chunk in enumerate(row_chunk_indices))
             line_length = max(max_line_sizes)
 
         # Merge the file chunks. This dictionary enables us to sort them properly.
@@ -238,7 +253,7 @@ class Builder:
 
         return line_length
 
-    def _save_rows_chunk(self, delimited_file_path, f4_file_path, delimiter, compression_type, column_sizes, column_types, compression_dicts, chunk_number, start_index, end_index, num_rows_per_save, tmp_dir_path):
+    def _save_rows_chunk(self, delimited_file_path, delimiter, comment_prefix, compression_type, column_sizes, compression_dicts, chunk_number, start_index, end_index, num_rows_per_save, tmp_dir_path):
         max_line_size = 0
 
         if compression_type == "zstd":
@@ -246,7 +261,7 @@ class Builder:
 
         # Save the data to output file. Ignore the header line.
         with f4py.get_delimited_file_handle(delimited_file_path) as in_file:
-            in_file.readline()
+            self.__exclude_comments_and_header(in_file, comment_prefix)
 
             with open(f"{tmp_dir_path}{chunk_number}", 'wb') as chunk_file:
                 out_lines = []
@@ -301,6 +316,15 @@ class Builder:
                     chunk_file.write(b"".join(out_lines))
 
         return max_line_size
+
+    def __exclude_comments_and_header(self, in_file, comment_prefix):
+        # Ignore the header because we don't need column names here. Also ignore commented lines.
+        if comment_prefix:
+            for line in in_file:
+                if not line.startswith(comment_prefix):
+                    break
+        else:
+            in_file.readline()
 
     def _merge_chunk_files(self, f4_file_path, num_processes, num_rows_per_save, tmp_dir_path):
         with open(f4_file_path, "wb") as f4_file:

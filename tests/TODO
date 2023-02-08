@@ -1,112 +1,45 @@
-In Builder.py, add a setting to ignore lines starting with a specified comment character (default = "#").
-
-CSV/TSV compression project:
-  Use 64 kb blocks for zstandard compression, similar to bgzip?
-  What benefit do you get from gzipping the whole file in addition to a line-by-line scheme?
-  Python code/module?
-  Lossy compression of numerical datasets using n-grams (see notes). (Or should that be a separate paper?)
-
-Remove tmp_chunk_results_file_path logic from Builder.py (and function signature).
-Re-run TestBuildLarge.py overnight.
-Try changing from pickle to msgpack (because it is language agnostic).
-
-Remove unnecessary comments and address TODO items in ../f4py/*.
-
-Huge benchmarks:
-  CADD files:
-    Figure out why compression is so poor.
-      Does specifying too large a number matter for the training dict size?
-      Does it make sense to build the training dictionary twice (once to determine size, then using that size).
-      How much does compression_level matter?
-    Compare against tabix. We can also compare it in terms of size.
-      https://www.htslib.org/doc/tabix.html
-      tabix sorted.gff.gz chr1:10,000,000-20,000,000
-      Try CSI index files https://github.com/enasequence/schema/issues/18
-    Pad every value with a space or a tab so the files are more readable?
-      With compression this might not matter much?
-  Gene-expression data:
-    GSE62944
-    ARCHS4 - https://maayanlab.cloud/archs4/download.html
-      Human - TPM (transcript level) - 101 GB - HDF5 format
-    ------------------------------------
-    refine.bio - Normalized (not RNA-Seq) compendia - Homo sapiens (43 GB) - https://www.refine.bio/compendia?c=normalized
-    LINCS (see WishBuilder)
-    recount3 (must write code to download individual studies and then combine them)
-  Generate formal statistics on results.
-    How does the data size compare with and without training dict and for level 1 vs. 22?
-  If we need to go faster to beat tabix:
-    Try Nuitka. https://nuitka.net (compiles your Python code to C, is supposed to achieve speedups of 3x or greater).
-    Parallelize the process of generating the output file (save to temp file)?
-      This *might* help when doing a lot of decompression.
-    Python 3.11. beta version already available. Production release in October 22. At least 20% speedup.
-
-Kick off full set of tests for large files and save results to GitHub.
-
-Implement basic http server functionality as a demo.
-
-Modify name? Put Parallel(ize) in it?
-
 #####################################################
-# After benchmark paper (for software packages)
+# For software release:
 #####################################################
 
-Allow user to specify a number of decimal places in brackets or maybe just a string formatting text that will say how an indexed column should be formatted. This way you could have a float column that only needs one decimal point. Precision in this saves a lot of space.
-
-Raise a friendly exception if the user tries to do an indexed query when the index has not been created.
-
-Allow user to specify missing values in Builder.convert() function. There is a function called is_missing_value in Utilities.py that should be removed.
-
-Support compressed indexes?
-
-Modify some function names to be private.
-
-Consider using this: https://github.com/textualize/rich-cli
-
-Bring back the filters that I commented out in Filters.py.
-  Make sure we have tests for them in TestSmall.py.
-  Also NumericWithoutFilter, NumericBetweenFilter, NumericEqualsFilter, NumericNotEqualsFilter
-
-Expand NumericFilter to LessThanFilter, GreaterThanFilter, etc.
-Add StringGreaterThanFilter, StringLessThanFilter (already have StringGreaterThanOrEqualsFilter, etc.)
-
-The current design supports filtering on all non-indexed columns or all indexed
-  columns but not a combination of both. What to do if the user violates this?
-  Maybe if there is not an index for all filter columns, we revert to the slow
-  version and just give them a warning.
-  Maybe also optimize this code by having a flag file that indicates whether any
-  column is indexed.
-
-If you have a column that has mostly numeric data but has a few non-numeric values, the code to check the type might store tons of numbers as numeric values. Tweak the code to put a cap on how many can be stored in the set.
-
-Store discrete data in separate table from numeric? The first column is a JSON dictionary that maps Unicode characters to unique values in the column. This could save a lot of disk space in most cases.
-  When inferring column sizes and types, store missing values using a single character and replace them when the values are queried?
-Make sure all arguments to public functions are fully validated in tests.
-If possible, move functions out of Helper.py. If you keep any, document them.
-Make all code consistent with PEP8 spec (using PyCharm).
-
-Support joins?
-Support date and string (has at least one non-number and more than 50% of values are unique?) columns.
-Support in_file_delimiter="," and out_file_type="csv"
-  Change in_file_delimiter to in_file_type?
-  Make sure exception when invalid value specified.
-GitHub builds for continuous integration and running the tests.
-Add documentation for all public functions.
-  Mention .gz file support.
-  Mention that if they specify tmp_dir_path, we assume that it is empty. It will not work if it is not.
-Set up readthedocs.
-
-Translate to Rust. Or create Rust/Python wrapper. https://crates.io/crates/pyo3
-  https://www.youtube.com/watch?v=Ygk0IMbu2nY
-  https://dev-notes.eu/2020/03/Binary-Search-in-Rust/
-  B-tree https://doc.rust-lang.org/std/collections/struct.BTreeMap.html
-  https://docs.rs/sled/0.34.6/sled/struct.Tree.html
+* Filters.py - Can we filter without decompressing by converting self.value in constructor?
+    Looks like we can do it for some filter classes (String, StartsWith, EndsWith, Head, Tail), but not others.
+      If you don't do it, remove select_compression_dict as a parameter from filter_column_values().
+* Compress values in index files using our dictionary compression technique.
+* Use more options for compression type and only store compression dictionary when more than 256 combinations (?).
+* Store individual, serialized compression dictionaries on one line, using .cc file to indicate where each starts and ends.
+* Do compression at the bigram level.
+* Do bit-packing (see to01() function in bitarray module). Also https://wiki.python.org/moin/BitManipulation
+* Pandas integration
+  Instead of And, Or, FloatRange, etc. classes, use the same syntax that they use?
+* Raise a friendly exception if the user tries to do an indexed query when the index has not been created.
+* Allow user to specify missing values in Builder.convert() function.
+    When inferring column sizes and types, store missing values using a single character and replace them when the values are queried?
+* Support compressed indexes?
+* The current design supports filtering on all non-indexed columns or all indexed columns but not a combination of both. What to do if the user violates this? Maybe if there is not an index for all filter columns, we revert to the slow version and just give them a warning.
+* Support in_file_delimiter="," and out_file_type="csv"
+    Change in_file_delimiter to in_file_type?
+    Make sure exception when invalid value specified.
+* Make sure all arguments to public functions are fully validated in tests.
+* If possible, move functions out of Utilities.py. If you keep any public ones, document them.
+* Make all code consistent with PEP8 spec (using PyCharm)?
+* Create a GitHub build for running the tests.
+* Add documentation for all public functions.
+    Mention .gz file support.
+    Mention that if they specify tmp_dir_path, we assume that it is empty. It will not work if it is not.
+* Set up readthedocs.
 
 #####################################################
-# May or may not do (at least for now)
+# May or may not do:
 #####################################################
 
-Add function to Parser.py to return all unique values for a discrete column
-Add function to Parser.py to get summary statistics for a numeric column
-Support conversion from pandas DataFrame to F4 and vice versa
-Provide explicit support for VCF format? Other bio formats?
-Provide a way to stream a file as input and/or output?
+* Support date and string (has at least one non-number and more than 50% of values are unique?) columns.
+* Support joins?
+* zstandard compression: Record line indices and starts positions in .cmpr file (in msgpack format) instead of "z"?
+* Use 64 kb blocks for zstandard compression, similar to bgzip?
+* Add function to Parser.py to return all unique values for a discrete column
+* Add function to Parser.py to get summary statistics for a numeric column
+* Support conversion from pandas DataFrame to F4 and vice versa
+* Provide explicit support for VCF format? Other bio formats?
+* Provide a way to stream a file as input and/or output?
+* If you have a column that has mostly numeric data but has a few non-numeric values, the code to check the type might store tons of numbers as numeric values. Tweak the code to put a cap on how many can be stored in the set.

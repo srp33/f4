@@ -4,7 +4,7 @@ import fastnumbers
 import operator
 import os
 import re
-import zstandard
+#import zstandard
 
 """
 This class is used to indicate that no filtering should be performed.

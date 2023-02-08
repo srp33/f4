@@ -1,3 +1,5 @@
+# This is a comment line
+## This is also a comment line
 ID	FloatA	FloatB	OrdinalA	OrdinalB	IntA	IntB	CategoricalA	CategoricalB
 E	9.9	-99.9	Low	High	6	66	Brown	Brown
 A	1.1	99.9	Low	High	5	99	Red	Yellow

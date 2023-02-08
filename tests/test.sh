@@ -6,7 +6,7 @@ set -o errexit
 # Build the Docker image
 #######################################################
 
-#docker build --platform linux/x86_64 -t srp33/f4_test .
+docker build --platform linux/x86_64 -t srp33/f4_test .
 
 #######################################################
 # Run preparatory steps
@@ -23,6 +23,7 @@ $dockerCommand bash -c "time python3 build_tsv.py 10 10 10 10000 data/medium.tsv
 
 #TODO: Integrate f4py into the analysis paper tests. Check speed and optimize more, if needed.
 #TODO: Address remaining TODO items in the code, remove unnecessary commented code.
+#TODO: Remove class structure so object orientation is not used.
 #TODO: Combine all information into a single file.
 #        Use this spec? https://tools.ietf.org/id/draft-kunze-bagit-16.html
 #TODO: Try potential speed improvements:
@@ -35,8 +36,8 @@ $dockerCommand bash -c "time python3 build_tsv.py 10 10 10 10000 data/medium.tsv
 # Run tests
 #######################################################
 
-python3 test.py
-#$dockerCommand python3 test.py
+#python3 test.py
+$dockerCommand python3 test.py
 
 #######################################################
 # Clean up
